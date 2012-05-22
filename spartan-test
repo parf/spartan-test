@@ -18,6 +18,8 @@ TODO:
 if(php_sapi_name()!='cli')
     die("cli required");
 
+ini_set('display_errors', 1);
+
 $me=array_shift($argv); // get rid of $__0
 if (! $argv)
     usage($me);
@@ -47,7 +49,7 @@ if ($__SILENT)
     $ARG["--nocolor"]=1;
 
 # console colors, only for xterm capable terminals
-if (getenv("TERM")=='xterm')
+if (strpos(getenv("TERM"),'xterm')!==false)
     $ARG["--color"]=1;
 if (@$ARG["--nocolor"])
     unset($ARG["--color"]);
@@ -58,6 +60,9 @@ if (@$ARG["--color"]) {
     $__RED="\033[31m";
     $__BLUE="\033[34m";
 }
+
+if (! @$ARG["--halt-on-errors"])
+    set_error_handler('Error::handler');
 
 $__fn=0; // file_number
 while( $__file=array_shift($argv) ) {
@@ -87,9 +92,9 @@ while( $__file=array_shift($argv) ) {
     $__out=array(); // output
     $__r=false;
     $__z=false;
-    $__c=0;
+    $__c=0;     // 0 - code line,  1- result line
     $__new=0;
-    $__l=0;
+    $__l=0;     // # of lines processed
     $__tests=0; // # of tests
     $__failed=0;
     $__errs="";
@@ -137,6 +142,7 @@ while( $__file=array_shift($argv) ) {
         if (! $__line || $__l2=='//' || $__l2=='<?' || $__l2=='?>' || $__line[0]=='#')
             continue;
 
+        // "- command" - execute and discard result
         if($__l2=='- ') {
             eval(substr($__line, 2));
             continue;
@@ -146,7 +152,7 @@ while( $__file=array_shift($argv) ) {
 
         $__c=1;
         $__code=$__line;
-        $__z="error";
+        $__z="error";  // evaluation result
         ob_start();
         try {
             if ( substr($__line, 0, 5)=='echo ') {
@@ -155,11 +161,13 @@ while( $__file=array_shift($argv) ) {
             } else
                 eval("\$__z=$__line");
         } catch(Exception $__ex) {
-            // we omit file and other propeties
             $__z=array(get_class($__ex), $__ex->getMessage(), $__ex->getCode());
         }
         if (is_object($__z))
             $__z=array("class" => get_class($__z), $__z);
+
+        if ($__err=Error::get())
+            $__z=array($__err[0] => $__err[1], "result" => $__z); // [error, result]
 
         $__ob=ob_get_clean();
         if ($__ob) {
@@ -167,7 +175,7 @@ while( $__file=array_shift($argv) ) {
                 $__errs.="Line $__l: PHP Error: '$__line'\n  $__ob";
                 $__failed++;
             } else
-                $__z=array("r" => $__z, "out" => $__ob);
+                $__z=array("r" => $__z, "out" => $__ob); // ["result" => .., "output" => ..]
         }
 
         $__z=json_encode($__z);
@@ -220,14 +228,44 @@ return;
 
 // --------------------------------------------------------------------------------
 
+class Error {  // namespace
+    static $err; // php-error from error handler
+
+    // return error (if any), clean up error info
+    static function get() {
+        $e=self::$err;
+        self::$err="";
+        return $e;
+    }
+
+    function handler ($level, $message, $file, $line, $context) {
+        static $map=array(
+                          E_NOTICE       => 'NOTICE',
+                          E_WARNING      => 'WARNING',
+                          E_USER_ERROR   => 'USER ERROR',
+                          E_USER_WARNING => 'USER WARNING',
+                          E_USER_NOTICE  => 'USER NOTICE',
+                      E_STRICT       => 'E_STRICT',
+                          );
+        $type = ($t = @$map[$level]) ? $t : "ERROR#$level";
+        self::$err = array($type, $message);
+    }
+
+}
+
+
+// --------------------------------------------------------------------------------
+
 
 function usage($me) {
     echo <<< USAGE
 Spartan(Minimalistic) PHP Unit Test Framework
 Usage:
- $me [-g] file.test file.test
- find . -name "*.test" | $me --
- $me --help
+    $me --help
+
+    $me [-g] file.test file.test
+    find . -name "*.test" | $me --
+ 
 
 USAGE;
     exit;
@@ -258,32 +296,47 @@ OPTIONS
   -- --stdin - read file list from stdin
   --clean    - remove test results from source file
   -s --silent - suppress output when no-errors (for use in cron)
+  --halt-on-errors - Do not allow PHP errors inside tests
 
 DESCRIPTION
   read file with php code line by line
   read expected results stored in php comments
   generate expected results if they are not available (update file if needed)
   compare results with expected results
-  framework checks return values, throwed exceptions, stdout output (echo, print)
+  framework checks return values, thrown exceptions, stdout output (echo, print)
 
 LIMITATIONS
   no loops or control structures allowed in test files
   one command per line
 
 AUTOLOAD
-  test will include file "init.php" in first file's dir, then in parent dirs
-  you should define your autoload, ... functions there
+  test will search for "init.php" file in current and parents directories //'
+  define your autoload and init functions there
 
 NOTES
-  expected results are stored in php comments as json "#=json
-  you can suppress line result check by providing "#=-" comment
+  expected results are stored in php comments as json "#=json"
+  you can suppress result check via "- " prefix : "- discard_my_result();"
+  you can suppress result check by providing "#=-" comment (old way)
+
+INSTALL
+   cd; mkdir src; cd src; git@github.com:parf/spartan-test.git
+   cd ~/bin; ln -s ~/src/spartan-test/spartan-test
+
+HOW TO USE:
+   1 test from specific file: spartan-test filename
+   2 run all tests in project: find /project -name "*.test" spartan-test --
+   3 make test executable file
+     add "#!/bin/env spartan-test" as first line of your test, then chmod +x your test
+     now you can run test as ./test-name
+
 
 EXAMPLE
 
   CRON example:
-        find . -name "*.test" | $me -- -s |& mail -E parf@example.com -s "Spartan Test Errors"
+        find /project-dir -name "*.test" | $me -- -s |& mail -E parf@example.com -s "Spartan Test Errors"
 
   UNPROCESSED TEST SCRIPT
+  #!/bin/env spartan-test
   <?
   // simple unit test
   2+2;
@@ -295,14 +348,15 @@ EXAMPLE
   \$f();
   print("123");
   // suppress tests for this line
+  - time();
+  // suppress tests for this line (old syntax)
   time();
   #=-
-  // suppress tests for this line (alternative one-line syntax)
-  - time();
   ?>
 
   PROCESSED TEST SCRIPT.
-  After first run original file will be updated, it will include expected results encoded as json
+  After first run original file will be updated: 
+  json-encoded expected results will be added as comments
   <?
   // simple unit test
   2+2;
@@ -322,10 +376,10 @@ EXAMPLE
   print("123");
   #={"r":1,"out":"123"}
   // suppress tests for this line
+  - time();
+  // suppress tests for this line (old syntax)
   time();
   #=-
-  // suppress tests for this line (alternative one-line syntax)
-  - time();
   ?>
 
 

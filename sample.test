@@ -1,0 +1,34 @@
+#!/bin/env spartan-test
+<?
+
+// simple unit test
+2+2;
+#=4
+$c=1;
+#=1
+$c>0;
+#=true
+array(1,2,3);
+#=[1,2,3]
+range(1,3);
+#=[1,2,3]
+$f=function() { throw new Exception("Oops...", 120); };
+#={"class":"Closure","0":{}}
+$f();
+#=["Exception","Oops...",120]
+print("123");
+#={"r":1,"out":"123"}
+
+// php errors
+trigger_error("trigger_error");
+#={"USER NOTICE":"trigger_error","result":true}
+
+1/0;
+#={"WARNING":"Division by zero","result":false}
+
+// suppress tests for this line
+- time();
+// suppress tests for this line (old syntax)
+time();
+#=-
+?>
