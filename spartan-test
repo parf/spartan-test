@@ -1,0 +1,341 @@
+#!/usr/bin/php
+<?
+/*
+
+Spartan(Minimalistic) PHP Unit Test Framework
+
+2011-08-24 - V1.3
+
+Author: Sergey Porfiriev <parf@comfi.com>
+
+TODO:
+: do not rewrite original files if not needed!!!
+: add multiline support
+: implement as a class   -- Why bother??
+
+*/
+
+if(php_sapi_name()!='cli')
+    die("cli required");
+
+$me=array_shift($argv); // get rid of $__0
+if (! $argv)
+    usage($me);
+
+// Arguments
+$ARG=array(); // ARGS
+foreach($argv as $a)
+    if ($a[0]=='-')
+        $ARG[$a]=1;
+
+if (@$ARG["--help"])
+    help($me);
+
+// files from stdin support
+if (@$ARG['--'] || @$ARG['--stdin'])
+    $argv=file("php://stdin", FILE_IGNORE_NEW_LINES);
+
+if (@$ARG["--clean"])
+    $ARG["-g"]=1;
+
+$__REGENERATE = @$ARG["-g"];
+$__STDOUT     = @$ARG["-o"];
+$__SILENT     = @$ARG["-s"] ||  @$ARG["-silent"];
+if ($__STDOUT)
+    $__SILENT=1;
+if ($__SILENT)
+    $ARG["--nocolor"]=1;
+
+# console colors, only for xterm capable terminals
+if (getenv("TERM")=='xterm')
+    $ARG["--color"]=1;
+if (@$ARG["--nocolor"])
+    unset($ARG["--color"]);
+$__NORM=$__BOLD=$__RED=$__BLUE="";
+if (@$ARG["--color"]) {
+    $__NORM="\033[0m";
+    $__BOLD="\033[1m";
+    $__RED="\033[31m";
+    $__BLUE="\033[34m";
+}
+
+$__fn=0; // file_number
+while( $__file=array_shift($argv) ) {
+    if ($__file[0]=='-')
+        continue;
+
+    $__fn++;
+    if ($__fn==1) { // first file
+        // search for "init.php" file and include it
+        $path=realpath($__file);
+        while( $path=dirname($path) ) {
+            if ($path=="/")
+                break;
+            if ( file_exists($path."/init.php") ) {
+                include_once $path."/init.php";
+                break;
+            }
+        }
+    }
+
+    $__handle = @fopen($__file, "r");
+    if (! $__handle ) {
+        fwrite(STDERR, "Can't read file '$__file'\n");
+        continue;
+    }
+
+    $__out=array(); // output
+    $__r=false;
+    $__z=false;
+    $__c=0;
+    $__new=0;
+    $__l=0;
+    $__tests=0; // # of tests
+    $__failed=0;
+    $__errs="";
+    $__code="";
+
+    while (!feof($__handle)) {
+        $__l0=fgets($__handle);
+        $__out[]=$__l0;
+        $__line=trim($__l0);
+        $__l++;
+        $__l2=substr($__line, 0, 2);
+
+        if ($__c && $__l2=='#=') {    // HAVE TO CHECK RESULTS
+            if ($__line=='#=-') { // suppress check special case
+                $__old=array_pop($__out);
+                $__gen=array_pop($__out);
+                $__out[]=$__old; // preserve old result
+                continue;
+            }
+
+            if ($__REGENERATE) {
+                array_pop($__out); // GET RID OF OLD RESULT.
+                continue;
+            }
+            $__old=array_pop($__out);
+            $__gen=array_pop($__out);
+            $__out[]=$__old; // preserve old result
+
+            $__r=substr($__line, 2);
+            if ($__r==$__z)
+                continue;
+
+            $__errs.="Line $__l: $__BLUE$__code$__NORM\n  expect: $__r\n  got   : $__RED$__z$__NORM\n";
+            $__failed++;
+            continue;
+        }
+
+        if ($__l2=='#=') {
+            $__errs="Line $__l: unexpected result comment: $__line removed\n";
+            array_pop($__out);
+            $__failed++;
+            continue;
+        }
+
+        if (! $__line || $__l2=='//' || $__l2=='<?' || $__l2=='?>' || $__line[0]=='#')
+            continue;
+
+        if($__l2=='- ') {
+            eval(substr($__line, 2));
+            continue;
+        }
+
+        $__tests++;
+
+        $__c=1;
+        $__code=$__line;
+        $__z="error";
+        ob_start();
+        try {
+            if ( substr($__line, 0, 5)=='echo ') {
+                $__z='echo';
+                eval($__line);
+            } else
+                eval("\$__z=$__line");
+        } catch(Exception $__ex) {
+            // we omit file and other propeties
+            $__z=array(get_class($__ex), $__ex->getMessage(), $__ex->getCode());
+        }
+        if (is_object($__z))
+            $__z=array("class" => get_class($__z), $__z);
+
+        $__ob=ob_get_clean();
+        if ($__ob) {
+            if ($__z==="error") {
+                $__errs.="Line $__l: PHP Error: '$__line'\n  $__ob";
+                $__failed++;
+            } else
+                $__z=array("r" => $__z, "out" => $__ob);
+        }
+
+        $__z=json_encode($__z);
+        $__out[]="#=".$__z."\n";
+    }
+
+    if (! $__REGENERATE) { // normal case
+        $__t="*** Testing $__file - ";
+        if ($__failed) {
+            $__err=$__t."FAILED $__failed of $__tests tests\n";
+            $__err=$__BOLD.$__RED.$__err.$__NORM;
+
+            fwrite(STDERR, $__err);
+        } else {
+            if (! $__SILENT)
+                echo $__t."OK $__tests tests\n";
+        }
+        if ($__errs) {
+            $__errs=str_replace("\n", "\n  ", $__errs); // identation
+            fwrite(STDERR, "----------- Errors ---------\n  ".$__errs."\n");
+        }
+    } else {         // REGENERATE
+        if (! $__SILENT)
+            echo "*** $__file regenerated\n";
+    }
+
+    if ($__STDOUT) {
+        echo join("", $__out);
+        continue;
+    }
+
+    if (@$ARG["--clean"]) {
+        echo "*** $__file cleaned\n";
+        $r=array();
+        foreach($__out as $o)
+            if (substr(ltrim($o), 0, 2)!="#=")
+                $r[]=$o;
+        $__out=$r;
+    }
+
+    // update original file
+    file_put_contents($__file, $__out);
+
+    if (! $__SILENT)
+        echo "\n";
+
+} // while
+
+return;
+
+// --------------------------------------------------------------------------------
+
+
+function usage($me) {
+    echo <<< USAGE
+Spartan(Minimalistic) PHP Unit Test Framework
+Usage:
+ $me [-g] file.test file.test
+ find . -name "*.test" | $me --
+ $me --help
+
+USAGE;
+    exit;
+}
+
+function help($me) {
+    echo <<< HELP
+NAME
+  $me - Spartan(Minimalistic) PHP Unit Test Framework
+
+SYNOPSIS
+  $me FILE...
+      - run test / generate expected tests results
+        update input file if new tests added
+
+  $me -g FILE...
+      - generate expected tests results
+        update input file
+
+  $me --
+      - read file list from stdin
+        find . -name "*.test" | $me --
+
+OPTIONS
+  --color    - force colors
+  --nocolor  - suppress colors
+  -o         - do not overwrite files, just show output
+  -- --stdin - read file list from stdin
+  --clean    - remove test results from source file
+  -s --silent - suppress output when no-errors (for use in cron)
+
+DESCRIPTION
+  read file with php code line by line
+  read expected results stored in php comments
+  generate expected results if they are not available (update file if needed)
+  compare results with expected results
+  framework checks return values, throwed exceptions, stdout output (echo, print)
+
+LIMITATIONS
+  no loops or control structures allowed in test files
+  one command per line
+
+AUTOLOAD
+  test will include file "init.php" in first file's dir, then in parent dirs
+  you should define your autoload, ... functions there
+
+NOTES
+  expected results are stored in php comments as json "#=json
+  you can suppress line result check by providing "#=-" comment
+
+EXAMPLE
+
+  CRON example:
+        find . -name "*.test" | $me -- -s |& mail -E parf@example.com -s "Spartan Test Errors"
+
+  UNPROCESSED TEST SCRIPT
+  <?
+  // simple unit test
+  2+2;
+  \$c=1;
+  \$c>0;
+  array(1,2,3);
+  range(1,3);
+  \$f=function() { throw new Exception("Oops...", 120); };
+  \$f();
+  print("123");
+  // suppress tests for this line
+  time();
+  #=-
+  // suppress tests for this line (alternative one-line syntax)
+  - time();
+  ?>
+
+  PROCESSED TEST SCRIPT.
+  After first run original file will be updated, it will include expected results encoded as json
+  <?
+  // simple unit test
+  2+2;
+  #=4
+  \$c=1;
+  #=1
+  \$c>0;
+  #=true
+  array(1,2,3);
+  #=[1,2,3]
+  range(1,3);
+  #=[1,2,3]
+  \$f=function() { throw new Exception("Oops...", 120); };
+  #={"class":"Closure","0":{}}
+  \$f();
+  #=["Exception","Oops...",120]
+  print("123");
+  #={"r":1,"out":"123"}
+  // suppress tests for this line
+  time();
+  #=-
+  // suppress tests for this line (alternative one-line syntax)
+  - time();
+  ?>
+
+
+AUTHOR
+  Sergey Porfiriev <parf@comfi.com>
+
+HELP;
+    exit;
+}
+
+// " << fix for stupid emacs
+
+?>
