@@ -29,7 +29,7 @@ INSTALL
 SYNOPSIS
 ========
 
-    spartan-test test1.test [test2.test] ...
+    spartan-test test1.test [test2.test] ...<br>
         - run testi(s) / generate expected tests results, add expected results for new tests
 
     ./test1.test
