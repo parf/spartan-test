@@ -35,7 +35,7 @@ if (@$ARG["--help"])
   return readfile(__DIR__.'/README.md');
 
 if (@$ARG["--example"])
-  return readfile(__DIR__.'/sample.test');
+  return readfile(__DIR__.'/examples/sample.test');
 
 if (@$ARG["--legal"])
   return legal();
