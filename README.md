@@ -21,9 +21,9 @@ DESCRIPTION
 INSTALL
 -------
 
-  mkdir -p ~/src ~/bin
-  git clone git@github.com:parf/spartan-test.git ~/src
-  ln -s ~/src/spartan-test/spartan-test ~/bin
+    mkdir -p ~/src ~/bin
+    git clone git@github.com:parf/spartan-test.git ~/src
+    ln -s ~/src/spartan-test/spartan-test ~/bin
 
 
 SYNOPSIS
