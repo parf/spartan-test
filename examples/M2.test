@@ -5,28 +5,28 @@
 // HOMEBASE FRAMEWORK
 // Mongo ORM v2 test
 
-- M2::load();
+; M2::load();
 
 count(M::listDatabases())>0;
 #=true
 
-- M("test.sequence")->drop();
-- $a_no=M("test.no_autoload");
-- $a_no->drop();
-- $a_id=M("test.id_autoload");
-- $a_id->drop();
-- $a_sf=M("test.sf_autoload");
-- $a_sf->drop();
-- M::Base()->drop();
-- M::Typed()->drop();
+; M("test.sequence")->drop();
+; $a_no=M("test.no_autoload");
+; $a_no->drop();
+; $a_id=M("test.id_autoload");
+; $a_id->drop();
+; $a_sf=M("test.sf_autoload");
+; $a_sf->drop();
+; M::Base()->drop();
+; M::Typed()->drop();
 
 # autoload testing
-- $a_no->insert(["_id" => 1, "name" => "Parf", "age" => 38]);
-- $a_id->insert(["_id" => 1, "name" => "Vikki", "age" => 0.6]);
-- $a_sf->insert(["_id" => 1, "name" => "Ted", "age" => 6, "sex" => "male"]);  # some fields
+; $a_no->insert(["_id" => 1, "name" => "Parf", "age" => 38]);
+; $a_id->insert(["_id" => 1, "name" => "Vikki", "age" => 0.6]);
+; $a_sf->insert(["_id" => 1, "name" => "Ted", "age" => 6, "sex" => "male"]);  # some fields
 
 # no auto load
-- $a_no= $a_no->go(1);
+; $a_no= $a_no->go(1);
 $a_no->v();
 #={"id":1,"D":[],"loaded":false}
 $a_no->name;
@@ -35,7 +35,7 @@ $a_no->v();
 #={"id":1,"D":{"_id":1,"name":"Parf","age":38},"loaded":true}
 
 # _id load
-- $a_id= $a_id(1);
+; $a_id= $a_id(1);
 $a_id->v();
 #={"id":1,"D":{"_id":1},"loaded":"a"}
 $a_id->id;  // 
@@ -52,7 +52,7 @@ $a_id->v();
 # specific fields load
 $a_sf->config("autoload");
 #="name age mmm"
-- $a_sf= $a_sf(1);
+; $a_sf= $a_sf(1);
 $a_sf->v();
 #={"id":1,"D":{"_id":1,"name":"Ted","age":6},"loaded":"a"}
 $a_sf->name;
@@ -73,8 +73,8 @@ $a_sf->v();
 #={"id":1,"D":{"_id":1,"sex":"male","name":"Ted","age":6},"loaded":true}
 
 # untyped operation testing
-- M::Base()->insert(["_id" => 1, "name" => "base"]);
-- M::Typed()->insert(["_id" => 1]);
+; M::Base()->insert(["_id" => 1, "name" => "base"]);
+; M::Typed()->insert(["_id" => 1]);
 
 M::listCollections("test");
 #=["test.user","test.merchant_reg","test.no_autoload","test.id_autoload","test.sf_autoload","test.base","test.typed"]
@@ -131,17 +131,17 @@ $U->find_in([100,101,102],"name");
 $U->last_id();
 #=101
 
-- $U->insert(["_id" => 1, "i" => 0, "f" => 0.0]);
-- $U->inc(1, "i");
-- $U->inc(1, "f", 0.5);
-- $U->push(1, "a", "parf");
-- $U->push(1, "a", "parf");
-- $U->addToSet(1, "a", "parf");
-- $U->addToSet(1, "a", "parf");
-- $U->push(1, "a", "test");
+; $U->insert(["_id" => 1, "i" => 0, "f" => 0.0]);
+; $U->inc(1, "i");
+; $U->inc(1, "f", 0.5);
+; $U->push(1, "a", "parf");
+; $U->push(1, "a", "parf");
+; $U->addToSet(1, "a", "parf");
+; $U->addToSet(1, "a", "parf");
+; $U->push(1, "a", "test");
 
-- $U->add(1, "a1", "one");
-- $U->add(1, "a2", "one", 3, 3.4);
+; $U->add(1, "a1", "one");
+; $U->add(1, "a2", "one", 3, 3.4);
 
 count($U[100]);
 #=5
@@ -158,7 +158,7 @@ $U(1);
 
 # M_OBJECT 
 
-- $parf=M::Base(100);
+; $parf=M::Base(100);
 $parf->name;
 #="Parf"
 
@@ -171,7 +171,7 @@ $parf=$U->find_o(100)[100];
 
 
 # no autoload
-- $u101=M::Base(-101);
+; $u101=M::Base(-101);
 $u101->name;
 #="Ted"
 
@@ -192,12 +192,12 @@ $u101->_;
 #={"_id":101,"name":"slash","test":"yes","xxx":"check"}
 
 
-- $u=M::Base(100);
+; $u=M::Base(100);
 $u->_;  // all fields
 #={"_id":100,"name":"Parf","test":"yes","wol":0.1,"x":{"y":"xy"}}
 $u["x"];
 #={"y":"xy"}
-- $u->x=123;
+; $u->x=123;
 $u->reload()->x;
 #=123
 $u["a.b.c"]=[1,2,3];
@@ -210,63 +210,63 @@ $u["a.b"];
 #={"c":[1,2,3]}
 $u->a;
 #={"b":{"c":[1,2,3]}}
-- $u->y="y";
-- $u->z=true;
+; $u->y="y";
+; $u->z=true;
 $u->get("x y z");
 #={"x":123,"y":"y","z":true}
 
 # 3 syntax of unset
-- $u->_unset("x");
-- $u->_unset(["y"]);
-- $u->_unset(["z"=>1]);
+; $u->_unset("x");
+; $u->_unset(["y"]);
+; $u->_unset(["z"=>1]);
 $u->get("x y z");
 #={"x":null,"y":null,"z":null}
 
 # $op testing
-- $u->addToSet("x", "parf");
-- $u->addToSet("x", "test");
-- $u->addToSet("x", "parf");
+; $u->addToSet("x", "parf");
+; $u->addToSet("x", "test");
+; $u->addToSet("x", "parf");
 
 $u->x;
 #=["parf","test"]
 #
 ### unset($u["x"]);  << no unset in eval !!
-- $u->_unset("x");
+; $u->_unset("x");
 $u->inc("x");
 #={"class":"M_Object","0":{"id":100}}
 $u->x;
 #=1
-- $u->inc("x", 5);
+; $u->inc("x", 5);
 $u->x;
 #=6
-- $u->dec("x");
+; $u->dec("x");
 $u->x;
 #=5
-- $u->dec("x", 2);
+; $u->dec("x", 2);
 $u->x;
 #=3
 
-- $u->push("y", 1);
+; $u->push("y", 1);
 $u->y;
 #=[1]
-- $u->push(["y" => 1, "z" => "z"]);
+; $u->push(["y" => 1, "z" => "z"]);
 $u->get("y z");
 #={"y":[1,1],"z":["z"]}
-- $u->push(["y" => 2, "z" => "z"]);
+; $u->push(["y" => 2, "z" => "z"]);
 $u->get("y z");
 #={"y":[1,1,2],"z":["z","z"]}
-- $u->push(["y" => 1, "z" => "y"]);
-- $u->push(["y" => 3, "z" => "Z2"]);
+; $u->push(["y" => 1, "z" => "y"]);
+; $u->push(["y" => 3, "z" => "Z2"]);
 $u->get("y z");
 #={"y":[1,1,2,1,3],"z":["z","z","y","Z2"]}
-- $u->pull("z", "z");
+; $u->pull("z", "z");
 $u->z;
 #=["y","Z2"]
-- $u->pop("z");
+; $u->pop("z");
 $u->z;
 #=["y"]
 
-- $u->rename(["z" => "zz"]);
+; $u->rename(["z" => "zz"]);
 $u->get("zz z");
 #={"zz":["y"],"z":null}
 #
@@ -301,32 +301,32 @@ $u["name-alias"];
 # ---------------------------------------------------------------------------------
 # Typed collections
 
-- $T=M::Typed();
+; $T=M::Typed();
 $T->type;
 #={"int":"int","arr":"array","t.s":"string","t.i":"int","t.a":"array","t.f":"float","t.b":"bool","t.d":"date","ai.*":"int","as.*":"string","_id":"int"}
 
-- $T->insert( ["_id" => 2, "int" => 1] );
-- $T->insert( ["_id" => 3, "int" => "a"] );
-- $T->insert( ["_id" => 4, "int" => 1.1] );
-- $T->insert( ["_id" => 5, "int" => true] );
-- $T->insert( ["_id" => 6, "int" => false] );
+; $T->insert( ["_id" => 2, "int" => 1] );
+; $T->insert( ["_id" => 3, "int" => "a"] );
+; $T->insert( ["_id" => 4, "int" => 1.1] );
+; $T->insert( ["_id" => 5, "int" => true] );
+; $T->insert( ["_id" => 6, "int" => false] );
 
 
 $T->find_in([2,3,4,5,6]);
 #={"2":{"_id":2,"int":1},"3":{"_id":3,"int":0},"4":{"_id":4,"int":1},"5":{"_id":5,"int":1},"6":{"_id":6,"int":0}}
 
-- $T->insert( ["_id" => 7, "arr" => ["a"] ] );
+; $T->insert( ["_id" => 7, "arr" => ["a"] ] );
 
 ## spartan test can't recognize PHP ERRORS & NOTICES SO FAR
 ## $T->insert( ["_id" => 8, "arr" => "err"] );
 ##
 
-- $T->insert( ["_id" => 9, "arr" => [1]] );
+; $T->insert( ["_id" => 9, "arr" => [1]] );
 
 $T->find_in([7,8,9]);
 #={"7":{"_id":7,"arr":["a"]},"9":{"_id":9,"arr":[1]}}
 
-- $T->dot_insert( ["_id" => 10, "t.s" => 1, "t.i" => "str", "t.f" => 1.01, "t.d" => "1973-07-04"] );
+; $T->dot_insert( ["_id" => 10, "t.s" => 1, "t.i" => "str", "t.f" => 1.01, "t.d" => "1973-07-04"] );
 $T[10];
 #={"_id":10,"t":{"s":"1","i":0,"f":1.01,"d":110606400}}
 
@@ -334,32 +334,32 @@ $T[10];
 date("Y-m-d", $T(10)["t.d"]);
 #="1973-07-04"
 
-- $T->set(1, "int", "abc");
+; $T->set(1, "int", "abc");
 $T[1]["int"];
 #=0
-- $T->inc(1, "int", "1");
+; $T->inc(1, "int", "1");
 $T[1]["int"];
 #=1
-- $T->inc(1, "int", 1.9);
+; $T->inc(1, "int", 1.9);
 $T[1]["int"];
 #=2
 
 # *:int
-- $T->push(1, "ai", "abc")->push(1, ["ai" => 0])->push(1, "ai", 1.1);
+; $T->push(1, "ai", "abc")->push(1, ["ai" => 0])->push(1, "ai", 1.1);
 $T[1]["ai"];
 #=[0,0,1]
 
 # *:string
-- $T->push(1, "as", "abc")->push(1, "as", 0)->push(1, "as", 1.1);
+; $T->push(1, "as", "abc")->push(1, "as", 0)->push(1, "as", 1.1);
 $T[1]["as"];
 #=["abc","0","1.1"]
 
-- $T->add(1, "aaa.b.c", 1, 2, 3);
+; $T->add(1, "aaa.b.c", 1, 2, 3);
 $T(1)->aaa;
 #={"b":{"c":[1,2,3]}}
 
 # SEQUENCE
-- $b = M::Base();
+; $b = M::Base();
 $b1=$b->insert(["a" => 1]);
 #=102
 

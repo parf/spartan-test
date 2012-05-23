@@ -1,11 +1,12 @@
 #!/bin/env spartan-test
-
-# Make sure you have spartan-test in your path:
-#   mkdir -p ~/src ~/bin
-#   git clone git@github.com:parf/spartan-test.git ~/src
-#   ln -s ~/src/spartan-test/spartan-test ~/bin
-
-// what about 2+2 is it still 4?
+/*
+ Make sure you have spartan-test in your path:
+   mkdir -p ~/src ~/bin
+   git clone git@github.com:parf/spartan-test.git ~/src
+   ln -s ~/src/spartan-test/spartan-test ~/bin
+*/
+<?
+// is 2+2 is it still 4?
 2+2;
 #=4
 $c=1;
@@ -33,7 +34,8 @@ trigger_error("trigger_error");
 #={"USER NOTICE":"trigger_error","result":true}
 1/0;
 #={"WARNING":"Division by zero","result":false}
-- $a=array();
+
+; $a=array();
 $a["a"];
 #={"NOTICE":"Undefined index: a","result":null}
 $a[1];
@@ -44,8 +46,5 @@ substr(phpversion(), 0, 2)=='5.';
 #=true
 
 // suppress tests for this line
-- time();
-
-// suppress tests for this line (old syntax)
-time();
-#=-
+; time();
+#?>

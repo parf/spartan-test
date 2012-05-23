@@ -107,6 +107,7 @@ while( $__file=array_shift($argv) ) {
     $__failed=0;
     $__errs="";
     $__code="";
+    $__ml_comment=0; // multiline comment flag
 
     while (!feof($__handle)) {
         $__l0=fgets($__handle);
@@ -115,14 +116,18 @@ while( $__file=array_shift($argv) ) {
         $__l++;
         $__l2=substr($__line, 0, 2);
 
-        if ($__c && $__l2=='#=') {    // HAVE TO CHECK RESULTS
-            if ($__line=='#=-') { // suppress check special case
-                $__old=array_pop($__out);
-                $__gen=array_pop($__out);
-                $__out[]=$__old; // preserve old result
-                continue;
-            }
+        // multi-line comments
+        if ($__l2=='/*') {
+            $__ml_comment=1;
+            continue;
+        }
+        if ($__ml_comment) {
+            if (substr($__line,-2)=='*/')
+                $__ml_comment=0;
+            continue;
+        }
 
+        if ($__c && $__l2=='#=') {    // HAVE TO CHECK RESULTS
             if ($__REGENERATE) {
                 array_pop($__out); // GET RID OF OLD RESULT.
                 continue;
@@ -149,11 +154,10 @@ while( $__file=array_shift($argv) ) {
 
         if (! $__line || $__l2=='//' || $__l2=='<?' || $__l2=='?>' || $__line[0]=='#')
             continue;
-
         // <? - vi coloring fix
 
-        // "- command" - execute and discard result
-        if($__l2=='- ') {
+        // ";command" - execute and discard result
+        if($__l2[0]==';') {
             eval(substr($__line, 2));
             continue;
         }

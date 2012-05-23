@@ -8,7 +8,7 @@
 
 $mc = new Memcached();
 #={"class":"Memcached","0":{}}
-- $mc->addServer("localhost", 11211);
+; $mc->addServer("localhost", 11211);
 
 # this options are irrelevant
 #- $mc->setOption(Memcached::OPT_SERIALIZER, Memcached::SERIALIZER_IGBINARY);
@@ -16,7 +16,7 @@ $mc = new Memcached();
 #- $mc->setOption(Memcached::OPT_TCP_NODELAY,true);
 
 # this IS a bug option - binary protocol messes things up
-- $mc->setOption(Memcached::OPT_BINARY_PROTOCOL, true);
+; $mc->setOption(Memcached::OPT_BINARY_PROTOCOL, true);
 
 $mc->getVersion();
 #={"localhost:11211":"1.4.13"}
@@ -29,7 +29,7 @@ phpversion();
 # no idea hwo to get pecl package version from php.
 # rpm -qa | grep php-pecl-memcached : php-pecl-memcached-2.0.1-6.el6.remi.x86_64
 
-- $key="key-for-testing";
+; $key="key-for-testing";
 
 
 # OK CASE 
@@ -56,3 +56,16 @@ $mc->increment($key);
 $mc->increment($key);
 #=2
 
+# ANOTHER BUG
+; $mc->delete($key);
+
+## add if not exists
+$mc->add($key, "abc");
+#=true
+$mc->get($key);
+#="abc"
+# BUG - should return false !!!
+$mc->add($key, "def");
+#=true
+$mc->get($key);
+#="abc"

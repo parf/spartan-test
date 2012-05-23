@@ -6,7 +6,7 @@ Minimalistic PHP Unit Test Framework
 Write your tests in style:
 * your tests should be easier than your code
 * run your tests as executable file
-* no clutter (assert, expect) - code and results only
+* test script is valid php code
 * more fun
 
 DESCRIPTION
@@ -59,7 +59,7 @@ OPTIONS
 LIMITATIONS
 -----------
 
-* one command per line
+* one command per line, however you can use multiline php comments
 * php eval limitations apply: no loops, control structures, no unset
 
 AUTOLOAD
@@ -72,8 +72,7 @@ NOTES
 -----
 
 * expected results are stored in php comments as json "#=json"
-* suppress result check via "- " prefix : "- discard_my_result();"
-* suppress result check by providing "#=-" comment (old way, keep test as valid php)
+* suppress result check via "; " prefix : "; discard_my_result();"
 
 HOW TO MAKE EXECUTABLE TESTS
 ----------------------------
