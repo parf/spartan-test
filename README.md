@@ -29,7 +29,7 @@ INSTALL
 SYNOPSIS
 ========
 
-    spartan-test test1.test [test2.test] ...<br>
+    spartan-test test1.test [test2.test] ...
         - run testi(s) / generate expected tests results, add expected results for new tests
 
     ./test1.test
@@ -44,16 +44,16 @@ SYNOPSIS
 
 OPTIONS
 -------
-  --color    - force terminal colors
-  --nocolor  - suppress colors
-  -o         - do not overwrite files, just show output
-  -- --stdin - read file list from stdin
-  --clean    - remove test results from source file
-  -s --silent - suppress output when no-errors (for use in cron)
-  --halt-on-errors - Do not allow PHP errors inside tests
-  --help      - show this help
-  --example   - show sample/example test
-  --legal     - show copyright, license, author
+    --color    - force terminal colors
+    --nocolor  - suppress colors
+    -o         - do not overwrite files, just show output
+    -- --stdin - read file list from stdin
+    --clean    - remove test results from source file
+    -s --silent - suppress output when no-errors (for use in cron)
+    --halt-on-errors - Do not allow PHP errors inside tests
+    --help      - show this help
+    --example   - show sample/example test
+    --legal     - show copyright, license, author
 
 
 LIMITATIONS
