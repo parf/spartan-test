@@ -7,6 +7,7 @@ Spartan(Minimalistic) PHP Unit Test Framework
 2011-08-24 - V1.3
 
 Author: Sergey Porfiriev <parf@comfi.com>
+License: MIT (http://www.opensource.org/licenses/mit-license.php)
 
 TODO:
 : do not rewrite original files if not needed!!!
@@ -31,7 +32,7 @@ foreach($argv as $a)
         $ARG[$a]=1;
 
 if (@$ARG["--help"])
-  return help($me);
+  return readfile(__DIR__.'/README.md');
 
 if (@$ARG["--example"])
   return readfile(__DIR__.'/sample.test');
@@ -70,8 +71,9 @@ if (@$ARG["--color"]) {
 if (! @$ARG["--halt-on-errors"])
     set_error_handler('Error::handler');
 
-$__fn=0; // file_number
+$__fn    = 0; // file_number
 while( $__file=array_shift($argv) ) {
+    $__start = microtime();
     if ($__file[0]=='-')
         continue;
 
@@ -148,6 +150,8 @@ while( $__file=array_shift($argv) ) {
         if (! $__line || $__l2=='//' || $__l2=='<?' || $__l2=='?>' || $__line[0]=='#')
             continue;
 
+        // <? - vi coloring fix
+
         // "- command" - execute and discard result
         if($__l2=='- ') {
             eval(substr($__line, 2));
@@ -197,7 +201,7 @@ while( $__file=array_shift($argv) ) {
             fwrite(STDERR, $__err);
         } else {
             if (! $__SILENT)
-                echo $__t."OK $__tests tests\n";
+                echo $__t."OK $__tests tests in ".number_format(microtime()-$__start,2)."sec\n";
         }
         if ($__errs) {
             $__errs=str_replace("\n", "\n  ", $__errs); // identation
@@ -262,7 +266,6 @@ class Error {  // namespace
 
 // --------------------------------------------------------------------------------
 
-
 function usage($me) {
     echo <<< USAGE
 Spartan Test - minimalistic PHP unit test framework
@@ -271,89 +274,11 @@ Usage:
     $me --example
     $me --legal
 
-    $me [-g] file.test file.test
+    $me [-g] file.test [file2.test] ...
+    ./file.test
     find . -name "*.test" | $me --
- 
 
 USAGE;
-    exit;
-}
-
-function help($me) {
-    echo <<< HELP
-NAME
-  $me - Spartan(Minimalistic) PHP Unit Test Framework
-
-SYNOPSIS
-  $me FILE...
-      - run test / generate expected tests results
-        update input file if new tests added
-
-  $me -g FILE...
-      - generate expected tests results
-        update input file
-
-  $me --
-      - read file list from stdin
-        find . -name "*.test" | $me --
-
-OPTIONS
-  --color    - force colors
-  --nocolor  - suppress colors
-  -o         - do not overwrite files, just show output
-  -- --stdin - read file list from stdin
-  --clean    - remove test results from source file
-  -s --silent - suppress output when no-errors (for use in cron)
-  --halt-on-errors - Do not allow PHP errors inside tests
-  --help      - show this help
-  --example   - show sample/example test
-  --legal     - show copyright, license, author
-
-DESCRIPTION
-  read file with php code line by line
-  read expected results stored in php comments
-  generate expected results if they are not available (update file if needed)
-  compare results with expected results
-  framework checks return values, thrown exceptions, stdout output (echo, print), php errors
-
-LIMITATIONS
-  one command per line
-  php eval limitations apply:
-    no loops, control structures, no unset
-
-AUTOLOAD
-  test will search for "init.php" file in current and parents directories
-  define your autoload and init functions there
-
-NOTES
-  expected results are stored in php comments as json "#=json"
-  you can suppress result check via "- " prefix : "- discard_my_result();"
-  you can suppress result check by providing "#=-" comment (old way)
-
-INSTALL
-  mkdir -p ~/src ~/bin
-  git clone git@github.com:parf/spartan-test.git ~/src
-  ln -s ~/src/spartan-test/spartan-test ~/bin
-
-HOW TO USE:
-  1 test from specific file: spartan-test filename
-  2 run all tests in project: find /project -name "*.test" spartan-test --
-  3 make test executable file
-    add "#!/bin/env spartan-test" as first line of your test, then chmod +x your test
-    now you can run test as ./test-name
-
-  CRON example:
-    run all project tests, send email only there are errors, run tests every 30 min
-    type "crontab -e" - add
-    */30 * * * *    find /project-dir -name "*.test" | $me -- -s |& mail -E parf@example.com -s "Project Unit Test Errors"
-
-EXAMPLE:
-   type $me --example  to see sample text
-
-HELP;
-
-legal();
-    exit;
 }
 
 function legal() {
@@ -368,8 +293,5 @@ LICENSE
   The MIT License (MIT) - http://www.opensource.org/licenses/mit-license.php
 ";
 }
-
-
-// " << fix for stupid emacs
 
 ?>

@@ -95,7 +95,7 @@ CRON EXAMPLE
 
 SAMPLE TEST
 -----------
-   type *spartan-test --example*  to see sample text
+   type *spartan-test --example*  to see sample test
 
 AUTHOR
 ------
