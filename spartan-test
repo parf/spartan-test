@@ -31,7 +31,13 @@ foreach($argv as $a)
         $ARG[$a]=1;
 
 if (@$ARG["--help"])
-    help($me);
+  return help($me);
+
+if (@$ARG["--example"])
+  return readfile(__DIR__.'/sample.test');
+
+if (@$ARG["--legal"])
+  return legal();
 
 // files from stdin support
 if (@$ARG['--'] || @$ARG['--stdin'])
@@ -259,9 +265,11 @@ class Error {  // namespace
 
 function usage($me) {
     echo <<< USAGE
-Spartan(Minimalistic) PHP Unit Test Framework
+Spartan Test - minimalistic PHP unit test framework
 Usage:
     $me --help
+    $me --example
+    $me --legal
 
     $me [-g] file.test file.test
     find . -name "*.test" | $me --
@@ -297,20 +305,24 @@ OPTIONS
   --clean    - remove test results from source file
   -s --silent - suppress output when no-errors (for use in cron)
   --halt-on-errors - Do not allow PHP errors inside tests
+  --help      - show this help
+  --example   - show sample/example test
+  --legal     - show copyright, license, author
 
 DESCRIPTION
   read file with php code line by line
   read expected results stored in php comments
   generate expected results if they are not available (update file if needed)
   compare results with expected results
-  framework checks return values, thrown exceptions, stdout output (echo, print)
+  framework checks return values, thrown exceptions, stdout output (echo, print), php errors
 
 LIMITATIONS
-  no loops or control structures allowed in test files
   one command per line
+  php eval limitations apply:
+    no loops, control structures, no unset
 
 AUTOLOAD
-  test will search for "init.php" file in current and parents directories //'
+  test will search for "init.php" file in current and parents directories
   define your autoload and init functions there
 
 NOTES
@@ -319,76 +331,44 @@ NOTES
   you can suppress result check by providing "#=-" comment (old way)
 
 INSTALL
-   cd; mkdir src; cd src; git@github.com:parf/spartan-test.git
-   cd ~/bin; ln -s ~/src/spartan-test/spartan-test
+  mkdir -p ~/src ~/bin
+  git clone git@github.com:parf/spartan-test.git ~/src
+  ln -s ~/src/spartan-test/spartan-test ~/bin
 
 HOW TO USE:
-   1 test from specific file: spartan-test filename
-   2 run all tests in project: find /project -name "*.test" spartan-test --
-   3 make test executable file
-     add "#!/bin/env spartan-test" as first line of your test, then chmod +x your test
-     now you can run test as ./test-name
-
-
-EXAMPLE
+  1 test from specific file: spartan-test filename
+  2 run all tests in project: find /project -name "*.test" spartan-test --
+  3 make test executable file
+    add "#!/bin/env spartan-test" as first line of your test, then chmod +x your test
+    now you can run test as ./test-name
 
   CRON example:
-        find /project-dir -name "*.test" | $me -- -s |& mail -E parf@example.com -s "Spartan Test Errors"
+    run all project tests, send email only there are errors, run tests every 30 min
+    type "crontab -e" - add
+    */30 * * * *    find /project-dir -name "*.test" | $me -- -s |& mail -E parf@example.com -s "Project Unit Test Errors"
 
-  UNPROCESSED TEST SCRIPT
-  #!/bin/env spartan-test
-  <?
-  // simple unit test
-  2+2;
-  \$c=1;
-  \$c>0;
-  array(1,2,3);
-  range(1,3);
-  \$f=function() { throw new Exception("Oops...", 120); };
-  \$f();
-  print("123");
-  // suppress tests for this line
-  - time();
-  // suppress tests for this line (old syntax)
-  time();
-  #=-
-  ?>
+EXAMPLE:
+   type $me --example  to see sample text
 
-  PROCESSED TEST SCRIPT.
-  After first run original file will be updated: 
-  json-encoded expected results will be added as comments
-  <?
-  // simple unit test
-  2+2;
-  #=4
-  \$c=1;
-  #=1
-  \$c>0;
-  #=true
-  array(1,2,3);
-  #=[1,2,3]
-  range(1,3);
-  #=[1,2,3]
-  \$f=function() { throw new Exception("Oops...", 120); };
-  #={"class":"Closure","0":{}}
-  \$f();
-  #=["Exception","Oops...",120]
-  print("123");
-  #={"r":1,"out":"123"}
-  // suppress tests for this line
-  - time();
-  // suppress tests for this line (old syntax)
-  time();
-  #=-
-  ?>
+HELP;
 
+legal();
+    exit;
+}
 
+function legal() {
+      echo "
 AUTHOR
   Sergey Porfiriev <parf@comfi.com>
 
-HELP;
-    exit;
+COPYRIGHT
+  (C) 2010 Comfi.com
+
+LICENSE
+  The MIT License (MIT) - http://www.opensource.org/licenses/mit-license.php
+";
 }
+
 
 // " << fix for stupid emacs
 
