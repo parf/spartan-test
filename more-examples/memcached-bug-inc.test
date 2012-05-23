@@ -1,0 +1,58 @@
+#!/bin/env spartan-test
+
+// spartan-test unit test: https://github.com/parf/spartan-test
+// PHP memcached extension BUGS
+
+// you can run this test
+// it shows just found bug in memcached php extension for php
+
+$mc = new Memcached();
+#={"class":"Memcached","0":{}}
+- $mc->addServer("localhost", 11211);
+
+# this options are irrelevant
+#- $mc->setOption(Memcached::OPT_SERIALIZER, Memcached::SERIALIZER_IGBINARY);
+#- $mc->setOption(Memcached::OPT_LIBKETAMA_COMPATIBLE, true);
+#- $mc->setOption(Memcached::OPT_TCP_NODELAY,true);
+
+# this IS a bug option - binary protocol messes things up
+- $mc->setOption(Memcached::OPT_BINARY_PROTOCOL, true);
+
+$mc->getVersion();
+#={"localhost:11211":"1.4.13"}
+
+# #={"p:11211":"1.4.10"}  << test on another server also have same issue
+
+phpversion();
+#="5.4.1"
+
+# no idea hwo to get pecl package version from php.
+# rpm -qa | grep php-pecl-memcached : php-pecl-memcached-2.0.1-6.el6.remi.x86_64
+
+- $key="key-for-testing";
+
+
+# OK CASE 
+$mc->set($key, 0);
+#=true
+$mc->increment($key);
+#=1
+$mc->increment($key);
+#=2
+$mc->increment($key);
+#=3
+
+# BUG CASE
+# extra get after set messes subsequent increments
+$mc->set($key, 0);
+#=true
+$mc->get($key);
+#=0
+# OMG - BUG !!! 
+$mc->increment($key);
+#=-1
+$mc->increment($key);
+#=1
+$mc->increment($key);
+#=2
+
