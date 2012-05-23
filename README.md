@@ -29,20 +29,18 @@ INSTALL
 SYNOPSIS
 ========
 
-  spartan-test test1.test [test2.test] ...
-      - run testi(s) / generate expected tests results
-        add expected results for new tests
+    spartan-test test1.test [test2.test] ...
+        - run testi(s) / generate expected tests results, add expected results for new tests
 
-  ./test1.test
-      - run any test as executable script
+    ./test1.test
+        - run any test as executable script
 
-  spartan-test -g FILE...    |   ./test1.test -g
-      - reGenerate expected tests results
-        update input file
+    spartan-test -g FILE...    |   ./test1.test -g
+        - reGenerate expected tests results, update input file
 
-  spartan-test --
-      - read file list from stdin
-        find . -name "*.test" | spartan-test --
+    spartan-test --
+        - read file list from stdin
+        example: find . -name "*.test" | spartan-test --
 
 OPTIONS
 -------
