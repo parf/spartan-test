@@ -90,6 +90,7 @@ CRON EXAMPLE
 * send email when errors occured (use sms gateways to send sms)
 
     type "crontab -e" - add:
+
         */30 * * * *    find /project-dir -name "*.test" | spartan-test -- -s |& mail -E parf@example.com -s "Project Unit Test Errors"
 
 SAMPLE TEST
