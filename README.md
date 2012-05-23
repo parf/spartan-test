@@ -22,7 +22,7 @@ INSTALL
 -------
 
     mkdir -p ~/src ~/bin
-    git clone git@github.com:parf/spartan-test.git ~/src
+    git clone git@github.com:parf/spartan-test.git ~/src/spartan-test
     ln -s ~/src/spartan-test/spartan-test ~/bin
 
 
