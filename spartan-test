@@ -248,7 +248,7 @@ class Error {  // namespace
         return $e;
     }
 
-    function handler ($level, $message, $file, $line, $context) {
+    static function handler ($level, $message, $file, $line, $context) {
         static $map=array(
                           E_NOTICE       => 'NOTICE',
                           E_WARNING      => 'WARNING',
