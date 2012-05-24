@@ -7,7 +7,7 @@ Write your tests in style:
 * your tests should be easier than your code
 * run your tests as executable file
 * test script is valid php code
-* more fun
+* less cruft, more fun
 
 DESCRIPTION
 -----------
@@ -75,6 +75,9 @@ NOTES
 
 * expected results are stored in php comments as json "#=json"
 * suppress result check via "; " prefix : "; discard_my_result();"
+* Style reccomendation: use "//" & "/* .. */" for your comments
+* check out './test.test -c'
+* check out 'watch "spartan-test xxx.test -o | tail"'
 
 HOW TO MAKE EXECUTABLE TESTS
 ----------------------------

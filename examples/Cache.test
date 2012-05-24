@@ -1,6 +1,6 @@
 #!/bin/env spartan-test
 
-// You can't run this test - this is just an example how to write tests
+// You can't run this test - this is just an example
 
 // HOMEBASE FRAMEWORK
 // memcached wrapper test

@@ -2,7 +2,8 @@
 <?
 /*
 
-Spartan PHP Unit Test Framework
+Spartan
+ PHP Unit Test Framework
 
 2011-??-?? - V1.0 - 15min simple but solid test script
 2011-08-24 - V1.3 - sets of minor changes, used in production
@@ -14,6 +15,8 @@ License: MIT (http://www.opensource.org/licenses/mit-license.php)
 TODO:
 : do not rewrite original files if not needed!!!
 : add multiline support
+: make web-friendly version
+: provide include_all(dir, mask="*.php") function
 : implement as a class   -- Why bother??
 
 */
@@ -27,7 +30,7 @@ ini_set('display_errors', 1);
 
 $me=array_shift($argv); // get rid of $__0
 if (! $argv)
-    usage($me);
+    return usage($me);
 
 // Arguments
 $ARG=array(); // ARGS
@@ -70,12 +73,13 @@ if (strpos(getenv("TERM"),'xterm')!==false)
     $ARG["--color"]=1;
 if (@$ARG["--nocolor"])
     unset($ARG["--color"]);
-$__NORM=$__BOLD=$__RED=$__BLUE="";
+$__NORM=$__BOLD=$__RED=$__BLUE=$__GREEN="";
 if (@$ARG["--color"]) {
     $__NORM="\033[0m";
     $__BOLD="\033[1m";
-    $__RED="\033[31m";
-    $__BLUE="\033[34m";
+    $__RED="\033[31m"; // error
+    $__BLUE="\033[34m"; // code
+    $__GREEN="\033[32m"; // result
 }
 
 if (! @$ARG["--halt-on-errors"])
@@ -230,6 +234,7 @@ while($__file = array_shift($argv)) {
         continue;
     }
 
+    // do ./test --clean, then ./test -c | tail
     if (@$ARG["-c"]) { // color test output to stdout
         $__ml_comment = 0;
         $crap = array_flip( explode(" ", "# / < ?") );
@@ -249,7 +254,9 @@ while($__file = array_shift($argv)) {
                 continue;
             }
             if (substr($o, 0, 2)=='#=')
-                $o = "   ".substr($o, 2);
+                $o = $__GREEN.substr($o, 2).$__NORM;
+            else
+                $o = "    ".$o;
             echo "    ".$o."\n"; 
         }
         continue;
@@ -339,4 +346,7 @@ LICENSE
 ";
 }
 
-?>
+# force emacs php-mode
+# Local Variables:
+# mode: php
+# End:
