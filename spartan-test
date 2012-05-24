@@ -4,7 +4,9 @@
 
 Spartan(Minimalistic) PHP Unit Test Framework
 
-2011-08-24 - V1.3
+2011-??-?? - V1.0 - 15min simple but solid test script
+2011-08-24 - V1.3 - sets of minor changes, used in production
+2012-06-20 - v2.0 - githubbed, licensed as MIT. minor improvements
 
 Author: Sergey Porfiriev <parf@comfi.com>
 License: MIT (http://www.opensource.org/licenses/mit-license.php)
