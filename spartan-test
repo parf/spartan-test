@@ -2,7 +2,7 @@
 <?
 /*
 
-Spartan(Minimalistic) PHP Unit Test Framework
+Spartan PHP Unit Test Framework
 
 2011-??-?? - V1.0 - 15min simple but solid test script
 2011-08-24 - V1.3 - sets of minor changes, used in production
@@ -17,6 +17,8 @@ TODO:
 : implement as a class   -- Why bother??
 
 */
+
+const VERSION = 2.0;
 
 if(php_sapi_name()!='cli')
     die("cli required");
@@ -309,8 +311,9 @@ class Error {  // namespace
 // --------------------------------------------------------------------------------
 
 function usage($me) {
+    $v = number_format(VERSION,1);
     echo <<< USAGE
-Spartan Test - minimalistic PHP unit test framework
+Spartan Test v$v - minimalistic PHP unit test framework
 Usage:
     $me --help
     $me --example
