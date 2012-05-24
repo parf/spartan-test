@@ -235,7 +235,7 @@ while($__file = array_shift($argv)) {
     }
 
     // do ./test --clean, then ./test -c | tail
-    if (@$ARG["-c"]) { // color test output to stdout
+    if (@$ARG["-c"] && ! $__errs) { // color test output to stdout
         $__ml_comment = 0;
         $crap = array_flip( explode(" ", "# / < ?") );
         foreach($__out as $o) {
