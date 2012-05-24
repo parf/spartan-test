@@ -21,18 +21,15 @@ $mc = new Memcached();
 $mc->getVersion();
 #={"localhost:11211":"1.4.13"}
 
-# #={"p:11211":"1.4.10"}  << test on another server also have same issue
-
 phpversion();
 #="5.4.1"
 
-# no idea hwo to get pecl package version from php.
 # rpm -qa | grep php-pecl-memcached : php-pecl-memcached-2.0.1-6.el6.remi.x86_64
+
 
 ; $key="key-for-testing";
 
-
-# OK CASE 
+# OK CASE
 $mc->set($key, 0);
 #=true
 $mc->increment($key);
@@ -48,13 +45,16 @@ $mc->set($key, 0);
 #=true
 $mc->get($key);
 #=0
-# OMG - BUG !!! 
+
+# OMG - BUG !!! - we should receive 1
 $mc->increment($key);
 #=-1
+
 $mc->increment($key);
 #=1
 $mc->increment($key);
 #=2
+
 
 # ANOTHER BUG
 ; $mc->delete($key);
@@ -64,8 +64,10 @@ $mc->add($key, "abc");
 #=true
 $mc->get($key);
 #="abc"
+
 # BUG - should return false !!!
 $mc->add($key, "def");
 #=true
+
 $mc->get($key);
 #="abc"

@@ -2,11 +2,11 @@
 /*
  Make sure you have spartan-test in your path:
    mkdir -p ~/src ~/bin
-   git clone git@github.com:parf/spartan-test.git ~/src
+   git clone git@github.com:parf/spartan-test.git ~/src/spartan-test
    ln -s ~/src/spartan-test/spartan-test ~/bin
 */
 <?
-// is 2+2 is it still 4?
+// is 2+2 still 4?
 2+2;
 #=4
 $c=1;
@@ -29,22 +29,26 @@ $f();
 print("123");
 #={"r":1,"out":"123"}
 
-// php errors
+// php errors, warnings and notices
 trigger_error("trigger_error");
-#={"USER NOTICE":"trigger_error","result":true}
+#=["USER NOTICE: trigger_error",true]
 1/0;
-#={"WARNING":"Division by zero","result":false}
+#=["WARNING: Division by zero",false]
+// two errors at the same time
+trigger_error("one".(1/0));
+#=[["WARNING: Division by zero","USER NOTICE: one"],true]
 
 ; $a=array();
 $a["a"];
-#={"NOTICE":"Undefined index: a","result":null}
+#=["NOTICE: Undefined index: a",null]
 $a[1];
-#={"NOTICE":"Undefined offset: 1","result":null}
+#=["NOTICE: Undefined offset: 1",null]
 
-# at least php 5 required
+// at least php 5 required
 substr(phpversion(), 0, 2)=='5.';
 #=true
 
 // suppress tests for this line
 ; time();
-#?>
+
+?>

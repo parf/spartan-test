@@ -27,10 +27,10 @@ INSTALL
 
 
 SYNOPSIS
-========
+--------
 
     spartan-test test1.test [test2.test] ...
-        - run testi(s) / generate expected tests results, add expected results for new tests
+        - run test(s) / generate expected tests results, add expected results for new tests
 
     ./test1.test
         - run any test as executable script
@@ -51,6 +51,8 @@ OPTIONS
     --clean    - remove test results from source file
     -s --silent - suppress output when no-errors (for use in cron)
     --halt-on-errors - Do not allow PHP errors inside tests
+    -c          - do not overwrite files, show processed colorified output
+
     --help      - show this help
     --example   - show sample/example test
     --legal     - show copyright, license, author
@@ -78,23 +80,24 @@ HOW TO MAKE EXECUTABLE TESTS
 ----------------------------
 
     add "#!/bin/env spartan-test" as first line of your test
-    chmod +x your_test
+    chmod +x test1.test
 
-    now you can run test as ./test-name
+    now you can run test as ./test1.test
 
 CRON EXAMPLE
 ------------
 
 * run all project tests every 30 min
-* send email when errors occured (use sms gateways to send sms)
+* send email when errors occurred (use sms gateways to send sms)
 
     type "crontab -e" - add:
 
         */30 * * * *    find /project-dir -name "*.test" | spartan-test -- -s |& mail -E parf@example.com -s "Project Unit Test Errors"
 
-SAMPLE TEST
------------
+EXAMPLES
+--------
    type *spartan-test --example*  to see sample test
+   more examples at https://github.com/parf/spartan-test/tree/master/examples
 
 AUTHOR
 ------

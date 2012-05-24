@@ -51,9 +51,15 @@ $__REGENERATE = @$ARG["-g"];
 $__STDOUT     = @$ARG["-o"];
 $__SILENT     = @$ARG["-s"] ||  @$ARG["-silent"];
 if ($__STDOUT)
-    $__SILENT=1;
+    $__SILENT = 1;
 if ($__SILENT)
-    $ARG["--nocolor"]=1;
+    $ARG["--nocolor"] = 1;
+
+if (@$ARG["-c"]) { // color test output
+    unset($ARG["--nocolor"]);
+    $ARG["--color"] = 1;
+    $__SILENT = 1;
+}
 
 # console colors, only for xterm capable terminals
 if (strpos(getenv("TERM"),'xterm')!==false)
@@ -71,10 +77,10 @@ if (@$ARG["--color"]) {
 if (! @$ARG["--halt-on-errors"])
     set_error_handler('Error::handler');
 
-$__fn    = 0; // file_number
-while( $__file=array_shift($argv) ) {
+$__fn = 0; // file_number
+while($__file = array_shift($argv)) {
     $__start = microtime();
-    if ($__file[0]=='-')
+    if ($__file[0] == '-')
         continue;
 
     $__fn++;
@@ -101,7 +107,6 @@ while( $__file=array_shift($argv) ) {
     $__r=false;
     $__z=false;
     $__c=0;     // 0 - code line,  1- result line
-    $__new=0;
     $__l=0;     // # of lines processed
     $__tests=0; // # of tests
     $__failed=0;
@@ -181,7 +186,7 @@ while( $__file=array_shift($argv) ) {
             $__z=array("class" => get_class($__z), $__z);
 
         if ($__err=Error::get())
-            $__z=array($__err[0] => $__err[1], "result" => $__z); // [error, result]
+            $__z=array($__err, $__z); // [error(s), result]
 
         $__ob=ob_get_clean();
         if ($__ob) {
@@ -216,8 +221,31 @@ while( $__file=array_shift($argv) ) {
             echo "*** $__file regenerated\n";
     }
 
-    if ($__STDOUT) {
+    if ($__STDOUT && ! $__errs) { // no output when errors
         echo join("", $__out);
+        continue;
+    }
+
+    if (@$ARG["-c"]) { // color test output to stdout
+        $__ml_comment = 0;
+        $crap = array_flip( explode(" ", "# / < ?") );
+        foreach($__out as $o) {
+            $o = trim($o, "; \n");
+            if (substr($o, 0, 2) == '/*')
+                $__ml_comment=1;
+            if ($__ml_comment) {
+                if (substr($o, -2)=='*/')
+                    $__ml_comment=0;
+                $o = "// ".$o;
+            }
+            if (! isset($crap[$o[0]])) {
+                echo $__BOLD.$__BLUE.$o.$__NORM."\n";
+                continue;
+            }
+            if (substr($o, 0, 2)=='#=')
+                $o = "   ".substr($o, 2);
+            echo "    ".$o."\n"; 
+        }
         continue;
     }
 
@@ -243,16 +271,20 @@ return;
 // --------------------------------------------------------------------------------
 
 class Error {  // namespace
-    static $err; // php-error from error handler
+    static $err = array(); // php-errors from error handler
 
     // return error (if any), clean up error info
     static function get() {
         $e=self::$err;
-        self::$err="";
-        return $e;
+        self::$err = array();
+        return sizeof($e) == 1 ? $e[0] : $e;
     }
 
     static function handler ($level, $message, $file, $line, $context) {
+        // you can hide notices and warnings with @
+        // you can't hide errors
+        if (!error_reporting() && ($level == E_WARNING || $level == E_NOTICE))
+            return;
         static $map=array(
                           E_NOTICE       => 'NOTICE',
                           E_WARNING      => 'WARNING',
@@ -262,9 +294,11 @@ class Error {  // namespace
                           E_STRICT       => 'E_STRICT',
                           );
         $type = ($t = @$map[$level]) ? $t : "ERROR#$level";
-        self::$err = array($type, $message);
+        $e = "$type: $message";
+        if( substr($file, 0, strlen(__FILE__)) != __FILE__ )
+            $e = array($e, $file, $line);
+        array_push(self::$err, $e);
     }
-
 }
 
 
