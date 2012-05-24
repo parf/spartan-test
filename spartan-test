@@ -240,6 +240,8 @@ while($__file = array_shift($argv)) {
                     $__ml_comment=0;
                 $o = "// ".$o;
             }
+            if (!$o)
+                continue;
             if (! isset($crap[$o[0]])) {
                 echo $__BOLD.$__BLUE.$o.$__NORM."\n";
                 continue;
