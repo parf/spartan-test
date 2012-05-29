@@ -170,7 +170,7 @@ while($__file = array_shift($argv)) {
 
         // ";command" - execute and discard result
         if($__l2[0]==';') {
-            eval(substr($__line, 2));
+            eval(ltrim($__line, " ;"));
             continue;
         }
 
