@@ -52,6 +52,7 @@ OPTIONS
     -s --silent - suppress output when no-errors (for use in cron)
     --halt-on-errors - Do not allow PHP errors inside tests
     -c          - do not overwrite files, show processed colorified output
+    --no-init   - do not check/include for init.php
 
     --help      - show this help
     --example   - show sample/example test
@@ -62,7 +63,7 @@ LIMITATIONS
 -----------
 
 * one command per line, however you can use multiline php comments
-* php eval limitations apply: no loops, control structures, no unset
+* php eval limitations apply: no loops, control structures, no unset (see x_unset)
 
 AUTOLOAD
 --------
@@ -78,6 +79,14 @@ NOTES
 * Style reccomendation: use "//" & "/* .. */" for your comments
 * check out './test.test -c'
 * check out 'watch "spartan-test xxx.test -o | tail"'
+
+PROVIDED FUNCTIONS:
+-------------------
+* include_all( directory | array(dir, dir, ...), ext=".php" )
+    php include all files in directories (and subdirs), exclude hidden directories
+    simple test: include_all( [ "/project/framework", "/project/lib" ] );
+* x_unset(array $a, $index)
+    allows you to test at least some unsets
 
 HOW TO MAKE EXECUTABLE TESTS
 ----------------------------

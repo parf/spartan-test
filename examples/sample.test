@@ -51,4 +51,15 @@ substr(phpversion(), 0, 2)=='5.';
 // suppress tests for this line
 ; time();
 
+// php does not allow to use unset in eval
+// use this workaround to test your unsets
+$a=array("a" => "AA", "b" => "BB");
+#={"a":"AA","b":"BB"}
+x_unset($a, "a");
+#={"b":"BB"}
+
+// load all files in this directory(and subdirs)
+// make sure that files can be loaded together: no synytax errors, class/function clashes
+// include_all("/home/parf/src/homebase/lib");
+
 ?>

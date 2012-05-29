@@ -16,19 +16,18 @@ TODO:
 : do not rewrite original files if not needed!!!
 : add multiline support
 : make web-friendly version
-: provide include_all(dir, mask="*.php") function
 : implement as a class   -- Why bother??
 
 */
 
 const VERSION = 2.0;
 
-if(php_sapi_name()!='cli')
+if (php_sapi_name() != 'cli')
     die("cli required");
 
 ini_set('display_errors', 1);
 
-$me=array_shift($argv); // get rid of $__0
+$me = array_shift($argv); // get rid of $__0
 if (! $argv)
     return usage($me);
 
@@ -52,7 +51,7 @@ if (@$ARG['--'] || @$ARG['--stdin'])
     $argv=file("php://stdin", FILE_IGNORE_NEW_LINES);
 
 if (@$ARG["--clean"])
-    $ARG["-g"]=1;
+    $ARG["-g"] = 1;
 
 $__REGENERATE = @$ARG["-g"];
 $__STDOUT     = @$ARG["-o"];
@@ -75,10 +74,10 @@ if (@$ARG["--nocolor"])
     unset($ARG["--color"]);
 $__NORM=$__BOLD=$__RED=$__BLUE=$__GREEN="";
 if (@$ARG["--color"]) {
-    $__NORM="\033[0m";
-    $__BOLD="\033[1m";
-    $__RED="\033[31m"; // error
-    $__BLUE="\033[34m"; // code
+    $__NORM ="\033[0m";
+    $__BOLD ="\033[1m";
+    $__RED  ="\033[31m"; // error
+    $__BLUE ="\033[34m"; // code
     $__GREEN="\033[32m"; // result
 }
 
@@ -92,7 +91,7 @@ while($__file = array_shift($argv)) {
         continue;
 
     $__fn++;
-    if ($__fn==1) { // first file
+    if ($__fn==1 && ! isset($ARG["--no-init"])) { // first file
         // search for "init.php" file and include it
         $path=realpath($__file);
         while( $path=dirname($path) ) {
@@ -257,7 +256,7 @@ while($__file = array_shift($argv)) {
                 $o = $__GREEN.substr($o, 2).$__NORM;
             else
                 $o = "    ".$o;
-            echo "    ".$o."\n"; 
+            echo "    ".$o."\n";
         }
         continue;
     }
@@ -283,16 +282,53 @@ return;
 
 // --------------------------------------------------------------------------------
 
+// use instead of unset
+// reason: php does not allows you to use unset in eval
+function x_unset(&$v, $index) { # $v
+    unset($v[$index]);
+    return $v;
+}
+
+// include all files below provided path
+// dirs - directory or array of directories
+function include_all($dirs, $ext=".php") {
+    if (! $dirs)
+         return;
+    if (is_array($dirs)) {
+        foreach($dirs as $d)
+            include_all($d);
+        return;
+    }
+
+    // dirs is directory name
+    if (substr($dirs,-1)!='/') $dirs.="/";
+
+    $ext_len = strlen($ext);
+    $dir = opendir($dirs);
+    while ($file = readdir($dir)) {
+        if (substr($file,0,1) == ".")
+            continue; // temp/hidden files
+        if (is_dir($dirs.$file)) {
+            include_all($dirs.$file);
+            continue;
+        }
+        if (substr($file,-$ext_len) == $ext)
+            require_once($dirs.$file);
+    }
+    closedir($dir);
+} // include_all
+
 class Error {  // namespace
     static $err = array(); // php-errors from error handler
 
     // return error (if any), clean up error info
-    static function get() {
+    static function get() { # string or array with errors
         $e=self::$err;
         self::$err = array();
         return sizeof($e) == 1 ? $e[0] : $e;
     }
 
+    // Error::handler
     static function handler ($level, $message, $file, $line, $context) {
         // you can hide notices and warnings with @
         // you can't hide errors
@@ -308,11 +344,12 @@ class Error {  // namespace
                           );
         $type = ($t = @$map[$level]) ? $t : "ERROR#$level";
         $e = "$type: $message";
-        if( substr($file, 0, strlen(__FILE__)) != __FILE__ )
+        if (substr($file, 0, strlen(__FILE__)) != __FILE__)
             $e = array($e, $file, $line);
         array_push(self::$err, $e);
     }
-}
+
+} // class Error
 
 
 // --------------------------------------------------------------------------------
