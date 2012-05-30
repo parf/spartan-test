@@ -1,7 +1,7 @@
 SPARTAN-TEST
 ============
 
-Minimalistic PHP Unit Test Framework
+Minimalistic PHP Unit Test Framework for Mac & Linux
 
 Write your tests in style:
 * your tests should be easier than your code
@@ -63,29 +63,29 @@ LIMITATIONS
 -----------
 
 * one command per line, however you can use multiline php comments
-* php eval limitations apply: no loops, control structures, no unset (see x_unset)
+* php eval limitations apply: no loops, control structures, no unset (see `x_unset`)
 
 AUTOLOAD
 --------
 
-  test will search for "init.php" file in current and parents directories
+  test will search for `init.php` file in current and parents directories
   define your autoload and init functions there
 
 NOTES
 -----
 
-* expected results are stored in php comments as json "#=json"
-* suppress result check via "; " prefix : "; discard_my_result();"
-* Style reccomendation: use "//" & "/* .. */" for your comments
-* check out './test.test -c'
-* check out 'watch "spartan-test xxx.test -o | tail"'
+* expected results are stored in php comments as json `#=json`
+* suppress result check via "; " prefix : `; discard_my_result();`
+* Style reccomendation: use `//` & `/* .. */` for your comments
+* try `./test.test -c`
+* try `watch "spartan-test xxx.test -o | tail"`
 
 PROVIDED FUNCTIONS:
 -------------------
-* `**include_all**`( directory | array(dir, dir, ...), ext=".php" )
+* `include_all`( directory | array(dir, dir, ...), ext=".php" )
   * php include all files in directories (and subdirs), exclude hidden directories
   * example: `include_all( [ "/project/framework", "/project/lib" ] );`
-* `**x_unset**`(array $a, $index)
+* `x_unset`(array $a, $index)
   * allows you to test at least some unsets
 
 HOW TO MAKE EXECUTABLE TESTS
