@@ -82,10 +82,10 @@ NOTES
 
 PROVIDED FUNCTIONS:
 -------------------
-* `include_all`( directory | array(dir, dir, ...), ext=".php" )
-  * php include all files in directories (and subdirs), exclude hidden directories
+* `include_all( dir| array(dir, dir, ...), ext=".php" )`
+  * include all php files in directories (and subdirs), skip hidden directories
   * example: `include_all( [ "/project/framework", "/project/lib" ] );`
-* `x_unset`(array $a, $index)
+* `x_unset(array $a, $index)`
   * allows you to test at least some unsets
 
 HOW TO MAKE EXECUTABLE TESTS
@@ -108,8 +108,8 @@ CRON EXAMPLE
 
 EXAMPLES
 --------
-   type `spartan-test --example`  to see sample test
-   more examples at https://github.com/parf/spartan-test/tree/master/examples
+* type `spartan-test --example` to see sample test
+* [more examples](https://github.com/parf/spartan-test/tree/master/examples)
 
 AUTHOR
 ------
