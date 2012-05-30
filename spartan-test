@@ -81,8 +81,6 @@ if (@$ARG["--color"]) {
     $__GREEN="\033[32m"; // result
 }
 
-if (! @$ARG["--halt-on-errors"])
-    set_error_handler('Error::handler');
 
 $__fn = 0; // file_number
 while($__file = array_shift($argv)) {
@@ -103,6 +101,9 @@ while($__file = array_shift($argv)) {
             }
         }
     }
+
+    if ($__fn==1 && ! isset($ARG["--halt-on-errors"]))
+        set_error_handler('Error::handler');
 
     $__handle = @fopen($__file, "r");
     if (! $__handle ) {
