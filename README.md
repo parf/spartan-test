@@ -75,8 +75,9 @@ NOTES
 -----
 
 * expected results are stored in php comments as json `#=json`
-* suppress result check via "; " prefix : `; discard_my_result();`
-* Style reccomendation: use `//` & `/* .. */` for your comments
+* suppress result check via `;` prefix : `; discard_my_result();`
+* Style reccomendation:
+  * avoid using `#` for your comments - use `//` and `/* .. */`
 * try `./test.test -c`
 * try `watch "spartan-test xxx.test -o | tail"`
 
