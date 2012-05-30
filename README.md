@@ -82,11 +82,11 @@ NOTES
 
 PROVIDED FUNCTIONS:
 -------------------
-* include_all( directory | array(dir, dir, ...), ext=".php" )
-    php include all files in directories (and subdirs), exclude hidden directories
-    simple test: include_all( [ "/project/framework", "/project/lib" ] );
-* x_unset(array $a, $index)
-    allows you to test at least some unsets
+* *include_all*( directory | array(dir, dir, ...), ext=".php" )
+**  php include all files in directories (and subdirs), exclude hidden directories
+**  simple test: include_all( [ "/project/framework", "/project/lib" ] );
+* *x_unset*(array $a, $index)
+**  allows you to test at least some unsets
 
 HOW TO MAKE EXECUTABLE TESTS
 ----------------------------
