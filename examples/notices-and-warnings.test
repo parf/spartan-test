@@ -1,11 +1,10 @@
 // Suppressing Notices & Warnings
 
-
 $B;
 #=["NOTICE: Undefined variable: B",null]
 
 // DEFINE B
-; $B=[];
+; $B=array();
 
 $B[12];
 #=["NOTICE: Undefined offset: 12",null]
