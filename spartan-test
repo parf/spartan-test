@@ -102,7 +102,7 @@ while($__file = array_shift($argv)) {
         }
     }
 
-    if ($__fn==1 && ! isset($ARG["--halt-on-errors"]))
+    if ($__fn==1 && ! isset($ARG["--no-error-handler"]))
         set_error_handler('Error::handler');
 
     $__handle = @fopen($__file, "r");
