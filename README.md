@@ -51,6 +51,7 @@ OPTIONS
     --clean    - remove test results from source file
     -s --silent - suppress output when no-errors (for use in cron)
     --no-error-handler - do not use built-in error tracking
+                  check notes for suppressing warnings and notices
     -c          - do not overwrite files, show processed colorified output
     --no-init   - do not check/include for init.php
 
@@ -88,6 +89,8 @@ PROVIDED FUNCTIONS:
   * example: `include_all( [ "/project/framework", "/project/lib" ] );`
 * `x_unset(array $a, $index)`
   * allows you to test at least some unsets
+* Error::suppress_notices()  - allow notices
+* Error::suppress_warnings() - allow warnings
 
 HOW TO MAKE EXECUTABLE TESTS
 ----------------------------
