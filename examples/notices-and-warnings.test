@@ -1,0 +1,30 @@
+// Suppressing Notices & Warnings
+
+
+$B;
+#=["NOTICE: Undefined variable: B",null]
+
+// DEFINE B
+; $B=[];
+
+$B[12];
+#=["NOTICE: Undefined offset: 12",null]
+$B["abv"];
+#=["NOTICE: Undefined index: abv",null]
+
+// Disable notices
+; Error::suppress_notices();
+$B[12];
+#=null
+$B["abv"];
+#=null
+
+1/0;
+#=["WARNING: Division by zero",false]
+
+// Disable warnings - 
+; Error::suppress_warnings();
+
+// Yay - now i can delete by 0 
+1/0;
+#=false

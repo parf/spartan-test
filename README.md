@@ -50,7 +50,7 @@ OPTIONS
     -- --stdin - read file list from stdin
     --clean    - remove test results from source file
     -s --silent - suppress output when no-errors (for use in cron)
-    --no-error-handler - Do not use built-in error tracking
+    --no-error-handler - do not use built-in error tracking
     -c          - do not overwrite files, show processed colorified output
     --no-init   - do not check/include for init.php
 
