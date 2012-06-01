@@ -170,8 +170,12 @@ while($__file = array_shift($argv)) {
         // <? - vi coloring fix
 
         // ";command" - execute and discard result
-        if($__l2[0]==';') {
+        if ($__l2[0]==';') {
             eval(ltrim($__line, " ;"));
+            if ($__z=Error::get()) { // discard notice
+                $__errs.="Line $__l: unexpected PHP Error(s): ".json_encode($__z);
+                $__failed++;
+            }
             continue;
         }
 
