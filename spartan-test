@@ -20,7 +20,7 @@ TODO:
 
 */
 
-const VERSION = 2.0;
+const VERSION = 2.1;
 
 if (php_sapi_name() != 'cli')
     die("cli required");
