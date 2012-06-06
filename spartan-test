@@ -201,8 +201,11 @@ while($__file = array_shift($argv)) {
             if ( substr($__line, 0, 5)=='echo ') {
                 $__z='echo';
                 eval($__line);
-            } else
+            } else {
                 eval("\$__z=$__line");
+                if (is_array($__z))
+                    ksort($__z);  // you should never relay on hash field order anyway
+            }
         } catch(Exception $__ex) {
             $__z=array(get_class($__ex), $__ex->getMessage(), $__ex->getCode());
         }
