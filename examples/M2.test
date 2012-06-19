@@ -1,13 +1,20 @@
 #!/bin/env spartan-test
 
+
+
+// You can't run this test - this is just an example
+
+
+
+
+
+
 //  
 // https://github.com/parf/spartan-test
 //
 // HOMEBASE FRAMEWORK
-// Mongo ORM v2 test
-
-count(M::listDatabases())>0;
-#=true
+// Mongo ORM v2
+// https://github.com/parf/Mongo-PHP-ORM
 
 M();
 #={"class":"Mongo","0":{"connected":true,"status":null}}
@@ -18,7 +25,10 @@ M::Base();
 M::Base(1);
 #={"class":"M_Object","0":{"id":1}}
 
+count(M::listDatabases())>0;
+#=true
 
+// prepare clean playground for the test: drop old test databases (if there are any)
 ; M("test.sequence")->drop();
 ; $a_no=M("test.no_autoload");
 ; $a_no->drop();
@@ -35,7 +45,7 @@ M::Base(1);
 ; $a_sf->insert(["_id" => 1, "name" => "Ted", "age" => 6, "sex" => "male"]);  # some fields
 
 // no auto load
-$a_no->config("autoload");
+$a_no->C("autoload");
 #=""
 ; $c= $a_no->go(1);
 $c->v();
@@ -50,7 +60,7 @@ $c->v();
 #={"D":{"_id":1,"name":"Parf","age":38},"id":1,"loaded":true}
 
 // _id load
-$a_id->config("autoload");
+$a_id->C("autoload");
 #="_id"
 ; $c= $a_id(1);
 $c->v();
@@ -67,7 +77,7 @@ $c->v();
 #={"D":{"_id":1,"name":"Vikki","age":0.6},"id":1,"loaded":true}
 
 // specific fields load
-$a_sf->config("autoload");
+$a_sf->C("autoload");
 #="name age mmm"
 ; $c= $a_sf(1);
 $c->v();
@@ -123,7 +133,7 @@ $U->f(100, "wol name");
 #={"100":{"_id":100,"name":"Parf","wol":0.1}}
 $U[100];
 #={"_id":100,"name":"Parf","test":"yes","wol":0.1,"x":{"y":"xy"}}
-$U->config("parf");
+$U->C("parf");
 #="custom-param"
 
 $U->f(100, "name");
@@ -291,7 +301,7 @@ $u->get("zz z");
 $u->v();
 #={"D":{"_id":100,"zz":["y"],"y":[1,1,2,1,3],"x":3,"a":{"b":{"c":[1,2,3]}},"name":"Parf","test":"yes","wol":0.1},"id":100,"loaded":true}
 
-$u->C();
+$u->MC();
 #={"class":"M_Collection","0":{"name":"test.base","sdc":"test.base","server":""}}
 
 $u->json();
@@ -324,7 +334,7 @@ $u->_undefined_magic_field;
 
 ; $T=M::Typed();
 $T->type;
-#={"_id":"int","ai.*":"int","arr":"array","as.*":"string","date":"date","datetime":"DateTime","dt":"datetime","en":["name","age","sex"],"int":"int","ip":"ip","map":{"y":"yksi","ka":"kaksi","ko":"kolme"},"ph":"phone","t.a":"array","t.b":"bool","t.d":"date","t.f":"float","t.i":"int","t.s":"string","usd":"price"}
+#={"_id":"int","ai.*":"int","aip.*":"ip","aip.2":"ip","arr":"array","as.*":"string","date":"date","datetime":"DateTime","dt":"datetime","en":["name","age","sex"],"int":"int","ip":"ip","map":{"y":"yksi","ka":"kaksi","ko":"kolme"},"name":"name","ph":"phone","str":"string","t.a":"array","t.b":"bool","t.d":"date","t.f":"float","t.i":"int","t.ip":"ip","t.s":"string","text":"text","u":"url","usd":"price"}
 
 ; $T->insert( ["_id" => 2, "int" => 1] );
 ; $T->insert( ["_id" => 3, "int" => "a"] );
@@ -338,9 +348,8 @@ $T->findIn([2,3,4,5,6]);
 
 ; $T->insert( ["_id" => 7, "arr" => ["a"] ] );
 
-## spartan test can't recognize PHP ERRORS & NOTICES SO FAR
-## $T->insert( ["_id" => 8, "arr" => "err"] );
-##
+// T->insert( ["_id" => 8, "arr" => "err"] );
+// ERROR !!
 
 ; $T->insert( ["_id" => 9, "arr" => [1]] );
 
@@ -366,6 +375,7 @@ $T[1]["int"];
 #=2
 
 # *:int
+
 ; $T->push(1, "ai", "abc")->push(1, ["ai" => 0])->push(1, "ai", 1.1);
 $T[1]["ai"];
 #=[0,0,1]
@@ -375,22 +385,51 @@ $T[1]["ai"];
 $T[1]["as"];
 #=["abc","0","1.1"]
 
+# *:ip
+; $T->push(1, "aip", "192.168.0.1")->push(1, "aip", 3232235778);
+$T[1]["aip"];
+#=[3232235521,3232235778]
+
+// we can get use of "aip.*:ip" type declaration and get human representation of this field
+$T(1)["_aip"];
+#=["192.168.0.1","192.168.1.2"]
+
 ; $T->add(1, "aaa.b.c", 1, 2, 3);
-$T(1)->aaa;
+// we need reload because we skipped M_Object layer in above line
+$T(1)->reload()->aaa;
 #={"b":{"c":[1,2,3]}}
 
+$t=$T(1);
+#={"class":"M_Object","0":{"id":1}}
+// no reload, M_Object layer always work
+; $t->add("aaa.b.d", 4, 5, 6);
+$t->aaa;
+#={"b":{"c":[1,2,3],"d":[4,5,6]}}
+
+// ALIAS OF MAGIC FIELD - GET
+; $t->int = 123456;
+$t->big_fat_int;
+#=123456
+$t->_big_fat_int;
+#="123,456"
+
+// ALIAS OF MAGIC FIELD - SET
+; $t->_big_fat_int = "and the number is 987,000";
+$t->int;
+#=987000
+
 # SEQUENCE
-; $b = M::Base();
-$b1=$b->insert(["a" => 1]);
+; $B = M::Base();
+$b1=$B->insert(["a" => 1]);
 #=102
 
-$b2=$b->insert(["c" => 2]);
+$b2=$B->insert(["c" => 2]);
 #=103
 
-$b($b1)->_;
+$B($b1)->_;
 #={"_id":102,"a":1}
 
-$b[$b2];
+$B[$b2];
 #={"_id":103,"c":2}
 
 // ENUMS - prederined hashes
@@ -412,10 +451,12 @@ $t;
 $t->_en; // Magic Field
 #="age"
 
+// you can assign keys or values to enum types
 $t->en="name";
-#=["InvalidArgumentException","bad enum key: name type: [ENUM]",0]
+#="name"
+
 $t->en;
-#=1
+#=0
 $t->_en="name";
 #="name"
 $t->en;
@@ -430,8 +471,9 @@ $t->en=["a"];
 # ENUM AS MAP
 $T->type["map"];
 #={"ka":"kaksi","ko":"kolme","y":"yksi"}
+// you can assign keys or values to enum types
 $t->map="kolme";
-#=["InvalidArgumentException","bad enum key: kolme type: [ENUM]",0]
+#="kolme"
 $t->map='ko';
 #="ko"
 $t->map;
@@ -456,6 +498,66 @@ $t->map;
 $t->_map;
 #="kaksi"
 
+
+// MAGIC FIELDS
+
+// INT TYPE
+$T->type["int"];
+#="int"
+; $t->int = 1234567890;
+$t->int;
+#=1234567890
+$t->_int;
+#="1,234,567,890"
+
+// STRING TYPE
+$T->type["str"];
+#="string"
+; $t->str="<script> alert(\"got u\") </script>";
+$t->str;
+#="<script> alert(\"got u\") <\/script>"
+$t->_str; // cross-site scripting protection
+#="&lt;script&gt; alert(&quot;got u&quot;) &lt;\/script&gt;"
+
+// TEXT TYPE
+$T->type["text"];
+#="text"
+; $t->text="<script> alert(\"got u\") <\/script>";
+$t->text; //  cross-site scripting protection
+#="&lt;script&gt; alert(&quot;got u&quot;) &lt;\\\/script&gt;"
+
+// URL TYPE
+$T->type["u"];
+#="url"
+; $t->u="comfi.com";
+$t->u;
+#="comfi.com"
+$t->_u;
+#="http:\/\/comfi.com"
+
+; $t->u="https://comfi.com";
+$t->u;
+#="https:\/\/comfi.com"
+
+$t->u="one two three";
+#=["InvalidArgumentException","bad url: one two three value type: string type: url",0]
+$t->u;
+#="https:\/\/comfi.com"
+
+// no exception when saving bad urls to magic field
+; $t->_u="one two three";
+$t->u;
+#=null
+$t->_u;
+#=""
+
+// NAME TYPE
+// capitalisation + sanitaze
+; $t->name=" sergey parf 123 <script>";
+$t->name;
+#="Sergey Parf Script"
+
+// DATE TYPE
 ; $t->date = 1337973872; // time();
 date("Y-m-d H:i:s", 1337973872);
 #="2012-05-25 15:24:32"
@@ -477,7 +579,7 @@ $t->datetime;
 $t->_datetime;
 #="May 25, 2012 03:24PM"
 
-# PHONE FIELD SUPPORT
+# PHONE TYPE
 $T->type["ph"];
 #="phone"
 ; $t->ph=" 1 (617) 372 0000";
@@ -528,10 +630,71 @@ $t->_ip;
 $t->_non_defined_field;
 #=["Exception","Type required for magic field non_defined_field",0]
 
+// applying type for deep field
+; $t["t.ip"] = "abc";
+$t["t.ip"];
+#=false
+; $t["t.ip"] = 3232235778;
+$t["t.ip"];
+#=3232235778
+
+// deep magic field
+$t["_t.ip"];
+#="192.168.1.2"
+
+
+// deep magic arrays field
+; $t["aip.0"] = 3232235778;
+$t["aip.0"];
+#=3232235778
+
+// Magic field.{number} syntax is unsupported by type+magic system
+// however you can explicitely define type to "aip.0", then it will work
+$t["_aip.0"];
+#=3232235778
+
+$t->_aip;
+#=["192.168.1.2","192.168.1.2"]
+
+// this syntax is supported
+$t->_aip[0];
+#="192.168.1.2"
+
+// field.{number} this syntax is unsupported by type system
+; $t["aip.1"] = '192.168.0.1'; // unsupported unless explicitely defined
+$t["aip.1"];
+#="192.168.0.1"
+$t["_aip.1"]; // unsupported unless explicitely defined
+#="192.168.0.1"
+; $t["aip.1"] = M_Type::applyIP('10.0.0.1');
+$t["aip.1"];
+#=167772161
+
+
+; $t->addToSet("aip", '192.168.1.1');
+$t["aip.2"];
+#=3232235777
+
+// explicit "aip.2" type defined
+$t["_aip.2"];
+#="192.168.1.1"
+
+$t->aip;
+#=[3232235778,167772161,3232235777]
+
+// ALL FIELDS
+$t->_;
+#={"_id":1,"aaa":{"b":{"c":[1,2,3],"d":[4,5,6]}},"ai":[0,0,1],"aip":[3232235778,167772161,3232235777],"as":["abc","0","1.1"],"date":1337918400,"datetime":1337973872,"en":1,"int":1234567890,"ip":3232235778,"map":"ka","name":"Sergey Parf Script","ph":8675583979813,"str":"<script> alert(\"got u\") <\/script>","t":{"ip":3232235778},"text":"&lt;script&gt; alert(&quot;got u&quot;) &lt;\\\/script&gt;","u":null}
+
+// ALL FIELDS as MAGIC
+$t->__;
+#={"_id":"1","aaa":{"b":{"c":[1,2,3],"d":[4,5,6]}},"ai":["0","0","1"],"aip":["192.168.1.2","10.0.0.1","192.168.1.1"],"as":["abc","0","1.1"],"date":"May 25, 2012","datetime":"May 25, 2012 03:24PM","en":"age","int":"1,234,567,890","ip":"192.168.1.2","map":"kaksi","name":"Sergey Parf Script","ph":"+86 7558-397-9813","str":"&lt;script&gt; alert(&quot;got u&quot;) &lt;\/script&gt;","t":{"ip":"192.168.1.2"},"text":"&lt;script&gt; alert(&quot;got u&quot;) &lt;\\\/script&gt;","u":""}
+
+
 // Extending M_Object 
  $C =M::Something();
 #={"class":"M_Collection","0":{"name":"test.something","sdc":"test.something","server":""}}
-$C->config("class");
+$C->C("class");
 #="M_Something"
 ; $C->remove(['_id' => ['$gt' => 0]]);
 ; $C->insert(["_id" => 1, "field" => "v"]);
@@ -539,6 +702,10 @@ $C->config("class");
 ; $C->insert(["_id" => 3, "class" => "Manager", "name" => "Bob"]);
 ; $C->insert(["_id" => 4, "class" => "Person", "name" => "Jim", "m_id" => 3]);
 ; $C->insert(["_id" => 5, "class" => "Person", "name" => "Tucker", "m_id" => 3]);
+
+// custom static methods from M_Object are mapped to collection
+$C->static_finder("abc");
+#=["static M_Object methods are mapped to M_Collection methods","param: abc"]
 
 $c=$C(1);
 #={"class":"M_Something","0":{"id":1}}
@@ -596,3 +763,40 @@ $c->Manager;
 #={"class":"M_Manager","0":{"id":3}}
 $c->Manager->name;
 #="Bob"
+
+// M_Object Static methods are mapped to Collection methods
+$C->static_finder("my complex param");
+#=["static M_Object methods are mapped to M_Collection methods","param: my complex param"]
+
+
+
+
+// TypedCollection magic fields query support
+
+; $T = M::Typed();  // typed collection
+$T->type["ph"];     // phone type field
+#="phone"
+; M_Sequence::set("".$T, 100);
+
+; $T->insert(["ph" => "(617) 372-0000"]);
+; $T->insert(["ph" => "7 495 726-0000"]);
+; $T->insert(["ph" => "+49 221 828 1234"]);
+
+// query all phone fields
+$T->f(['ph' => ['$exists' => true]], "ph");    
+#={"1":{"_id":1,"ph":8675583979813},"101":{"_id":101,"ph":16173720000},"102":{"_id":102,"ph":74957260000},"103":{"_id":103,"ph":492218281234}}
+// Find as Objects - Object List
+$ol = $T->fo(['ph' => ['$exists' => true]]);    
+#={"1":{"id":1},"101":{"id":101},"102":{"id":102},"103":{"id":103}}
+
+$ol[101]->_ph;
+#="1-617-372-0000"
+$ol[102]->_ph;
+#="+7 495-726-0000"
+$ol[103]->_ph;
+#="+49 221-828-1234"
+
+// Magic
+// $T->fm([], []);
+//; $T->fm([], "_ph");    
+

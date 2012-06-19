@@ -59,7 +59,7 @@ x_unset($a, "a");
 #={"b":"BB"}
 
 // load all files in this directory(and subdirs)
-// make sure that files can be loaded together: no synytax errors, class/function clashes
+// make sure that files can be loaded together: no syntax errors, class/function clashes
 // include_all("/home/parf/src/homebase/lib");
 
 ?>

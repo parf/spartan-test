@@ -1,3 +1,4 @@
+#!/bin/env spartan-test
 // Suppressing Notices & Warnings
 
 $B;
