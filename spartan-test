@@ -84,7 +84,7 @@ if (@$ARG["--color"]) {
 
 $__fn = 0; // file_number
 while($__file = array_shift($argv)) {
-    $__start = microtime();
+    $__start = microtime(true);
     if ($__file[0] == '-')
         continue;
 
@@ -237,7 +237,7 @@ while($__file = array_shift($argv)) {
             fwrite(STDERR, $__err);
         } else {
             if (! $__SILENT)
-                echo $__t."OK $__tests tests in ".number_format(microtime()-$__start,2)."sec\n";
+                echo $__t."OK $__tests tests in ".number_format(microtime(true)-$__start,2)."sec\n";
         }
         if ($__errs) {
             $__errs=str_replace("\n", "\n  ", $__errs); // identation
