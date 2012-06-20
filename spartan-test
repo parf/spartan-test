@@ -67,8 +67,9 @@ if (@$ARG["-c"]) { // color test output
     $__SILENT = 1;
 }
 
+$TERM = getenv("TERM");
 # console colors, only for xterm capable terminals
-if (strpos(getenv("TERM"),'xterm')!==false)
+if (strpos($TERM,'xterm')!==false || $TERM=='linux')
     $ARG["--color"]=1;
 if (@$ARG["--nocolor"])
     unset($ARG["--color"]);
@@ -198,8 +199,8 @@ while($__file = array_shift($argv)) {
         $__z="error";  // evaluation result
         ob_start();
         try {
-            if ( substr($__line, 0, 5)=='echo ') {
-                $__z='echo';
+            if (substr($__line, 0, 5)=='echo ' || substr($__line, 0, 6)=='unset(' || substr($__line, 0, 6)=='class ') {
+                $__z=null;
                 eval($__line);
             } else {
                 eval("\$__z=$__line");
@@ -301,13 +302,6 @@ while($__file = array_shift($argv)) {
 return;
 
 // --------------------------------------------------------------------------------
-
-// use instead of unset
-// reason: php does not allows you to use unset in eval
-function x_unset(&$v, $index) { # $v
-    unset($v[$index]);
-    return $v;
-}
 
 // include all files below provided path
 // dirs - directory or array of directories
