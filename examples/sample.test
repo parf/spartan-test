@@ -1,4 +1,4 @@
-#!/bin/env spartan-test
+#!/usr/bin/env spartan-test
 /*
  Make sure you have spartan-test in your path:
    mkdir -p ~/src ~/bin
@@ -60,11 +60,11 @@ unset($a);
 $a;
 #=["NOTICE: Undefined variable: a",null]
 
-class A { static function x() { return "A::x"; } }
+class S { static function x() { return "S::x"; } }
 #=null
 
-A::x();
-#="A::x"
+S::x();
+#="S::x"
 
 // load all files in this directory(and subdirs)
 // make sure that files can be loaded together: no syntax errors, class/function clashes

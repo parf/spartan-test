@@ -1,4 +1,4 @@
-#!/bin/env spartan-test
+#!/usr/bin/env spartan-test
 <?  # this line is optional, just want to run this code as php also
 /*
  Make sure you have spartan-test in your path:

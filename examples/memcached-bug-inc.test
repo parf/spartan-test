@@ -1,4 +1,4 @@
-#!/bin/env spartan-test
+#!/usr/bin/env spartan-test
 
 // spartan-test unit test: https://github.com/parf/spartan-test
 // PHP memcached extension BUGS
