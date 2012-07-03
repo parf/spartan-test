@@ -184,12 +184,34 @@ while($__file = array_shift($argv)) {
 
         // ";command" - execute and discard result
         if ($__l2[0]==';') {
-            eval(ltrim($__line, " ;"));
-            if ($__z=Error::get()) { // discard notice
-                $__errs.="Line $__l: unexpected PHP Error(s): ".json_encode($__z);
-                $__failed++;
+            $__z = "";
+            $__et = ""; // exception trace
+            ob_start();
+            try {
+                eval(ltrim($__line, " ;"));
+            } catch(Exception $__ex) {
+                $__z = array(get_class($__ex), $__ex->getMessage(), $__ex->getCode());
+                $__et = $__ex->getTraceAsString();
+                $__et = explode("\n", $__et);
+                array_pop($__et); // get rid of useless trace elements
+                array_pop($__et);
+                $__et = "      ".join("\n      ", $__et);
             }
-            continue;
+            if ($__e=Error::get())
+                $__z[] = array("Error", $__e);
+            if ($__ob=ob_get_clean())
+                $__z[] = array("Unexpected Output:", $__ob);
+
+            if (! $__z)
+                continue;
+            // ERRORS !!!
+            $__err = str_replace('],[', "],\n    [", substr(json_encode($__z), 1, -1));
+            $__err = str_replace('\n', "\n      ", $__err);
+            $__err = $__BOLD.$__RED.$__err.$__NORM;
+            $__err ="Line $__l: PHP Error: '$__line\n    ".$__err;
+            if ($__et) $__err.="\n".$__et;
+            fwrite(STDERR, "----------- ${__RED}UNEXPECTED ERROR${__NORM} ---------\n    ".$__err."\n");
+            exit(1);
         }
 
         $__tests++;
