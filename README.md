@@ -64,7 +64,7 @@ LIMITATIONS
 -----------
 
 * one command per line, however you can use multiline php comments
-* php eval limitations apply: no loops, control structures, no unset (see `x_unset`)
+* php eval limitations apply: no loops and ifs (x ? is ok)
 
 AUTOLOAD
 --------
@@ -87,8 +87,6 @@ PROVIDED FUNCTIONS:
 * `include_all( dir| array(dir, dir, ...), ext=".php" )`
   * include all php files in directories (and subdirs), skip hidden directories
   * example: `include_all( [ "/project/framework", "/project/lib" ] );`
-* `x_unset(array $a, $index)`
-  * allows you to test at least some unsets
 * Error::suppress_notices()  - allow notices
 * Error::suppress_warnings() - allow warnings
 
