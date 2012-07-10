@@ -210,6 +210,8 @@ while($__file = array_shift($argv)) {
             $__err = $__BOLD.$__RED.$__err.$__NORM;
             $__err ="Line $__l: PHP Error: '$__line\n    ".$__err;
             if ($__et) $__err.="\n".$__et;
+            if ($__fn>1)
+                fwrite(STDERR, "file : $__file \n");
             fwrite(STDERR, "----------- ${__RED}UNEXPECTED ERROR${__NORM} ---------\n    ".$__err."\n");
             exit(1);
         }
