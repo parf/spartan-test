@@ -118,6 +118,9 @@ while($__file = array_shift($argv)) {
         Error::$suppress=0;
     }
 
+    if (! $__SILENT && ! $__REGENERATE)
+         echo "*** Testing $__file - ";
+
     $__handle = @fopen($__file, "r");
     if (! $__handle ) {
         fwrite(STDERR, "Can't read file '$__file'\n");
@@ -254,7 +257,7 @@ while($__file = array_shift($argv)) {
     }
 
     if (! $__REGENERATE) { // normal case
-        $__t="*** Testing $__file - ";
+        $__t=""; // *** Testing $__file - ";
         if ($__failed) {
             $__err=$__t."FAILED $__failed of $__tests tests\n";
             $__err=$__BOLD.$__RED.$__err.$__NORM;
