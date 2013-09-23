@@ -104,7 +104,7 @@ while($__file = array_shift($argv)) {
                 include $path."/init.php";
 
                 if ($__z=Error::get()) { //
-                    $__err=$__RED."PHP Error".$__NORM.": ".json_encode($__z)."\n";
+                    $__err=$__RED."PHP Error".$__NORM.": ".@json_encode($__z)."\n";
                     fwrite(STDERR, $__err);
                     exit(1);
                 }
@@ -138,6 +138,7 @@ while($__file = array_shift($argv)) {
     $__code="";
     $__ml_comment=0; // multiline comment flag
 
+    chdir($path);
     while (!feof($__handle)) {
         $__l0=fgets($__handle);
         $__out[]=$__l0;
@@ -208,7 +209,7 @@ while($__file = array_shift($argv)) {
             if (! $__z)
                 continue;
             // ERRORS !!!
-            $__err = str_replace('],[', "],\n    [", substr(json_encode($__z), 1, -1));
+            $__err = str_replace('],[', "],\n    [", substr(@json_encode($__z), 1, -1));
             $__err = str_replace('\n', "\n      ", $__err);
             $__err = $__BOLD.$__RED.$__err.$__NORM;
             $__err ="Line $__l: PHP Error: '$__line\n    ".$__err;
@@ -252,7 +253,7 @@ while($__file = array_shift($argv)) {
                 $__z=array("r" => $__z, "out" => $__ob); // ["result" => .., "output" => ..]
         }
 
-        $__z=json_encode($__z);
+        $__z=@json_encode($__z);
         $__out[]="#=".$__z."\n";
     }
 
