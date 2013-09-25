@@ -34,7 +34,7 @@ if (! $argv)
 // Arguments
 $ARG=array(); // ARGS
 foreach($argv as $a)
-    if ($a[0]=='-')
+    if (@$a[0]=='-')
         $ARG[$a]=1;
 
 if (@$ARG["--help"])
