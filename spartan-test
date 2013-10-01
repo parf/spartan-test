@@ -55,7 +55,7 @@ if (@$ARG["--clean"])
 
 $__REGENERATE = @$ARG["-g"];
 $__STDOUT     = @$ARG["-o"];
-$__SILENT     = @$ARG["-s"] ||  @$ARG["-silent"];
+$__SILENT     = @$ARG["-s"] ||  @$ARG["--silent"];
 if ($__STDOUT)
     $__SILENT = 1;
 if ($__SILENT)
