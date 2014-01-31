@@ -227,6 +227,18 @@ while($__file = array_shift($argv)) {
         $__c=1;
         $__code=$__line;
         $__z="error";  // evaluation result
+
+        // special case - homebase framework action testing
+        if ($__line[0] == '/') {
+            // /path?xxx [params]
+            $_a_params = "[]";
+            if ($___p = strpos($__line, " [")) {
+                $_a_params = substr($__line, $___p+1);
+                $__line = substr($__line, 0, $___p);
+            }
+            $__line = "Controller::A(\"$__line\", $_a_params);";
+        }
+
         ob_start();
         try {
             if (substr($__line, 0, 5)=='echo ' || substr($__line, 0, 6)=='unset(' || substr($__line, 0, 6)=='class ') {
