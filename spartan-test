@@ -20,7 +20,7 @@ TODO:
 
 */
 
-const VERSION = 2.1;
+const VERSION = 2.2;
 
 if (php_sapi_name() != 'cli')
     die("cli required");
@@ -274,7 +274,7 @@ while($__file = array_shift($argv)) {
     if (! $__REGENERATE) { // normal case
         $__t=""; // *** Testing $__file - ";
         if ($__failed) {
-            $__err=$__t."FAILED $__failed of $__tests tests\n";
+            $__err=$__t."FAILED $__failed of $__tests tests - $__file\n";
             $__err=$__BOLD.$__RED.$__err.$__NORM;
 
             fwrite(STDERR, $__err);
