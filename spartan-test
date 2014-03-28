@@ -146,7 +146,8 @@ while($__file = array_shift($argv)) {
         $__out[]=$__l0;
         $__line=trim($__l0);
         $__l++;
-        $__l2=substr($__line, 0, 2);
+        $__l2=substr($__line, 0, 2); // $line ~= "^(..)"
+
 
         // multi-line comments
         if ($__l2=='/*') {
@@ -184,7 +185,8 @@ while($__file = array_shift($argv)) {
             continue;
         }
 
-        if (! $__line || $__l2=='//' || $__l2=='<?' || $__l2=='?>' || $__line[0]=='#')
+        // skip comments
+        if (! $__line || $__l2=='//' || $__l2=='<?' || $__l2=='?>' || ($__line[0]=='#' && $__line[1]!='>'))
             continue;
         // <? - vi coloring fix
 
@@ -222,6 +224,7 @@ while($__file = array_shift($argv)) {
             exit(1);
         }
 
+
         $__tests++;
 
         $__c=1;
@@ -241,7 +244,16 @@ while($__file = array_shift($argv)) {
 
         ob_start();
         try {
-            if (substr($__line, 0, 5)=='echo ' || substr($__line, 0, 6)=='unset(' || substr($__line, 0, 6)=='class ') {
+            if ($__l2=='#>') { # array processing
+                list ($arg, $code) = explode(">>", substr($__line, 2), 2);
+                if (! $code)
+                    $__z = "ERROR: format is #! \$array >> Class::Method(\$a)";
+                else {
+                    $__line = "foreach(".trim($arg)." as \$a) {\$__z[]=".trim($code).";};";
+                    #die($__line);
+                }
+            }
+            if (substr($__line, 0, 5)=='echo ' || substr($__line, 0, 6)=='unset(' || substr($__line, 0, 6)=='class ' || substr($__line, 0, 7)=='foreach') {
                 $__z=null;
                 eval($__line);
             } else {
@@ -374,7 +386,7 @@ function include_all($dirs, $ext=".php") {
     closedir($dir);
 } // include_all
 
-class Error {  // namespace
+class Error {  // error handler
 
     PUBLIC static $suppress = 0;      // bit-mask to suppress errors
 
@@ -417,7 +429,6 @@ class Error {  // namespace
     }
 
 } // class Error
-
 
 // --------------------------------------------------------------------------------
 
