@@ -89,6 +89,11 @@ PROVIDED FUNCTIONS:
   * example: `include_all( [ "/project/framework", "/project/lib" ] );`
 * Error::suppress_notices()  - allow notices
 * Error::suppress_warnings() - allow warnings
+* Special syntax for multiple calls to function on one line:
+  // "#> $array >> Operation($a)" special syntax for foreach in tests
+  #> [2,3,4] >> $a*$a
+  #=[4,9,16]
+
 
 HOW TO MAKE EXECUTABLE TESTS
 ----------------------------
