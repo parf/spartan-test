@@ -186,7 +186,7 @@ while($__file = array_shift($argv)) {
         }
 
         // skip comments
-        if (! $__line || $__l2=='//' || $__l2=='<?' || $__l2=='?>' || ($__line[0]=='#' && $__line[1]!='>'))
+        if (! $__line || $__l2=='//' || $__l2=='<?' || $__l2=='?>' || (@$__line[0]=='#' && @$__line[1]!='>'))
             continue;
         // <? - vi coloring fix
 
