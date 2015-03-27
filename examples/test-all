@@ -1,1 +1,2 @@
-find . -name "*.stest" -perm +111 | ../spartan-test --
+#!/bin/sh
+find . -name "*.stest" -executable -type f | ../spartan-test --
