@@ -105,7 +105,7 @@ while($__file = array_shift($argv)) {
                 include $path."/init.php";
 
                 if ($__z=Error::get()) { //
-                    $__err=$__RED."PHP Error".$__NORM.": ".@json_encode($__z)."\n";
+                    $__err=$__RED."PHP Error".$__NORM.": ".@__json_encode($__z)."\n";
                     fwrite(STDERR, $__err);
                     exit(1);
                 }
@@ -214,7 +214,7 @@ while($__file = array_shift($argv)) {
             if (! $__z)
                 continue;
             // ERRORS !!!
-            $__err = str_replace('],[', "],\n    [", substr(@json_encode($__z), 1, -1));
+            $__err = str_replace('],[', "],\n    [", substr(@__json_encode($__z), 1, -1));
             $__err = str_replace('\n', "\n      ", $__err);
             $__err = $__BOLD.$__RED.$__err.$__NORM;
             $__err ="Line $__l: PHP Error: '$__line\n    ".$__err;
@@ -259,8 +259,12 @@ while($__file = array_shift($argv)) {
                 eval($__line);
             } else {
                 eval("\$__z=$__line");
-                if (is_array($__z))
+                if (is_array($__z)) {
                     ksort($__z);  // you should never relay on hash field order anyway
+                    foreach ($__z as & $___z)
+                        if (is_array($___z))
+                            ksort($___z);
+                }
             }
         } catch(Exception $__ex) {
             $__z=array(get_class($__ex), $__ex->getMessage(), $__ex->getCode());
@@ -280,7 +284,7 @@ while($__file = array_shift($argv)) {
                 $__z=array("r" => $__z, "out" => $__ob); // ["result" => .., "output" => ..]
         }
 
-        $__z=@json_encode($__z);
+        $__z=@__json_encode($__z);
         $__out[]="#=".$__z."\n";
     }
 
@@ -432,6 +436,10 @@ class Error {  // error handler
 } // class Error
 
 // --------------------------------------------------------------------------------
+
+function __json_encode($data) { # json
+    return json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+}
 
 function usage($me) {
     $v = number_format(VERSION,1);
