@@ -1,0 +1,5 @@
+2011-??-?? - v1.0 - 15min simple but solid test script
+2011-08-24 - v1.3 - sets of minor changes, used in production
+2012-06-20 - v2.0 - githubbed, licensed as MIT. minor improvements
+2014-04-01 - v2.3 - support for foreach, array test syntax
+2017-01-?? - v3.0 - rewrite, available as composer package

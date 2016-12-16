@@ -1,0 +1,124 @@
+# Spartan Test 3.x todo (PlainTask)
+
+Implementation:
+
+
+
+Major Features:
+ ☐ New output format:
+   "code;"
+   "code;        # DESCRIPTION"     // if test failed you'll see "DESCRIPTION"
+   "    result;"                    // result as PHP code (var_export-alike)
+                                    // Exceptions and Classes are converted to Arrays (see examples)
+   "    ~ special-result-test;"     //
+   internally - every code-tests works like "$_ = eval($code)"
+
+ ☐ Universal inotify-based php-linter & tester
+   parses out /** @test .... */
+
+ ☐ SPECIAL RESULT checks
+   one expression can have several special tests
+   ☐ ~ "item"            // strpos() !== false
+   ☐ ~ /RE/              // REGEXP on result
+   ☐ ~ [$item]           // item exists in array
+   ☐ ~ [$key => $item]   // key exists in array
+   ☐ ~ xp "xpath"        // treat result as XML/HTML, make sure xpath expression non-emptry
+   ☐ ~ xp "xpath" == "x" // treat result as XML/HTML
+   ☐ ~ > $value          // make sure expression is true supported operations: (< > >= <= != ==)
+   ☐ ~ stop "REASON"     // stop test with REASON (if exception or non-empty value)
+   ☐ ~ alert "REASON"    // critical-stop test with REASON (if exception or non-empty value)
+
+ ☐ WEB Test integration
+   \stest\domain("https://site.com");  // set root
+   /path?x=y             # same as \stest\curl("/path?x=y")
+   /path ["x" => "y"]
+   /path?params [php-params] [custom-headers] [cookies]
+   POST /path
+
+   special result tests
+   ~ http_code 301
+   ~ header "name"             # header exists
+   ~ header "name" == "value"  # check header value
+   ~ redirect "expected-redirect-location"
+   ~ cookie "name"
+
+   extra response (RS) fields: -
+      \stest\RS::$http_code    // last response http_code
+      \stest\RS::$headers
+      \stest\RS::$cookies
+
+   globally specifying custom headers: -
+      \stest\Curl::$headers    // \stest\Curl::$headers['User-Agent'] = "spartan-test 3.0"
+      \stest\Curl::$cookies    // currently accumulated cookies
+
+   ☐ Expects
+     ☐ RE
+     ☐ XPath
+       ☐ xp ....
+
+   ☐ Generic Errors Detection
+
+ ☐ WEB API Tests (json)
+   ☐ json /path
+
+ ☐ REMOTE API reporting (json & slack)
+   ☐ test execution
+   ☐ test failures (errors)
+   ☐ critical errors
+
+ ☐ Execute All Tests
+   ☐ (with filters)
+     ☐ recently changed tests
+     ☐ recently changed files associated tests
+     ☐ scripts with TAG, scripts w/o tags
+     ☐ other filters
+   ☐ specify critical-tests in config file
+     ☐ critical tests executed first, if critical test is failed - no futher testing performed
+
+ ☐ TESTS tagging
+   ☐ you can TAG scripts
+     TAG = any keyword
+     DOT = hierarhy.  TAG='db.mongo' is the same as TAG='db db.mongo'
+   ☐ # @TAGS: space delimited tag-list
+   you can see all defined tags (and counts)
+
+ ☐ autotest scripts
+    ☐ cron-based
+    ☐ inotify-based auto-test
+      ☐ PHP file specify its TESTS via "@test "
+      ☐ once file is changed - test is auto-executed
+    ☐ once-a-(hour-day-week) test support
+    ☐ no-parallel execution test support (via memcached)
+    ☐ linux desktop alerting
+    ☐ slack alerting
+
+  ☐ NO-KEY-SORT test option
+
+ ☐ special TEST setting - stop-on-errors
+
+
+Minor Features:
+ ☐ smart comparison display: show in colors added/removed blocks
+ ☐ nmultiline support
+
+ default behaviour:
+ ☐ show added tests
+ ☐ regen - show changed tests
+
+
+
+
+
+OLD:
+
+ ☐ New spartan test
+   ☐ stop test ahead of time
+   ☐ web-test
+   ☐ json/xml services tests
+   ☐ do not escape results
+     present them as arrays with 4x"space" identation
+   ☐ allow to suppress sorting
+   ☐ compile tests into phar
+   ☐ integration with alert system
+   ☐ integration with stat system
+

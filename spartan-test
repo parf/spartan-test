@@ -1,0 +1,15 @@
+#!/usr/bin/sh
+
+# 
+#    Spartan Test
+#
+#    TESTING Framework for PHP Done Right
+#
+#    Version 3
+#
+#    Author: Sergey Porfiriev
+#    License: MIT
+#
+
+BASEDIR=$(dirname "$0")
+php -r "include '$BASEDIR/src/stest.php'; stest\\i('\\stest\\STest', \$argv)->run();";
