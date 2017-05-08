@@ -1,6 +1,6 @@
 #!/usr/bin/sh
 
-# 
+#
 #    Spartan Test
 #
 #    TESTING Framework for PHP Done Right
@@ -11,5 +11,7 @@
 #    License: MIT
 #
 
-BASEDIR=$(dirname "$0")
-php -r "include '$BASEDIR/src/stest.php'; stest\\i('\\stest\\STest', \$argv)->run();";
+SCRIPT=$(readlink -f $0)
+BASEDIR=$(dirname $(dirname "$SCRIPT"))
+php $BASEDIR/src/stest.php "$@"
+

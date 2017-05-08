@@ -1,25 +1,15 @@
-#!/bin/php
 <?php
 
-namespace {
-
-    class STest extends \stest\STest {}
-}
-
-// #!/bin/php
+namespace stest;
 
 /**
  * Spartan Test 3.0 - php 7.1 testing framework done right
  * RTFM: README.md
  */
 
-
-
-namespace stest {
-
 include __DIR__."/Helpers.inc.php";
 
-// Dependency injection
+// poor-man Dependency injection
 //
 // I($name)                     - get / create new named instance
 // I($name, [arg1, arg2, ...])  - get / create new named-with-params instance
@@ -69,6 +59,7 @@ class STest {
         'C' => ['color' => 0],      // force no-color
         'v' => 'verbose',           // show test lines being executed
         '1' => 'first_error',       // stop on first error in test
+        'h' => 'help',              // show help
         // option to set of options
         'cron' => ['color' => 0, 'silent' => 1],   // --cron - show only errors, no colors
     ];
@@ -144,7 +135,9 @@ class STest {
         I(['console', helper\Console::i([@self::$args['color'], @self::$args['silent']])]);
         if (@self::$args['debug'])
             I('console')->e("{green}Spartan Test v".VERSION."{/} on ".gethostname()." at ".date("Y-m-d H:i")."\n");
-        set_error_handler('\\stest\Error::handler', E_ALL);
+        if (! self::$tests && ! @self::$args['tag'])
+            self::$args = ["help" => 1];
+        set_error_handler('\\stest\\Error::handler', E_ALL);
     }
 
     // spartan-test -abc --d --c="VALUE" test1 test2
@@ -182,12 +175,10 @@ class STest {
     }
 
     protected static function parseArgs($argv) {
-        self::$args = helper\parseArgs($argv);
-        self::$tests = self::$args[0];
+        [self::$args, self::$tests] = helper\parseArgs($argv);
         // default color = on
         self::$args += ['color' => 1];
         self::$args += ['sort' => 1];
-        unset(self::$args[0]);
         // convert short options to long options using self::$optionExpand
         $to_fix = array_filter(
             self::$args,
@@ -207,26 +198,16 @@ class STest {
     }
 
     function reportTestException(Exception $ex, $line) {
-
+        // todo move to i('reporter')
     }
 
 }
 
 /**
  *
+ *  @see  Readme.md file for details: how to write/execute tests
  */
 class STest_Global_Commands {
-
-    /**
-     * debug: show parsed arguments as json
-     */
-    static function debug_args() {
-        $a = STest::$args;
-        $tests = @$a[0];
-        unset($a[0]);
-        echo json_encode(['args' => $a, 'tests' => $tests], JSON_PRETTY_PRINT)."\n";
-    }
-
 
     /**
      * stop on first error encountered in test (-1)
@@ -271,63 +252,84 @@ class STest_Global_Commands {
         throw new Exception("Unsupported");
     }
 
-
-    /**
-     * 'init' file to include, must provide autoload
-     */
-    static function init($v) {
-    }
-
     /**
      * Enable/Disable result sorting - to be used inside test only
      * $ARG['sort'] = 0; // disable
      * $ARG['sort'] = 1; // enable (default)
      */
     static function sort($v) {
-        throw new Exception("see docs");
+        # throw new Exception("see docs");
     }
 
-}
+    /**
+     * this help
+     */
+    static function help() {
+        $h = function ($h, $title) {
+            echo i('console')->e("{head}%s{/}\n", $title);
+            echo $h[""], "\n\n";
+            foreach ($h as $method => $doc) {
+                if (! $method)
+                    continue;
+                i('console')->e("  {blue}{bold}%s{/}", str_pad($method, 16));
+                i('console')->e(" {grey}%s{/}\n", str_replace("\n", "\n                   ", $doc));
+            }
+            echo "\n";
+        };
+        i('console')->e("{bold}Spartan Test v".VERSION." minimalistic php 7.1 testing framework done right{/}\n");
+        $h ( helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), "Global Options");
+        $h ( helper\Documentor::classDoc("\\stest\\STest_File_Commands"), "File Actions");
+
+        #echo json_encode(helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), JSON_PRETTY_PRINT), "\n";
+        #echo json_encode(helper\Documentor::classDoc("\\stest\\STest_File_Commands"), JSON_PRETTY_PRINT), "\n";
+    }
+
+    /**
+     * 'init' php file to include, must provide autoload
+     * suggested use - specify 'init' in `stest.config` file @ root of your project
+     */
+    static function init($v) {
+    }
+
+    /**
+     * execute text based on tag value and "# @tag space-demimited-tag-list" tag comment, @see --tag for more details
+     */
+    static function tag($v) {
+        STest_File_Commands::tag($v);
+    }
+
+    /**
+     * debug: show parsed arguments as json
+     */
+    static function debug_args() {
+        $a = STest::$args;
+        $tests = @$a[0];
+        unset($a[0]);
+        echo json_encode(['args' => $a, 'tests' => $tests], JSON_PRETTY_PRINT)."\n";
+    }
+
+    /**
+     * Debug test - some methods will provide additional information
+     */
+    static function debug() {}
+
+} // class STest_Global_Commands
 
 /**
  *
  * STest --$option File.stest
  *
- * static function $Option(ParsedTest $T, $option_value)
- *
  */
 class STest_File_Commands {
 
-    // --debug-test
-    static function debug_test($T) { # echo internal test presentation
-        foreach ($T as [$ln, $tv]) {
-            echo "$ln: ", json_encode($tv, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), "\n";
-        }
-    }
+    // static function $Option(ParsedTest $T, $option_value)
 
-    /**
-     * `cat` processed test tp stdout (add missing semicolons, correct identation)
-     */
-    static function cat($T, $echo = 1) : string { # test
-        $s = "";
-        foreach ($T as [$ln, $tv]) {
-            [$tp, $v] = $tv;
-            if ($tp  == "test") {
-                $r = @$tv[2];
-                $s .= "$v\n".($r ? "    $r\n" : "");
-                continue;
-            }
-            $s .= "$v\n";
-        }
-        if ($echo)
-            echo $s;
-        return $s;
-    }
 
-    // default action
-    // --generate   - regenerate test, ignore errors
-    // --force - ignore STest::stop
-    // -v | --verbose - show statements being executed
+    /** default action:
+      * perform testing, generate and save new results
+      * -v | --verbose  - show statements being executed
+      * -g | --generate - regenerate test, ignore errors
+      */
     static function test($T) {
         // using i('o') to hide varibles
         i(["o", (object)
@@ -423,7 +425,7 @@ class STest_File_Commands {
                     if ($__out)
                         $__rz  = [$__rz, '$' => $__out];
                     if ($__error = Error::get())
-                        $__rz = [$__rz, 'error' => $__error];
+                        $__rz = ['error' => $__error];
                 } catch(\Exception $__exception) {
                     $__rz = [get_class($__exception), $__exception->getMessage()];
                 }
@@ -456,8 +458,26 @@ class STest_File_Commands {
     }
 
     /**
+     * `cat` processed test to stdout (add missing semicolons, correct identation)
+     */
+    static function cat($T, $echo = 1) : string { # test
+        $s = "";
+        foreach ($T as [$ln, $tv]) {
+            [$tp, $v] = $tv;
+            if ($tp  == "test") {
+                $r = @$tv[2];
+                $s .= "$v\n".($r ? "    $r\n" : "");
+                continue;
+            }
+            $s .= "$v\n";
+        }
+        if ($echo)
+            echo $s;
+        return $s;
+    }
+
+    /**
      * save corrected test (missing ";" added, identation fixed)
-     * called from "test"
      */
     static function save($T) {
         # echo json_encode($T);
@@ -478,8 +498,32 @@ class STest_File_Commands {
         self::save($T);
     }
 
-}
+    /**
+     * Execute test that matches given tags description, @see --tag for details
+     */
+    static function tag($v) {
+        if ($v === true) {
+            $e = [i('console'), 'e'];
+            $e("{head}STest --tag=\"...\" option{/}\n");
+            $e("comma separated list of tag groups, test will be executed if it matches any group\n");
+            $e("{blue}tag1,tag2,tag3{/} - execute test if it have tag1 or tag2 or tag3\n");
+            $e("{blue}tag1 tag2,tag3{/} - execute test if it have (tag1 and tag2) or tag3\n");
+            $e("{blue}-tag1{/} - execute test if it does NOT have tag1\n");
+            $e("{blue}tag1 -tag2{/} - execute test if it have tag1 and does not have tag2\n");
+        }
+    }
 
+    /**
+     * show parsed unprocessed test text
+     */
+    static function debug_test($T) { # echo internal test presentation
+        foreach ($T as [$ln, $tv]) {
+            echo "$ln: ", json_encode($tv, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), "\n";
+        }
+    }
+
+
+} // class STest_File_Commands
 
 /**
  * Error Handler
@@ -529,6 +573,7 @@ class Error {  // error handler
 
 
 
+
 class Exception extends \Exception {}
 
 class SyntaxErrorException extends Exception  {}
@@ -537,13 +582,5 @@ class StopException extends Exception  {}   // \STest::stop("message")   -- Succ
 class ErrorException extends Exception {}   // \STest::error("message")  -- UNSuccessfully Stop Test, ignore rest of the test
 class AlertException extends Exception {}   // \STest::alert("message")  -- UNSuccessfully Stop Test, send an alert, ignore rest of the test
 
-// RUN TESTS
 
-helper\InstanceConfig::$config = [
-    'stest'   => 'STest',
-    'console' => 'stest\helper\Console',
-] + helper\InstanceConfig::$config;
 
-I("stest")->run($argv);
-
-} // namespace

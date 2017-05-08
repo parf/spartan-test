@@ -1,0 +1,4 @@
+{
+ "stest"   :"STest",
+ "console" :"stest\\helper\\Console"
+}

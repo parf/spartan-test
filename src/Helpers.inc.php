@@ -15,10 +15,16 @@ class InstanceConfig {
     static $config = [
     ];
 
+    static $baseConfig = [];
+
     // InstanceName | InstanceName:params => instance
     static $I = [
     ];
 
+    static function init() {
+        self::$baseConfig = self::$config;
+        self::$config = json_decode(file_get_contents(__DIR__."/config.json"), 1);
+    }
 }
 
 
@@ -34,15 +40,15 @@ class InstanceConfig {
 // --ab          is ['ab' => true]
 // --ab="value"  is ['ab' => value]
 // --ab=value    is ['ab' => value]
-// --            is READ test list from STDIN
-// result: ['option' => $value, ..., 0 => ['arg1', 'arg2', ...]]
-function parseArgs(array $argv) : array { # $args
-    $args = [0 => []];
-    $tests = &$args[0];
+// --            is READ argument-list from STDIN
+// @return : [ ['option' => $value, ...], ['arg1', 'arg2', ...] ]
+function parseArgs(array $argv) : array { # [$options, $args]
+    $options = [0 => []];
+    $args = [];
     array_shift($argv);
     foreach ($argv as $a) {
         if ($a{0} !== '-') {
-            $tests[] = $a;
+            $args[] = $a;
             continue;
         }
         if (strlen($a)<2) {
@@ -56,13 +62,13 @@ function parseArgs(array $argv) : array { # $args
                 exit(1);
             }
             foreach (range(1, strlen($a)-1) as $p)
-                $args[$a[$p]] = true;
+                $options[$a[$p]] = true;
             continue;
         }
         // "--"
         if ($a == "--") {
             while ($test = fgets(STDIN))
-                $tests[] = trim($test);
+                $args[] = trim($test);
             continue;
         }
         $k = substr($a, 2); // cut leading "--"
@@ -74,10 +80,10 @@ function parseArgs(array $argv) : array { # $args
             [$k, $v] = explode("=", $k);
             $v = trim($v, '"');
         }
-        $args[$k] = $v;
+        $options[$k] = $v;
     }
 
-    return $args;
+    return [$options, $args];
 }
 
 // anything to ~ PHP string
@@ -580,3 +586,32 @@ class ConsoleMonoErrorOnly extends ConsoleMono {
     static function e(string $s, ...$args) { }
 
 }
+
+
+// -------------------------
+// Documentor
+//
+
+
+/**
+ * stripped down Parf's PHP-DOC/RUN
+ */
+class Documentor {
+
+    static function classDoc($class) { # ["" => classDoc, "method" => "MethodDoc"]
+        $D = []; // class doc + all method docs
+        $rc = new \ReflectionClass($class);
+        $doc = function(/* Reflection$X */  $m) : string { # clean doc
+            $d = $m->getDocComment();
+            $d = str_replace(["/**", "*/"], "", $d);
+            return trim(preg_replace("!^[/ ]+\* ?!m", "", $d));
+        };
+        $D[""] = $doc($rc);
+        foreach ($rc->getMethods() as $m) {
+            $D[$m->name] = $doc($m);
+        }
+        return $D;
+    }
+
+}
+

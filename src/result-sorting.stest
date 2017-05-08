@@ -1,0 +1,24 @@
+#!/bin/env stest
+<?php
+
+#
+# by default stest sorts all arrays usingb keys (unlimited depth)
+#
+
+// Default Case - sorting ON
+$r = ['b' => 2, 'c' => 3, 'a' => 1];
+    ["a"=>1, "b"=>2, "c"=>3];
+; $r['d'] = $r;
+$r;
+    ["a"=>1, "b"=>2, "c"=>3, "d"=>["a"=>1, "b"=>2, "c"=>3]];
+
+// Turn off sorting
+; $ARG['sort'] = 0; 
+$r = ['b' => 2, 'c' => 3, 'a' => 1];
+    ["b"=>2, "c"=>3, "a"=>1];
+; $r['d'] = $r;
+$r;
+    ["b"=>2, "c"=>3, "a"=>1, "d"=>["b"=>2, "c"=>3, "a"=>1]];
+
+; $ARG['sort'] = 1; // restore default mode (result sorting);
+

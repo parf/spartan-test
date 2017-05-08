@@ -1,4 +1,4 @@
-#!/bin/env /rd/research.local/spartan-test/src/stest.php
+#!/bin/env stest
 <?php
 #
 # Sample Spartan Test
@@ -53,7 +53,7 @@ $a.$a;
 
 
 $r;
-    [NULL, "error"=>"NOTICE: Undefined variable: r"];
+    ["error"=>"NOTICE: Undefined variable: r"];
 
 /* one line comment */
 
@@ -89,5 +89,5 @@ $r = ['b' => 2, 'c' => 3, 'a' => 1];
 $r;
     ["b"=>2, "c"=>3, "a"=>1, "d"=>["b"=>2, "c"=>3, "a"=>1]];
 
-; $ARG['sort'] = 1; // restore default mode (result sorting)
+; $ARG['sort'] = 1; // restore default mode (result sorting);
 

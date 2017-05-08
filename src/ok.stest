@@ -1,4 +1,4 @@
-#!/bin/env /rd/research.local/spartan-test/src/stest.php
+#!/bin/env stest
 <?php
 #
 # Sample Spartan Test

@@ -1,10 +1,87 @@
-# Spartan Test 3.x todo (PlainTask)
+# Spartan Test 3.x todo (PlainTask format)
 
-Implementation:
+Ideas:
+
+- Php 7.1 code testing framework
+- Simple ez-to maintain tests implemented as PHP code
+- Integrated web testing framework
+- Pluggable alert & statistic modules
+- CI (continuous integration) systems integration
+- instant inotify-based tester - auto-activates when source file is saved
+- parallel test execution (using gnu-parallel)
+- git-push-test script. install script on "test" server, then do "git push test" to test
+
+
+STEP 1:
+  ✔ * simple tests @done (17-05-05 13:37)
+  * basic options
+  * config reader
+    global, local
+  * execution policy
+  * reporting
+
+  ✘ * special case for "if, for, foreach, switch" keywords @cancelled (17-05-05 13:37)
+
+   ✔ multi-line expressions and tests (right way) @done (17-05-05 13:37)
+    special cases for expressions ("; x\n  x\n  x....") << 2 chars indent
+
+  ☐ STest::enable / disable
+    Ability to Skip Some Tests Based on user-defined conditions
+    ^^^ HOW TO RE-ENABLE ??? - need special syntax - ";; "
+
+ ✔ Switch to i("XX") model - use common singletons @done (17-05-04 17:57)
+
+  ✔ Console::e(" sprintf pattern ", ...) @done (17-05-08 10:21)
+
+ ✔ 1st error @done (17-05-08 10:38)
+
+ ✔ -h (doc) @done (17-05-08 15:48)
+
+ ✔ array sorting @done (17-05-08 13:05)
+ ✔ PHP notices & errors @done (17-05-08 13:05)
+
+ ☐ config
+
+ ☐ --new
+
+ ☐ ~ tests
+   ~ "SubString"
+   ~ [$ArrayItem]
+   ~ method $args
+   ~ is Class
+ ☐ /URL [...]
+
+ ☐ composer package
+   https://knpuniversity.com/screencast/question-answer-day/create-composer-package
+   https://getcomposer.org/doc/articles/vendor-binaries.md
+
+ ☐ "@tag" support - analyze 1st 5-ve comments in file for "# @tag space-delimited tag list"
+    stest --tag="tag1 -tag2, tag3"   # (tag1 but no tag2) or (tag3)
+
+TODO :
+ ✔ do not re-ident "; expressions" @done (17-05-05 13:37)
+ ✔ variable name clash @done (17-05-05 13:16)
+
+STEP 2:
+  * Web tests
+    * prod / stable / ci / local tests
+    easy switch
+  * "~ .. " tests
 
 
 
-Major Features:
+STEP 3:
+  ☐ tags
+  ☐ run-all-tests (@tags)
+  ☐ parallel execution (via parallel)
+  ☐ inotify readers
+
+
+STEP 4:
+  ☐ web alert system
+  ☐ iphone / android notification app
+
+Features:
  ☐ New output format:
    "code;"
    "code;        # DESCRIPTION"     // if test failed you'll see "DESCRIPTION"
@@ -18,17 +95,20 @@ Major Features:
 
  ☐ SPECIAL RESULT checks
    one expression can have several special tests
-   ☐ ~ "item"            // strpos() !== false
+   ☐ ~ "item"            // string exists in result (strpos() !== false)
    ☐ ~ /RE/              // REGEXP on result
    ☐ ~ [$item]           // item exists in array
+   ☐ ~ [$i1, $i2]        // items $i1, $i2 exists in array
    ☐ ~ [$key => $item]   // key exists in array
-   ☐ ~ xp "xpath"        // treat result as XML/HTML, make sure xpath expression non-emptry
+   ☐ ~ xp "xpath"        // treat result as XML/HTML, make sure xpath expression non-empty
    ☐ ~ xp "xpath" == "x" // treat result as XML/HTML
    ☐ ~ > $value          // make sure expression is true supported operations: (< > >= <= != ==)
-   ☐ ~ stop "REASON"     // stop test with REASON (if exception or non-empty value)
-   ☐ ~ alert "REASON"    // critical-stop test with REASON (if exception or non-empty value)
 
  ☐ WEB Test integration
+   $DOMAIN = "site.com"
+   $DOMAIN = "https://site.com"
+   $DOMAIN = ["https://site.com", $IP]
+
    \stest\domain("https://site.com");  // set root
    /path?x=y             # same as \stest\curl("/path?x=y")
    /path ["x" => "y"]
@@ -65,6 +145,7 @@ Major Features:
    ☐ test execution
    ☐ test failures (errors)
    ☐ critical errors
+   ☐ local/remote alert system integration
 
  ☐ Execute All Tests
    ☐ (with filters)
@@ -82,6 +163,22 @@ Major Features:
    ☐ # @TAGS: space delimited tag-list
    you can see all defined tags (and counts)
 
+ ☐ TEST-ACTIONS
+   users can specify action taken
+   ☐ on-first-fail action (php | web api)
+   ☐ on-test-fail action (php | web api)
+   ☐ on-success action (php | web api)
+
+ ☐ Early / Conditional Test Execution Stop
+   ☐ Test Critical Part
+     ☐ Any error in critical part means stop test & report alert
+   ☐ e.g. stop DB test if DB connection failed
+   ☐ time based test ignore:
+     a. using script
+        allows to turn off test for some time, using json file (or cli tool)
+     b. using web service
+        including GITHUB
+
  ☐ autotest scripts
     ☐ cron-based
     ☐ inotify-based auto-test
@@ -96,18 +193,46 @@ Major Features:
 
  ☐ special TEST setting - stop-on-errors
 
+ ☐ add special comment line at the top of the test successful test with datetime and server
+
+ ☐ smart iNotify tracker. Test coverage report
+   - use get-included-files method to map tests to source files
+   - when source file is changed all system will execute all dependent tests
 
 Minor Features:
  ☐ smart comparison display: show in colors added/removed blocks
- ☐ nmultiline support
+ ☐ multiline support
 
- default behaviour:
+Default behaviour:
  ☐ show added tests
  ☐ regen - show changed tests
 
+Implementation:
+
+  ☐ config file
+    location: test-directory and parent directories
+    name: stest-config.yaml.local, stest-config.yaml
+    if both files exists "local" config treated as a changeset
+    we suggest you add "*.local" to your ".gitignore" file
+
+    config file can be a "partial-or-override config"  (include-parent-config: true)
+       in this case it treated as a changeset for config from parent directory
 
 
 
+Unsorted Ideas:
+ ☐ Add Option to show timing for every test line
+   * TEST-NAME
+   [12.3]
+
+ ☐ place stest-config.yaml or .stest-config.yaml or stest-config.yaml.local
+   in one of parent directories
+   provide config there
+
+ ☐ Class stest tempate generation / coverage report
+
+   spartan-test generate-test Class    >> generate "Class.stest" / update stest using all class methods
+   spartan-test generate-test --coverage Class    >> list methods w/o tests or with incomplete tests
 
 OLD:
 
@@ -121,4 +246,6 @@ OLD:
    ☐ compile tests into phar
    ☐ integration with alert system
    ☐ integration with stat system
+
+
 

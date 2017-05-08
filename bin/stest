@@ -1,0 +1,7 @@
+#!/bin/php
+<?php
+include __DIR__."/../src/STest.php";
+// RUN TESTS
+class STest extends \stest\STest {}
+stest\helper\InstanceConfig::init();
+stest\I("stest")->run($argv);
