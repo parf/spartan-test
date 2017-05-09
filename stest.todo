@@ -58,6 +58,19 @@ STEP 1:
  ☐ "@tag" support - analyze 1st 5-ve comments in file for "# @tag space-delimited tag list"
     stest --tag="tag1 -tag2, tag3"   # (tag1 but no tag2) or (tag3)
 
+ ☐ testFailAlert
+
+ ☐ Alerter::
+     Syslog, json
+
+ ☐ isProd, isDVP, isCI
+
+ ☐ AutoGenerate test for a given class
+   ☐ static methods (along with params)
+   ☐ dynamic methods
+
+ ☐ Split InstanceConfig to Instance and Config:  C(...)
+
 TODO :
  ✔ do not re-ident "; expressions" @done (17-05-05 13:37)
  ✔ variable name clash @done (17-05-05 13:16)

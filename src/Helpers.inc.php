@@ -12,18 +12,62 @@ class InstanceConfig {
 
     // InstanceName => Class
     // InstanceName => [Class, method]
-    static $config = [
-    ];
+    static $config = [];
 
     static $baseConfig = [];
 
     // InstanceName | InstanceName:params => instance
-    static $I = [
-    ];
+    static $I = [];
 
-    static function init() {
-        self::$baseConfig = self::$config;
-        self::$config = json_decode(file_get_contents(__DIR__."/config.json"), 1);
+    static function init($file = false) {
+        $base = __DIR__."/config.json";
+        if (! self::$baseConfig)
+            self::$baseConfig = json_decode(file_get_contents($base), 1);
+        if (! self::$baseConfig)
+            throw new \ErrorException("Can't parse config '$base'");
+
+        self::$config = self::$baseConfig;
+        if (! $file)
+            return;
+        $DIR = $dir = realpath($file);
+        while (($dir = dirname($dir)) != '/') {
+            @\STest::$ARG['debug'] > 1 && print("Loading configs: $dir\n");
+            foreach (["stest-config.json", "stest-config.json.local", ".stest-config.json"] as $fn) {
+                $f = "$dir/$fn";
+                if (! file_exists($f))
+                    continue;
+                @\STest::$ARG['debug'] && print(" - $f\n");
+                $d = json_decode(file_get_contents($f), 1);
+                if (is_null($d))
+                    throw new \ErrorException("Can't parse config '$f'", 1);
+                self::$config = array_replace_recursive(self::$config, $d);
+            }
+        }
+        // lookup init file, include it
+        self::_include_init($DIR, self::$config['init']);
+    }
+
+    // include init file
+    // absolute path: include right away
+    // relative path: look for file in current, parent directories, include first found
+    static function _include_init($dir, $file) {
+        if (! $file)
+            return;
+        if ($file{0} === '/') {
+            @\STest::$ARG['debug'] && print("including $file\n");
+            include_once $file;
+            return;
+        }
+        while (($dir = dirname($dir)) != '/') {
+            $f = "$dir/$file";
+            if (! file_exists($f)) {
+                @\STest::$ARG['debug'] > 1 && print(" - missing $f\n");
+                continue;
+            }
+            @\STest::$ARG['debug'] && print(" - $f\n");
+            include_once $f;
+            break;
+        }
     }
 }
 
@@ -147,10 +191,10 @@ class Parser {
      *
      * $source_file = join("\n", array_values($lexems) );
      */
-    static function Reader(string $file)  { # Array or Generator
+    static function Reader(string $file)  { # Array or Generator | Exception
         $lines = @file($file, FILE_IGNORE_NEW_LINES);
         if ($lines === false)
-            return [];
+            throw new \InvalidArgumentException("file does not exists");
 
         // file lines starts with "1"
         $lines = array_merge([""], $lines);
@@ -544,7 +588,7 @@ class Console {
     }
 
 
-    // i('console', $color, $silent)
+    // i('console', [$color, $silent])
     static function I(array $config) { # Instance
         [$color, $silent] = $config;
         $m = 2*((int) $color) + (int) $silent;
@@ -615,3 +659,44 @@ class Documentor {
 
 }
 
+
+/**
+ * Alerter - connectivity with other systems
+ */
+class Alerter {
+
+
+    static function jsonPost(string $url, array $kv) {
+        $c = curl_init($url);
+        curl_setopt($c, CURLOPT_HEADER, false);
+        curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($c, CURLOPT_HTTPHEADER, ["Content-type: application/json"]);
+        curl_setopt($c, CURLOPT_POST, true);
+        curl_setopt($c, CURLOPT_POSTFIELDS, json_encode($kv));
+        $r = curl_exec($c);
+        $status = curl_getinfo($c, CURLINFO_HTTP_CODE);
+        if ( $status != 201 && $status != 200 ) // 200 & 201 = OK
+            throw new \RuntimeException("Error: call to URL $url failed with status $status, response $r, curl_error " . curl_error($c) . ", curl_errno " . curl_errno($c));
+        curl_close($c);
+        return json_decode($r, 1);
+    }
+
+    static function post(string $url, array $kv) {
+        $c = curl_init($url);
+        curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($c, CURLOPT_POSTFIELDS, $kv);
+        $r = curl_exec($c);
+        $status = curl_getinfo($c, CURLINFO_HTTP_CODE);
+        if ( $status != 201 && $status != 200 ) // 200 & 201 = OK
+            throw new \RuntimeException("Error: call to URL $url failed with status $status, response $r, curl_error " . curl_error($c) . ", curl_errno " . curl_errno($c));
+        curl_close($c);
+        return $r;
+    }
+
+    static function syslog(string $message, int $level = LOG_WARNING) {
+        openlog("stest", 0, LOG_LOCAL0);
+        syslog($level, $message);
+        closelog();
+    }
+
+}

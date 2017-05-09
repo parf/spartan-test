@@ -1,0 +1,4 @@
+{
+ "init": "init.php",
+ "some-option":"Some Value"
+}

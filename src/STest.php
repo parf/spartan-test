@@ -9,7 +9,7 @@ namespace stest;
 
 include __DIR__."/Helpers.inc.php";
 
-// poor-man Dependency injection
+// poor-man DI - Dependency Injection
 //
 // I($name)                     - get / create new named instance
 // I($name, [arg1, arg2, ...])  - get / create new named-with-params instance
@@ -26,7 +26,7 @@ function I(/*string | array */ $name, array $args=[]) { # Instance
         return $i;
     $class = @helper\InstanceConfig::$config[$name]; // class name
     if (! $class)
-        throw new Exception("No definition for instance $name");
+        throw new \DomainException("No definition for instance $name");
     if (is_array($class)) // Actual ClassName Provided by method
         $class = $class($args);
     return helper\InstanceConfig::$I[$k] = new $class($args);
@@ -46,8 +46,8 @@ const VERSION = 3.0;
 
 class STest {
 
-    static $args;
-    static $tests;
+    static $ARG;
+    static $TESTS;
 
     // optionExpand Short to LongOption or [Option => value, ...]
     static $optionExpand = [
@@ -83,7 +83,7 @@ class STest {
     static function stop(string $message, int $until_yyyymmdd = 0) {
         if ($until_yyyymmdd && (int) date("Ymd") < $until_yyyymmdd)
             return;
-        if (@self::$args['force'])
+        if (@self::$ARG['force'])
             return;
         throw new StopException($message);
     }
@@ -132,37 +132,37 @@ class STest {
     function init($argv) {
         self::parseArgs($argv);
         // setup console
-        I(['console', helper\Console::i([@self::$args['color'], @self::$args['silent']])]);
-        if (@self::$args['debug'])
+        I(['console', helper\Console::i([@self::$ARG['color'], @self::$ARG['silent']])]);
+        if (@self::$ARG['debug'])
             I('console')->e("{green}Spartan Test v".VERSION."{/} on ".gethostname()." at ".date("Y-m-d H:i")."\n");
-        if (! self::$tests && ! @self::$args['tag'])
-            self::$args = ["help" => 1];
+        if (! self::$TESTS && ! @self::$ARG['tag'])
+            self::$ARG = ["help" => 1];
         set_error_handler('\\stest\\Error::handler', E_ALL);
     }
 
     // spartan-test -abc --d --c="VALUE" test1 test2
     PUBLIC function run(array $argv) {
         $this->init($argv);
-        foreach (self::$args as $a => $v) {
+        foreach (self::$ARG as $a => $v) {
             $a = str_replace("-", "_", $a); // "-" to "_"
             if (is_callable(["stest\\STest_Global_Commands", $a]))
                 STest_Global_Commands::$a($v);
         }
-        foreach (self::$tests as $test)
+        foreach (self::$TESTS as $test)
             $this->runTest($test);
     }
 
     function runTest($file) {
         $this->file = $file;
-        # i('console')->e("*** {head}$file{/}\n");
         try {
+            helper\InstanceConfig::init($file);
             $T = helper\Parser::Reader($file);
-        } catch(SyntaxErrorException $ex) {
-            echo $ex->getMessage(), "\n";
-            die;
+        } catch(\Exception $ex) {
+            i('console')->e("*** {alert}$file{/}. Error: ".$ex->getMessage());
+            return;
         }
         $cmd = 0;
-        foreach (self::$args as $a => $v) {
+        foreach (self::$ARG as $a => $v) {
             $a = str_replace("-", "_", $a); // "-" to "_"
             if (is_callable(["stest\\STest_File_Commands", $a])) {
                 $cmd++;
@@ -175,25 +175,23 @@ class STest {
     }
 
     protected static function parseArgs($argv) {
-        [self::$args, self::$tests] = helper\parseArgs($argv);
-        // default color = on
-        self::$args += ['color' => 1];
-        self::$args += ['sort' => 1];
+        [self::$ARG, self::$TESTS] = helper\parseArgs($argv);
+        self::$ARG += ['color' => 1, 'sort' => 1]; // Defaults
         // convert short options to long options using self::$optionExpand
         $to_fix = array_filter(
-            self::$args,
+            self::$ARG,
             function ($v, $k) {
                 if (@self::$optionExpand[$k])
                     return 1;
             },
             ARRAY_FILTER_USE_BOTH);
         foreach ($to_fix as $k => $v) {
-            unset(self::$args[$k]);
+            unset(self::$ARG[$k]);
             $nk = self::$optionExpand[$k];
             if (is_array($nk))
-                self::$args = array_merge(self::$args, $nk);
+                self::$ARG = array_merge(self::$ARG, $nk);
             else
-                self::$args[ $nk ] = $v;
+                self::$ARG[ $nk ] = $v;
         }
     }
 
@@ -210,17 +208,8 @@ class STest {
 class STest_Global_Commands {
 
     /**
-     * stop on first error encountered in test (-1)
-     */
-    static function first_error() {}
-
-    /**
-     * do not stop \STest::stop, stop on Error/Alert however (-f)
-     */
-    static function force() {}
-
-    /**
      * show every line being tested (-v)
+     * stest -v filename.stest
      */
     static function verbose() {}
 
@@ -228,7 +217,6 @@ class STest_Global_Commands {
      * re-generate test. replace all results (-g)
      */
     static function generate() {}
-
 
     /**
      * turn output coloring on/off - default on
@@ -240,6 +228,17 @@ class STest_Global_Commands {
      * show erorrs only (-s)
      */
     static function silent() {}
+
+    /**
+     * stop on first error encountered in test (-1)
+     * inside test: "; $ARG['first_error'] = 1;"
+     */
+    static function first_error() {}
+
+    /**
+     * do not stop \STest::stop, stop on Error/Alert however (-f)
+     */
+    static function force() {}
 
     /**
      * error handler
@@ -265,21 +264,23 @@ class STest_Global_Commands {
      * this help
      */
     static function help() {
-        $h = function ($h, $title) {
-            echo i('console')->e("{head}%s{/}\n", $title);
-            echo $h[""], "\n\n";
+        if (STest::$ARG['silent'])
+            return;
+        $e = [i('console'), 'e'];
+        $h = function ($h, $title) use ($e) {
+            $e("{head}%s{/}\n", $title);
+            $e($h[""], "\n\n");
             foreach ($h as $method => $doc) {
                 if (! $method)
                     continue;
-                i('console')->e("  {blue}{bold}%s{/}", str_pad($method, 16));
-                i('console')->e(" {grey}%s{/}\n", str_replace("\n", "\n                   ", $doc));
+                $e("  {blue}{bold}%s{/}", str_pad($method, 16));
+                $e(" {grey}%s{/}\n", str_replace("\n", "\n                   ", $doc));
             }
-            echo "\n";
+            $e("\n");
         };
-        i('console')->e("{bold}Spartan Test v".VERSION." minimalistic php 7.1 testing framework done right{/}\n");
+        $e("{bold}Spartan Test v".VERSION." minimalistic php 7.1 testing framework done right{/}\n");
         $h ( helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), "Global Options");
         $h ( helper\Documentor::classDoc("\\stest\\STest_File_Commands"), "File Actions");
-
         #echo json_encode(helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), JSON_PRETTY_PRINT), "\n";
         #echo json_encode(helper\Documentor::classDoc("\\stest\\STest_File_Commands"), JSON_PRETTY_PRINT), "\n";
     }
@@ -302,10 +303,7 @@ class STest_Global_Commands {
      * debug: show parsed arguments as json
      */
     static function debug_args() {
-        $a = STest::$args;
-        $tests = @$a[0];
-        unset($a[0]);
-        echo json_encode(['args' => $a, 'tests' => $tests], JSON_PRETTY_PRINT)."\n";
+        echo json_encode(['args' => STest::$ARG, 'tests' => STest::$TESTS], JSON_PRETTY_PRINT)."\n";
     }
 
     /**
@@ -330,19 +328,16 @@ class STest_File_Commands {
       * -v | --verbose  - show statements being executed
       * -g | --generate - regenerate test, ignore errors
       */
-    static function test($T) {
+    static function test(array /* parsed-test */ $T) {
         // using i('o') to hide varibles
         i(["o", (object)
             ['T' => $T,
              'filename_shown' => 0,
-            'fail' => 0,
-            'new' => 0,
-            'tests' => 0,
+            'fail' => 0, 'new' => 0, 'tests' => 0,
             'start' => microtime(1),
             ]
             ]);
-        $ARG = \STest::$args; // Visible inside TEST
-
+        $ARG = \STest::$ARG; // Visible inside TEST, can be modified inside test
         // i(console)->err wrapper
         $__err = function($s, $reason = "failed") {
             if (! i('o')->filename_shown) {
@@ -403,7 +398,9 @@ class STest_File_Commands {
 
         @$ARG['verbose'] && i('console')->e("*** {head}%s{/}\n", i('stest')->file);
 
+        //
         // MAIN TEST LOOP BEGIN ------------------
+        //
         foreach (i('o')->T as &$__line__tp_v_r) { // [ln, [tp, v, r]]
             [$__line, [$__type, $__code]] = $__line__tp_v_r;
             if ($__type == 'expr') {
@@ -438,7 +435,9 @@ class STest_File_Commands {
                 }
             }
         }
+        //
         // MAIN TEST LOOP END ------------------
+        //
 
         $dur = microtime(1) - i('o')->start;
         $stat = "tests: ".i('o')->tests;
