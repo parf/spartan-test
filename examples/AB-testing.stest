@@ -1,0 +1,31 @@
+#!/bin/env stest
+<?php
+
+/*
+  Typical pattern:
+
+  Default test for old-api, when "-b" or "--b" option specified new-api is used
+
+;  if ($ARG['b']) {
+      include "new-api.php";
+   } else {
+      include "old-api.php";
+   }
+
+*/
+
+
+; $def = function ($a) { return $a; };
+; if (@$ARG['b']) { // check for -b option
+     $def = function ($a) { return 2 * $a; };
+  };
+
+$def(0);
+    0;
+$def(1);
+    1;
+; $r=[]; foreach (Range(1,10) as $i) $r[] = $def($i);
+$r;
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+

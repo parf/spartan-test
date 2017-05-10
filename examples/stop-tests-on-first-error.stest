@@ -1,0 +1,18 @@
+//
+// You can change stest mode and stop test on first error
+//
+// command line: --first_error (-1)
+// runtime:      $ARG['first_error'] = 1
+//
+
+1+1
+    2.01
+
+2*2
+    5
+
+// stop test on every error
+$ARG['first_error'] = 1; 
+3*3
+    10
+

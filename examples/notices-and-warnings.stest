@@ -1,0 +1,63 @@
+/*
+  How to ignore notices, warnings and other php messages in stest
+*/
+
+# Default behaviour is E_ALL (php.ini error_reporting)
+# fail on all kinds of notices/warnings/errors/...
+$undefined;
+    ["error"=>"NOTICE: Undefined variable: undefined"];
+1/0;
+    ["error"=>"WARNING: Division by zero"];
+; $a = ['a' => 1];
+$a['a'];
+    1;
+$a['b'];
+    ["error"=>"NOTICE: Undefined index: b"];
+@$a['b']; // safe way;
+    NULL;
+
+# suppress notices
+stest\Error::suppress_notices();
+    NULL;
+$undefined;
+    NULL;
+1/0;
+    ["error"=>"WARNING: Division by zero"];
+$a['b'];
+    NULL;
+
+# suppress warnings (usually this is a bad idea)
+stest\Error::suppress_warnings();
+    NULL;
+$undefined;
+    NULL;
+1/0;
+    INF;
+
+# You can suppress more !!
+# set stest\Error::$error_reporting to any value (~ of value as in php.ini error_reporting)
+stest\Error::$error_reporting;
+    10;
+
+E_NOTICE | E_WARNING;
+    10;
+
+# suppress deprecated-warnings and warnings and notices
+; class X { function a() { echo "x"; } };
+X::a();
+    ["error"=>"E_DEPRECATED: Non-static method X::a() should not be called statically"];
+; stest\Error::$error_reporting |= E_DEPRECATED;
+X::a();
+    [NULL, "$"=>"x"];
+
+# explicit
+; stest\Error::$error_reporting = E_DEPRECATED | E_NOTICE | E_WARNING;
+X::a($a['b']);
+    [NULL, "$"=>"x"];
+
+# report notices, ignore deprecated
+# multiple errors combined
+; stest\Error::$error_reporting = E_DEPRECATED;
+X::a($a['b'], $a['c']);
+    ["error"=>["NOTICE: Undefined index: b", "NOTICE: Undefined index: c"]];
+

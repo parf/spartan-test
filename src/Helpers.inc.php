@@ -588,14 +588,18 @@ class Console {
     }
 
 
-    // i('console', [$color, $silent])
+    // i([color, silent, syslog])
     static function I(array $config) { # Instance
-        [$color, $silent] = $config;
-        $m = 2*((int) $color) + (int) $silent;
+        @['color' => $color, 'silent' => $silent, 'syslog' => $syslog] = $config;
+        $m = (int)$silent + 2*(int)$color + 4*(int)$syslog;
         $map = [0 => 'ConsoleMono',
                 1 => 'ConsoleMonoErrorOnly',
                 2 => 'Console',
                 3 => 'ConsoleErrorOnly',
+                4 => 'ConsoleSyslog',
+                5 => 'ConsoleSyslogErrorOnly',
+                6 => 'ConsoleSyslog',           // ignore color
+                7 => 'ConsoleSyslogErrorOnly',  // ignore color
                 ];
         $class = "stest\\helper\\".$map[$m];
         return new $class();
@@ -631,6 +635,21 @@ class ConsoleMonoErrorOnly extends ConsoleMono {
 
 }
 
+class ConsoleSyslog extends ConsoleMono {
+
+    static function e(string $s, ...$args) {
+        Alerter::syslog(self::r($s, $args), LOG_NOTICE);
+    }
+
+    static function err(string $s, ...$args) {
+        Alerter::syslog(self::r($s, $args), LOG_WARNING);
+    }
+
+}
+
+class ConsoleSyslogErrorOnly extends ConsoleSyslog {
+    static function e(string $s, ...$args) {}
+}
 
 // -------------------------
 // Documentor

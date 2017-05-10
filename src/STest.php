@@ -132,9 +132,9 @@ class STest {
     function init($argv) {
         self::parseArgs($argv);
         // setup console
-        I(['console', helper\Console::i([@self::$ARG['color'], @self::$ARG['silent']])]);
+        I(['out', helper\Console::i(@self::$ARG)]); // color, silent, syslog
         if (@self::$ARG['debug'])
-            I('console')->e("{green}Spartan Test v".VERSION."{/} on ".gethostname()." at ".date("Y-m-d H:i")."\n");
+            I('out')->e("{green}Spartan Test v".VERSION."{/} on ".gethostname()." at ".date("Y-m-d H:i")."\n");
         if (! self::$TESTS && ! @self::$ARG['tag'])
             self::$ARG = ["help" => 1];
         set_error_handler('\\stest\\Error::handler', E_ALL);
@@ -158,7 +158,7 @@ class STest {
             helper\InstanceConfig::init($file);
             $T = helper\Parser::Reader($file);
         } catch(\Exception $ex) {
-            i('console')->e("*** {alert}$file{/}. Error: ".$ex->getMessage());
+            i('out')->e("*** {alert}$file{/}. Error: ".$ex->getMessage());
             return;
         }
         $cmd = 0;
@@ -230,6 +230,11 @@ class STest_Global_Commands {
     static function silent() {}
 
     /**
+     * output to syslog (to send errors-only to syslog: --syslog -s)
+     */
+    static function syslog() {}
+
+    /**
      * stop on first error encountered in test (-1)
      * inside test: "; $ARG['first_error'] = 1;"
      */
@@ -242,7 +247,7 @@ class STest_Global_Commands {
 
     /**
      * error handler
-     * \stest\Error::$suppress;  - bitmask to suppress errors
+     * \stest\Error::$error_reporting;  - bitmask to suppress errors
      * \stest\Error::suppress_notices()  - ignore notices (suppress reporting)
      * \stest\Error::suppress_warnings() - ignore warnings (suppress reporting)
      */
@@ -266,10 +271,10 @@ class STest_Global_Commands {
     static function help() {
         if (STest::$ARG['silent'])
             return;
-        $e = [i('console'), 'e'];
+        $e = [i('out'), 'e'];
         $h = function ($h, $title) use ($e) {
             $e("{head}%s{/}\n", $title);
-            $e($h[""], "\n\n");
+            $e($h[""]. "\n");
             foreach ($h as $method => $doc) {
                 if (! $method)
                     continue;
@@ -279,8 +284,8 @@ class STest_Global_Commands {
             $e("\n");
         };
         $e("{bold}Spartan Test v".VERSION." minimalistic php 7.1 testing framework done right{/}\n");
-        $h ( helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), "Global Options");
-        $h ( helper\Documentor::classDoc("\\stest\\STest_File_Commands"), "File Actions");
+        $h ( helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), "Options");
+        $h ( helper\Documentor::classDoc("\\stest\\STest_File_Commands"), "Actions");
         #echo json_encode(helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), JSON_PRETTY_PRINT), "\n";
         #echo json_encode(helper\Documentor::classDoc("\\stest\\STest_File_Commands"), JSON_PRETTY_PRINT), "\n";
     }
@@ -329,45 +334,43 @@ class STest_File_Commands {
       * -g | --generate - regenerate test, ignore errors
       */
     static function test(array /* parsed-test */ $T) {
-        // using i('o') to hide varibles
-        i(["o", (object)
+        $__t = (object) // hide variables
             ['T' => $T,
              'filename_shown' => 0,
             'fail' => 0, 'new' => 0, 'tests' => 0,
             'start' => microtime(1),
-            ]
-            ]);
+            ];
         $ARG = \STest::$ARG; // Visible inside TEST, can be modified inside test
-        // i(console)->err wrapper
-        $__err = function($s, $reason = "failed") {
-            if (! i('o')->filename_shown) {
-                i('console')->err("*** {alert}%s %s{/}\n", i('stest')->file, $reason);
-                i('o')->filename_shown = 1;
+        // show filename above first error
+        $__err = function($s, $reason = "failed") use ($__t) {
+            if (! $__t->filename_shown) {
+                i('out')->err("*** {alert}%s %s{/}\n", i('stest')->file, $reason);
+                $__t->filename_shown = 1;
             }
-            i('console')->err($s);
+            i('out')->err($s);
         };
 
-        $__tester = function(string &$expected, $got, $line, $code) use ($__err, &$ARG) {
+        $__tester = function(string &$expected, $got, $line, $code) use ($__err, &$ARG, $__t) {
             $exp = trim($expected, ";");
             $got = helper\x2s($got, @$ARG['sort']);
             if ($exp == $got)
                 return;
             if (@$ARG['generate']) { // generate all results in test
-                i('o')->fail++;
+                $__t->fail++;
                 $expected = $got.";"; // save corrected result
                 return;
             }
             $code = str_replace("\n", " ", $code);
             $code = preg_replace("/\s+/", " ", $code);
             if (! $expected) { // NEW TEST - generate result
-                i('o')->new++;
+                $__t->new++;
                 $expected = $got.";"; // save generated result
                 $__err("{bold}{blue}L$line{/}: $code\n");
                 $__err(" got: {blue}$got{/}\n");
                 return;
             }
             // FAILED TEST
-            i('o')->fail++;
+            $__t->fail++;
             $__err("{alert}L$line{/}: {red}$code{/}\n");
             $__err(" expected: {cyan}".$exp."{/}\n");
             $__err(" got: {red}$got{/}\n");
@@ -375,12 +378,12 @@ class STest_File_Commands {
                 throw new StopException("Stopping on first error");
         };
 
-        $__expr_exception = function (\Exception $ex, $line) use ($__err) {
+        $__expr_exception = function (\Exception $ex, $line) use ($__err, $__t) {
             $m = $ex->getMessage();
             $class = get_class($ex);
             if ( is_a($ex, "\stest\Exception")) {
                 if (is_a($ex, "\stest\StopException")) {
-                    i('console')->e("*** {head}%s{/} {warn}Test stopped{/} at line $line : $m\n", i('stest')->file);
+                    i('out')->e("*** {head}%s{/} {warn}Test stopped{/} at line $line : $m\n", i('stest')->file);
                     return;
                 }
                 $err = "TestFlow Exception `$class`";
@@ -396,16 +399,16 @@ class STest_File_Commands {
             $__err("{alert}$err{/} at line $line: $m\n", "Unsuccessfully Stopped");
         };
 
-        @$ARG['verbose'] && i('console')->e("*** {head}%s{/}\n", i('stest')->file);
+        @$ARG['verbose'] && i('out')->e("*** {head}%s{/}\n", i('stest')->file);
 
         //
         // MAIN TEST LOOP BEGIN ------------------
         //
-        foreach (i('o')->T as &$__line__tp_v_r) { // [ln, [tp, v, r]]
+        foreach ($__t->T as &$__line__tp_v_r) { // [ln, [tp, v, r]]
             [$__line, [$__type, $__code]] = $__line__tp_v_r;
             if ($__type == 'expr') {
                 try {
-                    @$ARG['verbose'] && i('console')->e("{grey}%s{/}\n", $__code);
+                    @$ARG['verbose'] && i('out')->e("{grey}%s{/}\n", $__code);
                     eval($__code);
                 } catch(\Exception $__exception) {
                     $__expr_exception($__exception, $__line);
@@ -413,9 +416,9 @@ class STest_File_Commands {
                 }
             }
             if ($__type  == "test") {
-                i('o')->tests++;
+                $__t->tests++;
                 try {
-                    @$ARG['verbose'] && i('console')->e("{cyan}%s{/}\n", $__code);
+                    @$ARG['verbose'] && i('out')->e("{cyan}%s{/}\n", $__code);
                     ob_start();
                     $__rz = eval("return $__code");
                     $__out = ob_get_clean();
@@ -426,11 +429,11 @@ class STest_File_Commands {
                 } catch(\Exception $__exception) {
                     $__rz = [get_class($__exception), $__exception->getMessage()];
                 }
-                @$ARG['verbose'] && i('console')->e("    {green}%s{/}\n", helper\x2s($__rz));
+                @$ARG['verbose'] && i('out')->e("    {green}%s{/}\n", helper\x2s($__rz));
                 try {
                     $__tester($__line__tp_v_r[1][2], $__rz, $__line, $__code);
                 } catch(\stest\StopException $__exception) {
-                    i('console')->e("*** {head}%s{/} {warn}Test stopped{/} at line $__line : ".$__exception->getMessage()."\n", i('stest')->file);
+                    i('out')->e("*** {head}%s{/} {warn}Test stopped{/} at line $__line : ".$__exception->getMessage()."\n", i('stest')->file);
                     return;
                 }
             }
@@ -439,21 +442,21 @@ class STest_File_Commands {
         // MAIN TEST LOOP END ------------------
         //
 
-        $dur = microtime(1) - i('o')->start;
-        $stat = "tests: ".i('o')->tests;
+        $dur = microtime(1) - $__t->start;
+        $stat = "tests: ".$__t->tests;
         if ($dur > 0.1) // require at least 0.1 sec
             $stat .= " (".sprintf("%0.2f", $dur)."s)";
-        if ($new = i('o')->new)
+        if ($new = $__t->new)
             $stat .= ", {blue}{bold}new: $new{/}";
-        if ($fail = i('o')->fail) {
+        if ($fail = $__t->fail) {
             $__err("{alert}>{/} $stat, {warn}failed: $fail{/}\n");
         } else {
-            i('console')->e("*** {head}%s{/} $stat\n", i('stest')->file);
+            i('out')->e("*** {head}%s{/} $stat\n", i('stest')->file);
         }
 
         // save test when '--generate' option, or new items were added and no tests failed
-        if ((i('o')->new && ! i('o')->fail) || @$ARG['generate'])
-            self::save(i('o')->T);
+        if (($__t->new && ! $__t->fail) || @$ARG['generate'])
+            self::save($__t->T);
     }
 
     /**
@@ -481,7 +484,7 @@ class STest_File_Commands {
     static function save($T) {
         # echo json_encode($T);
         $filename = i('stest')->file;
-        i('console')->e("*** {head}%s{/} saved\n", $filename);
+        i('out')->e("*** {head}%s{/} saved\n", $filename);
         $s = self::cat($T, 0);
         file_put_contents($filename, $s);
     }
@@ -502,7 +505,7 @@ class STest_File_Commands {
      */
     static function tag($v) {
         if ($v === true) {
-            $e = [i('console'), 'e'];
+            $e = [i('out'), 'e'];
             $e("{head}STest --tag=\"...\" option{/}\n");
             $e("comma separated list of tag groups, test will be executed if it matches any group\n");
             $e("{blue}tag1,tag2,tag3{/} - execute test if it have tag1 or tag2 or tag3\n");
@@ -529,7 +532,7 @@ class STest_File_Commands {
  */
 class Error {  // error handler
 
-    PUBLIC static $suppress = 0;      // bit-mask to suppress errors
+    PUBLIC static $error_reporting = 0;      // bit-mask to suppress errors
 
     private static $err = []; // php-errors from error handler - use get() to read
 
@@ -540,9 +543,9 @@ class Error {  // error handler
         return sizeof($e) == 1 ? $e[0] : $e;
     }
 
-    PUBLIC static function suppress_notices() { self::$suppress |= E_NOTICE; }
-    PUBLIC static function suppress_warnings() { self::$suppress |= E_WARNING; }
-    // if you want to suppress something else - change Error::$suppress
+    PUBLIC static function suppress_notices() { self::$error_reporting |= E_NOTICE; }
+    PUBLIC static function suppress_warnings() { self::$error_reporting |= E_WARNING; }
+    // if you want to suppress something else - change Error::$error_reporting
 
     // Error::handler
     static function handler($level, $message, $file, $line, $context) {
@@ -550,7 +553,7 @@ class Error {  // error handler
         // you can't hide errors
         if (!error_reporting() && ($level == E_WARNING || $level == E_NOTICE))
             return;
-        if ($level & self::$suppress) // allow people to debug ugly code
+        if ($level & self::$error_reporting) // allow people to debug ugly code
             return;
         static $map=array(
                           E_NOTICE       => 'NOTICE',
@@ -559,6 +562,7 @@ class Error {  // error handler
                           E_USER_WARNING => 'USER WARNING',
                           E_USER_NOTICE  => 'USER NOTICE',
                           E_STRICT       => 'E_STRICT',
+                          E_DEPRECATED   => 'E_DEPRECATED',
                           );
         $type = ($t = @$map[$level]) ? $t : "ERROR#$level";
         $e = "$type: $message";

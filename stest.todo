@@ -40,7 +40,7 @@ STEP 1:
  ✔ array sorting @done (17-05-08 13:05)
  ✔ PHP notices & errors @done (17-05-08 13:05)
 
- ☐ config
+ ✔ config @done (17-05-10 14:23)
 
  ☐ --new
 
@@ -70,6 +70,8 @@ STEP 1:
    ☐ dynamic methods
 
  ☐ Split InstanceConfig to Instance and Config:  C(...)
+
+ ☐ syslog reporting
 
 TODO :
  ✔ do not re-ident "; expressions" @done (17-05-05 13:37)

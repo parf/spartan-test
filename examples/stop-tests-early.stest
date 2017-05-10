@@ -1,0 +1,31 @@
+//
+// You can successfully or unsuccessfully stop test
+//
+
+//
+// try to run this test 
+// 1. as-is (try to use -v aka --verbose)
+// 2. with --no-db option  (emulate OK-database failure) - STest::stop case
+// 3. with --no-db --force options - STest::erorr case
+// 4. with --test-alert option
+//
+
+# using "--no-db" to emulate absense of database
+; $db_connection = function () use ($ARG) { return @$ARG['no-db'] ? 0 : 1; };
+
+# Stoping test via STest::stop(..)
+# Test stopped this way is not considered as a failed test
+# You can ignore `stop` with --force
+; if (! $db_connection()) STest::stop("no database found, test skipped");
+
+# Stoping test via STest::error(..)
+# Test stopped this way is a FAILED test
+# You can't ignore STest::error
+; if (! $db_connection()) STest::error("no database found - error condition");
+
+# STest::alert works same way as ::error, however Reporter class will call Alert handler
+# for production systems you should receive SMS or Slack alert in this case
+; @$ARG['test-alert'] && STest::alert("no database found - alert condition");
+
+$db_connection();
+    1;
