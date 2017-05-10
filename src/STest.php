@@ -276,7 +276,7 @@ class STest_Global_Commands {
             $e("{head}%s{/}\n", $title);
             $e($h[""]. "\n");
             foreach ($h as $method => $doc) {
-                if (! $method)
+                if (! $method || $method{0} == '_')
                     continue;
                 $e("  {blue}{bold}%s{/}", str_pad($method, 16));
                 $e(" {grey}%s{/}\n", str_replace("\n", "\n                   ", $doc));
@@ -334,7 +334,7 @@ class STest_File_Commands {
       * -g | --generate - regenerate test, ignore errors
       */
     static function test(array /* parsed-test */ $T) {
-        $__t = (object) // hide variables
+        $__t = (object) // dummy object used to hide variables
             ['T' => $T,
              'filename_shown' => 0,
             'fail' => 0, 'new' => 0, 'tests' => 0,
@@ -352,6 +352,8 @@ class STest_File_Commands {
 
         $__tester = function(string &$expected, $got, $line, $code) use ($__err, &$ARG, $__t) {
             $exp = trim($expected, ";");
+            if ($exp{0} == '~')
+                return self::_special_test($exp, $got, $__err, $ARG, $__t, $line, $code);
             $got = helper\x2s($got, @$ARG['sort']);
             if ($exp == $got)
                 return;
@@ -457,6 +459,70 @@ class STest_File_Commands {
         // save test when '--generate' option, or new items were added and no tests failed
         if (($__t->new && ! $__t->fail) || @$ARG['generate'])
             self::save($__t->T);
+    }
+
+    /**
+     *
+     */
+    static function _special_test($exp, $got, $__err, $ARG, $__t, $line, $code) {
+        $x = trim($exp, "~ ");
+        @$ARG['debug']+0>1 && print(" ~test: ". helper\x2s(['code' => $code, 'got' => $got, '~test' => $x])."\n" );
+        $err = ""; // test-error found
+        switch ($x{0}) {
+            case '"': // "substring"
+                $x = eval("return $x;");
+                if (strpos($got, $x) !== false)
+                    return;
+                $err = "substring-expected: '{cyan}$x{/}'";
+                break;
+            case '[': // in-array
+                $x = eval("return $x;");
+                if (! is_array($got)) {
+                    $err = "array expected";
+                } else {
+                    foreach ($x as $k => $e) { // e - element
+                        if (! is_int($k)) {
+                            if (@$got[$k] == $e)
+                                continue;
+                            $err = " array-element {cyan}\"$k\" => ".helper\x2s($e)."{/} expected";
+                            break;
+
+                        }
+                        if (! in_array($e, $got)) {
+                            $err = " array-element-expected: {cyan}".helper\x2s($e)."{/}";
+                            break;
+                        }
+                    }
+                }
+                break;
+            case '/': // regexp
+                if (! is_string($got)) {
+                    $err = "regexp match - string expected got:{cyan}".helper\x2s($got)."{/}";
+                    break;
+                }
+                if (! preg_match($x, $got))
+                    $err = " regexp match expected {cyan}".helper\x2s($x)."{/}";
+                break;
+            default:
+                @[$op, $arg] = explode(" ", $x, 2);
+                if ($op && ! $arg) { # ~ ClassName case
+                    if (! is_object($got)) {
+                        $err = "Object expected";
+                        break;
+                    }
+                    if (! is_a($got, $op))
+                        $err = "{cyan}$op{/} descendant object expected, got {red}".get_class($got)."{/} object";
+                    break;
+                }
+
+                $err = "{alert}Unsupported test{/} $exp";
+                break;
+        }
+        if ($err) {
+            $__err("{alert}L$line{/}: {red}$code{/}\n");
+            $__err(" $err\n");
+            $__t->fail++;
+        }
     }
 
     /**

@@ -42,7 +42,7 @@ STEP 1:
 
  ✔ config @done (17-05-10 14:23)
 
- ☐ --new
+ ☐ --new << ?? - idea execute previous expression
 
  ☐ ~ tests
    ~ "SubString"
@@ -71,7 +71,13 @@ STEP 1:
 
  ☐ Split InstanceConfig to Instance and Config:  C(...)
 
- ☐ syslog reporting
+ ✔ syslog reporting @done (17-05-10 15:48)
+
+ ☐ reporting:
+   success / fail / alert
+   ☐ --error-as-alert support
+
+ ☐ docs
 
 TODO :
  ✔ do not re-ident "; expressions" @done (17-05-05 13:37)

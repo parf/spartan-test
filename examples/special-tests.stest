@@ -1,0 +1,54 @@
+#!/bin/env stest
+
+#
+# "~tests"
+#
+# using this tests will make your test php-incompatible
+#
+
+# intance-of
+new DateTime()
+    ~ DateTime
+new DateTime()
+    ~ Directory
+
+# match substring
+"Cat jumped off the bed"
+    ~ "off"
+"Cat jumped off the bed"
+    ~ "Dog"
+# you can use php expressions inside a tes
+"Cat jumped off the bed"
+    ~ "j".chr(117)."mped"
+
+# in-array
+[1,2,3,4,5]
+    ~ [3]
+[1,2,3,4,5]
+    ~ ["a"]
+# in-array - multiple values
+[1,2,3,4,5]
+    ~ [2,4]
+# in-array - key => value pairs
+$a = ['a' => 1, 'b' => 2]
+    ~ ['a' => 1]
+$a
+    ~ ['a' => 1, 'b' => 2]
+$a
+    ~ ['a' => 2]
+$a
+    ~ ['c' => 3]
+# is array test
+$a
+    ~ []
+
+# regexp
+"Lorem ipSum dolor sit amet, consectetur adipiscing elit"
+    ~ /..sum/i
+
+"Lorem ipSum dolor sit amet, consectetur adipiscing elit"
+    ~ /XXX/
+
+"Lorem ipSum dolor sit amet, consectetur adipiscing ElIt"
+    ~ /elit$/i
+
