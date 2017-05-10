@@ -522,6 +522,8 @@ class STest_File_Commands {
             $__err("{alert}L$line{/}: {red}$code{/}\n");
             $__err(" $err\n");
             $__t->fail++;
+            if (@$ARG['first_error'])
+                throw new StopException("Stopping on first error");
         }
     }
 
