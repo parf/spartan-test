@@ -678,6 +678,57 @@ class Documentor {
 
 }
 
+/**
+* Reporter
+* extend this class and specify reporter in config: "reporter" : "ReporterClass"
+*
+* receive test result notifications: success/fail, STest::stop/error/alert
+*
+*/
+class Reporter {
+
+    /**
+     * called upon successful test execution
+     * tests_nn - number of tests executed
+     */
+    function success(string $test, array $stats = []) {
+
+    }
+
+    /**
+     * STest::stop endpoint
+     * default: considered as success
+     */
+    function stop(string $test, array $stats = []) {
+        $this->success($test, $stats);
+    }
+
+    /**
+     * called upon UN-successful test execution (at least one test failed)
+     */
+    function fail(string $test, array $stats = []) {
+
+    }
+
+    /**
+     * STest::error endpoint
+     * stats['message'] contains message
+     * default: considered as fail
+     */
+    function error(string $test, array $stats = []) {
+        $this->fail($test, $stats);
+    }
+
+    /**
+     * case 1: STest::alert endpoint
+     * case 2: $ARG['alert-on-fail'] used and test failed
+     * stats['message'] contains message
+     */
+    function alert(string $test, array $stats = []) {
+
+    }
+
+}
 
 /**
  * Alerter - connectivity with other systems

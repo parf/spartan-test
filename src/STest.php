@@ -195,10 +195,6 @@ class STest {
         }
     }
 
-    function reportTestException(Exception $ex, $line) {
-        // todo move to i('reporter')
-    }
-
 }
 
 /**
@@ -382,23 +378,12 @@ class STest_File_Commands {
 
         $__expr_exception = function (\Exception $ex, $line) use ($__err, $__t) {
             $m = $ex->getMessage();
-            $class = get_class($ex);
-            if ( is_a($ex, "\stest\Exception")) {
-                if (is_a($ex, "\stest\StopException")) {
-                    i('out')->e("*** {head}%s{/} {warn}Test stopped{/} at line $line : $m\n", i('stest')->file);
-                    return;
-                }
-                $err = "TestFlow Exception `$class`";
-                if (is_a($ex, "\stest\ErrorException"))
-                    $err = "TEST ERROR";
-                if (is_a($ex, "\stest\AlertException"))
-                    $err = " !!!  TEST ALERT  !!! ";
-                i('stest')->reportTestException($ex, $line);
-                $__err("{alert}$err{/} at line $line: $m\n", "Stopped");
-                return;
-            }
-            // \Exception
-            $__err("{alert}$err{/} at line $line: $m\n", "Unsuccessfully Stopped");
+            $class = str_replace("stest\\", "", get_class($ex));
+            if ($class === "StopException")
+                return i('out')->e("*** {head}%s{/} {warn}$class{/} at line $line : $m\n", i('stest')->file);
+            if ( is_a($ex, "stest\StopException")) // stop / alert
+                return $__err("{alert}".str_replace("Exception", "", $class)."{/} at line $line: $m\n", $class);
+            $__err("{alert}$class{/} at line $line: $m\n", "Unexpected Exception");
         };
 
         @$ARG['verbose'] && i('out')->e("*** {head}%s{/}\n", i('stest')->file);
@@ -435,6 +420,7 @@ class STest_File_Commands {
                 try {
                     $__tester($__line__tp_v_r[1][2], $__rz, $__line, $__code);
                 } catch(\stest\StopException $__exception) {
+                    // so far only one case: --first_error
                     i('out')->e("*** {head}%s{/} {warn}Test stopped{/} at line $__line : ".$__exception->getMessage()."\n", i('stest')->file);
                     return;
                 }
@@ -462,9 +448,11 @@ class STest_File_Commands {
     }
 
     /**
-     *
+     * INTERNAL
+     * special "~XXX" tests
+     * @see examples/special-tests.stest
      */
-    static function _special_test($exp, $got, $__err, $ARG, $__t, $line, $code) {
+    static private function _special_test($exp, $got, $__err, $ARG, $__t, $line, $code) {
         $x = trim($exp, "~ ");
         @$ARG['debug']+0>1 && print(" ~test: ". helper\x2s(['code' => $code, 'got' => $got, '~test' => $x])."\n" );
         $err = ""; // test-error found
@@ -650,8 +638,8 @@ class Exception extends \Exception {}
 class SyntaxErrorException extends Exception  {}
 
 class StopException extends Exception  {}   // \STest::stop("message")   -- Successfully Stop Test, ignore rest of the test
-class ErrorException extends Exception {}   // \STest::error("message")  -- UNSuccessfully Stop Test, ignore rest of the test
-class AlertException extends Exception {}   // \STest::alert("message")  -- UNSuccessfully Stop Test, send an alert, ignore rest of the test
+class ErrorException extends StopException {}   // \STest::error("message")  -- UNSuccessfully Stop Test, ignore rest of the test
+class AlertException extends StopException {}   // \STest::alert("message")  -- UNSuccessfully Stop Test, send an alert, ignore rest of the test
 
 
 

@@ -61,7 +61,8 @@ STEP 1:
  ☐ testFailAlert
 
  ☐ Alerter::
-     Syslog, json
+     ✔ Syslog, json @done (17-05-11 17:10)
+     ☐ logs
 
  ☐ isProd, isDVP, isCI
 
@@ -78,6 +79,16 @@ STEP 1:
    ☐ --error-as-alert support
 
  ☐ docs
+
+ ☐ rewrite special test -
+   should only return ERR !!!
+
+ ☐ rewrite test loop
+   no early returns return
+
+ ☐ incorporate smart array compare
+    incorporate smart string compare
+    show/highlight only changed / removed parts
 
 TODO :
  ✔ do not re-ident "; expressions" @done (17-05-05 13:37)

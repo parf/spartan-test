@@ -1,5 +1,5 @@
 {
  "stest"   :"STest",
- "console" :"stest\\helper\\Console",
- "init"    :"init.php"
+ "init"    :"init.php",
+ "reporter" :"stest\\helper\\Reporter"
 }
