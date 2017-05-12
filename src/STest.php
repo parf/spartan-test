@@ -426,7 +426,7 @@ class STest_File_Commands {
             //
         } catch (StopException $__ex) { // Stop/Error/Alert
             $m = $__ex->getMessage();
-            $reason = str_replace(["Exception", "stest\\"], "", get_class($__ex));
+            $reason = str_replace(["Exception", "stest\\"], "", get_class($__ex)); // Stop/Error/Alert
             if ($reason === "Stop")
                 i('out')->e("*** {head}%s{/} {warn}Test stopped{/} at line $__line : $m\n", $__t->filename);
             else
@@ -450,6 +450,9 @@ class STest_File_Commands {
         // save test when '--generate' option, or new items were added and no tests failed
         if (($__t->new && ! $__t->fail) || @$ARG['generate'])
             self::save($__t->T);
+
+        $how = $fail ? "fail" : "success";
+        i('reporter')->$how($__t->filename, array_filter(['tests' => $__t->tests, 'new' => $__t->new, 'fail' => $__t->fail]));
     }
 
     /**
@@ -457,7 +460,7 @@ class STest_File_Commands {
      * special "~XXX" tests
      * @see examples/special-tests.stest
      */
-    static private function _special_test($exp, $got) { # error
+    static private function _special_test($exp, $got) /*: ?string*/ { # error | null
         $x = trim($exp, "~ ");
         $err = ""; // test-error found
         switch ($x{0}) {
