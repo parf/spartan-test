@@ -329,27 +329,39 @@ class STest_File_Commands {
       * -v | --verbose  - show statements being executed
       * -g | --generate - regenerate test, ignore errors
       */
-    static function test(array /* parsed-test */ $T) {
+    static function test(array /* parsed-test */ $__TEST) {
         $__t = (object) // dummy object used to hide variables
-            ['T' => $T,
-             'filename_shown' => 0,
+            ['T' => $__TEST,
             'fail' => 0, 'new' => 0, 'tests' => 0,
             'start' => microtime(1),
+             'filename_shown' => 0,
+            'filename' => realpath(i('stest')->file),
             ];
+
         $ARG = \STest::$ARG; // Visible inside TEST, can be modified inside test
         // show filename above first error
         $__err = function($s, $reason = "failed") use ($__t) {
             if (! $__t->filename_shown) {
-                i('out')->err("*** {alert}%s %s{/}\n", i('stest')->file, $reason);
+                i('out')->err("*** {alert}%s %s{/}\n", $__t->filename, $reason);
                 $__t->filename_shown = 1;
             }
-            i('out')->err($s);
+            i('out')->err($s."\n");
         };
 
         $__tester = function(string &$expected, $got, $line, $code) use ($__err, &$ARG, $__t) {
+            $showError = function($err) use ($line, $code, $__err, $ARG, $__t) {
+                // FAILED TEST
+                $__t->fail++;
+                $__err("{alert}L$line{/}: {red}$code{/}\n $err");
+                if (@$ARG['first_error'])
+                    throw new StopException("Stopping on first error");
+            };
             $exp = trim($expected, ";");
-            if ($exp{0} == '~')
-                return self::_special_test($exp, $got, $__err, $ARG, $__t, $line, $code);
+            if ($exp{0} == '~') { // ~XXX special tests
+                if ($err = self::_special_test($exp, $got))
+                    $showError($err);
+                return;
+            }
             $got = helper\x2s($got, @$ARG['sort']);
             if ($exp == $got)
                 return;
@@ -363,72 +375,65 @@ class STest_File_Commands {
             if (! $expected) { // NEW TEST - generate result
                 $__t->new++;
                 $expected = $got.";"; // save generated result
-                $__err("{bold}{blue}L$line{/}: $code\n");
-                $__err(" got: {blue}$got{/}\n");
+                $__err("{bold}{blue}L$line{/}: $code");
+                $__err(" got: {blue}$got{/}");
                 return;
             }
-            // FAILED TEST
-            $__t->fail++;
-            $__err("{alert}L$line{/}: {red}$code{/}\n");
-            $__err(" expected: {cyan}".$exp."{/}\n");
-            $__err(" got: {red}$got{/}\n");
-            if (@$ARG['first_error'])
-                throw new StopException("Stopping on first error");
+
+            $showError("expected: {cyan}".$exp."{/}\n  got: {red}$got{/}");
         };
 
-        $__expr_exception = function (\Exception $ex, $line) use ($__err, $__t) {
-            $m = $ex->getMessage();
-            $class = str_replace("stest\\", "", get_class($ex));
-            if ($class === "StopException")
-                return i('out')->e("*** {head}%s{/} {warn}$class{/} at line $line : $m\n", i('stest')->file);
-            if ( is_a($ex, "stest\StopException")) // stop / alert
-                return $__err("{alert}".str_replace("Exception", "", $class)."{/} at line $line: $m\n", $class);
-            $__err("{alert}$class{/} at line $line: $m\n", "Unexpected Exception");
-        };
+        @$ARG['verbose'] && i('out')->e("*** {head}%s{/}\n", $__t->filename);
 
-        @$ARG['verbose'] && i('out')->e("*** {head}%s{/}\n", i('stest')->file);
-
-        //
-        // MAIN TEST LOOP BEGIN ------------------
-        //
-        foreach ($__t->T as &$__line__tp_v_r) { // [ln, [tp, v, r]]
-            [$__line, [$__type, $__code]] = $__line__tp_v_r;
-            if ($__type == 'expr') {
-                try {
-                    @$ARG['verbose'] && i('out')->e("{grey}%s{/}\n", $__code);
-                    eval($__code);
-                } catch(\Exception $__exception) {
-                    $__expr_exception($__exception, $__line);
-                    return;
-                }
-            }
-            if ($__type  == "test") {
-                $__t->tests++;
-                try {
-                    @$ARG['verbose'] && i('out')->e("{cyan}%s{/}\n", $__code);
-                    ob_start();
-                    $__rz = eval("return $__code");
-                    $__out = ob_get_clean();
-                    if ($__out)
-                        $__rz  = [$__rz, '$' => $__out];
-                    if ($__error = Error::get())
-                        $__rz = ['error' => $__error];
-                } catch(\Exception $__exception) {
-                    $__rz = [get_class($__exception), $__exception->getMessage()];
-                }
-                @$ARG['verbose'] && i('out')->e("    {green}%s{/}\n", helper\x2s($__rz));
-                try {
+        try {
+            //
+            // MAIN TEST LOOP BEGIN ------------------
+            //
+            foreach ($__t->T as &$__line__tp_v_r) { // [ln, [tp, v, r]]
+                [$__line, [$__type, $__code]] = $__line__tp_v_r;
+                if ($__type == 'expr') {
+                    try {
+                        @$ARG['verbose'] && i('out')->e("{grey}%s{/}\n", $__code);
+                        eval($__code);
+                    } catch(StopException $__ex) {
+                        throw $__ex;
+                    } catch(\Exception $__ex) {
+                        throw new ErrorException("Unexpected exception ".get_class($ex)." ".$ex->getMessage());
+                    }
+                } // if-expr
+                if ($__type  == "test") {
+                    $__t->tests++;
+                    try {
+                        @$ARG['verbose'] && i('out')->e("{cyan}%s{/}\n", $__code);
+                        ob_start();
+                        $__rz = eval("return $__code");
+                        $__out = ob_get_clean();
+                        if ($__out)
+                            $__rz  = [$__rz, '$' => $__out];
+                        if ($__error = Error::get())
+                            $__rz = ['error' => $__error];
+                    } catch(StopException $__ex) {
+                        throw $__ex;
+                    } catch(\Exception $__ex) {
+                        $__rz = [get_class($__ex), $__ex->getMessage()];
+                    }
+                    @$ARG['verbose'] && i('out')->e("    {green}%s{/}\n", helper\x2s($__rz));
                     $__tester($__line__tp_v_r[1][2], $__rz, $__line, $__code);
-                } catch(\stest\StopException $__exception) {
-                    // so far only one case: --first_error
-                    i('out')->e("*** {head}%s{/} {warn}Test stopped{/} at line $__line : ".$__exception->getMessage()."\n", i('stest')->file);
-                    return;
-                }
+                } // if-test
             }
+            //
+            // MAIN TEST LOOP END ------------------
+            //
+        } catch (StopException $__ex) { // Stop/Error/Alert
+            $m = $__ex->getMessage();
+            $reason = str_replace(["Exception", "stest\\"], "", get_class($__ex));
+            if ($reason === "Stop")
+                i('out')->e("*** {head}%s{/} {warn}Test stopped{/} at line $__line : $m\n", $__t->filename);
+            else
+                $__err("{alert}$reason{/} at line $line: $m", $class);
+            i('reporter')->$reason($__t->filename, ['message' => $m]);
+            return;
         }
-        //
-        // MAIN TEST LOOP END ------------------
-        //
 
         $dur = microtime(1) - $__t->start;
         $stat = "tests: ".$__t->tests;
@@ -437,9 +442,9 @@ class STest_File_Commands {
         if ($new = $__t->new)
             $stat .= ", {blue}{bold}new: $new{/}";
         if ($fail = $__t->fail) {
-            $__err("{alert}>{/} $stat, {warn}failed: $fail{/}\n");
+            $__err("{alert}>{/} $stat, {warn}failed: $fail{/}");
         } else {
-            i('out')->e("*** {head}%s{/} $stat\n", i('stest')->file);
+            i('out')->e("*** {head}%s{/} $stat\n", $__t->filename);
         }
 
         // save test when '--generate' option, or new items were added and no tests failed
@@ -452,67 +457,48 @@ class STest_File_Commands {
      * special "~XXX" tests
      * @see examples/special-tests.stest
      */
-    static private function _special_test($exp, $got, $__err, $ARG, $__t, $line, $code) {
+    static private function _special_test($exp, $got) { # error
         $x = trim($exp, "~ ");
-        @$ARG['debug']+0>1 && print(" ~test: ". helper\x2s(['code' => $code, 'got' => $got, '~test' => $x])."\n" );
         $err = ""; // test-error found
         switch ($x{0}) {
             case '"': // "substring"
                 $x = eval("return $x;");
                 if (strpos($got, $x) !== false)
                     return;
-                $err = "substring-expected: '{cyan}$x{/}'";
-                break;
+                return "substring-expected: '{cyan}$x{/}'";
             case '[': // in-array
                 $x = eval("return $x;");
-                if (! is_array($got)) {
-                    $err = "array expected";
-                } else {
-                    foreach ($x as $k => $e) { // e - element
-                        if (! is_int($k)) {
-                            if (@$got[$k] == $e)
-                                continue;
-                            $err = " array-element {cyan}\"$k\" => ".helper\x2s($e)."{/} expected";
-                            break;
-
-                        }
-                        if (! in_array($e, $got)) {
-                            $err = " array-element-expected: {cyan}".helper\x2s($e)."{/}";
-                            break;
-                        }
+                if (! is_array($got))
+                    return "array expected";
+                foreach ($x as $k => $e) { // e - element
+                    if (! is_int($k)) {
+                        if (@$got[$k] == $e)
+                            continue;
+                        return " array-element {cyan}\"$k\" => ".helper\x2s($e)."{/} expected";
                     }
+                    if (! in_array($e, $got))
+                        return " array-element-expected: {cyan}".helper\x2s($e)."{/}";
                 }
                 break;
             case '/': // regexp
-                if (! is_string($got)) {
-                    $err = "regexp match - string expected got:{cyan}".helper\x2s($got)."{/}";
-                    break;
-                }
+                if (! is_string($got))
+                    return "regexp match - string expected got:{cyan}".helper\x2s($got)."{/}";
                 if (! preg_match($x, $got))
-                    $err = " regexp match expected {cyan}".helper\x2s($x)."{/}";
+                    return " regexp match expected {cyan}".helper\x2s($x)."{/}";
                 break;
             default:
                 @[$op, $arg] = explode(" ", $x, 2);
                 if ($op && ! $arg) { # ~ ClassName case
-                    if (! is_object($got)) {
-                        $err = "Object expected";
-                        break;
-                    }
+                    if (! is_object($got))
+                        return "Object expected";
                     if (! is_a($got, $op))
-                        $err = "{cyan}$op{/} descendant object expected, got {red}".get_class($got)."{/} object";
-                    break;
+                        return "{cyan}$op{/} descendant object expected, got {red}".get_class($got)."{/} object";
                 }
 
                 $err = "{alert}Unsupported test{/} $exp";
                 break;
         }
-        if ($err) {
-            $__err("{alert}L$line{/}: {red}$code{/}\n");
-            $__err(" $err\n");
-            $__t->fail++;
-            if (@$ARG['first_error'])
-                throw new StopException("Stopping on first error");
-        }
+        return $err;
     }
 
     /**

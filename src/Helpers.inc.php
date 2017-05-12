@@ -689,10 +689,9 @@ class Reporter {
 
     /**
      * called upon successful test execution
-     * tests_nn - number of tests executed
      */
     function success(string $test, array $stats = []) {
-
+        echo __METHOD__."(".x2s(func_get_args()).")\n";
     }
 
     /**
@@ -707,7 +706,7 @@ class Reporter {
      * called upon UN-successful test execution (at least one test failed)
      */
     function fail(string $test, array $stats = []) {
-
+        echo __METHOD__."(".x2s(func_get_args()).")\n";
     }
 
     /**
@@ -725,7 +724,7 @@ class Reporter {
      * stats['message'] contains message
      */
     function alert(string $test, array $stats = []) {
-
+        echo __METHOD__."(".x2s(func_get_args()).")\n";
     }
 
 }
