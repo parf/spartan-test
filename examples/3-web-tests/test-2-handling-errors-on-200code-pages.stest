@@ -1,0 +1,52 @@
+#!/bin/env stest
+<?php
+
+; STest::$DOMAIN = "127.0.0.2:8080";
+
+; $fp = fsockopen("127.0.0.2", 8080, $errno, $errstr, 5);
+  if (! $fp)
+     \STest::stop("no webserver running on ".STest::$DOMAIN." : $errno / $errstr");
+
+# All following tests will produce error in normal case scenario,
+# we are modifying default behaviour:
+
+# Turning off EXCEPTIONS in WebTests
+# now instead of ErrorExceptions u'll get an array: ["ErrorException" = > "....", "code" => $http_code]
+; stest\i('webtest')->error_as_exception = 0;
+
+# code=200 empty response always considered as an error
+/empty_response;
+    ["ErrorException"=>'Empty Response', "code"=>200];
+
+/notice;
+    ["ErrorException"=>['Notice', 'Undefined variable: a', '/rd/research.local/spartan-test/examples/3-web-tests/web-server.php', '74'], "code"=>200];
+/notice2;
+    ["ErrorException"=>['Notice', 'user notice', '/rd/research.local/spartan-test/examples/3-web-tests/web-server.php', '78'], "code"=>200];
+
+/warning;
+    ["ErrorException"=>['Warning', 'Division by zero', '/rd/research.local/spartan-test/examples/3-web-tests/web-server.php', '82'], "code"=>200];
+/warning2;
+    ["ErrorException"=>['Warning', 'user warning', '/rd/research.local/spartan-test/examples/3-web-tests/web-server.php', '86'], "code"=>200];
+
+/error;
+    ["ErrorException"=>['Fatal error', 'Uncaught Error: Call to undefined function xxx() in /rd/research.local/spartan-test/examples/3-web-tests/web-server.php:90
+    Stack trace:
+    #0 /rd/research.local/spartan-test/examples/3-web-tests/web-server.php(24): Pages-&gt;error(Array)
+    #1 /rd/research.local/spartan-test/examples/3-web-tests/web-server.php(12): Pages::_dispatch(\'/error\')
+    #2 {main}
+      thrown', '/rd/research.local/spartan-test/examples/3-web-tests/web-server.php', '90'], "code"=>200];
+/error2;
+    ["ErrorException"=>['Fatal error', 'user error', '/rd/research.local/spartan-test/examples/3-web-tests/web-server.php', '94'], "code"=>200];
+/error3;
+    ["ErrorException"=>['Fatal error', 'Uncaught Error: Call to a member function method() on null in /rd/research.local/spartan-test/examples/3-web-tests/web-server.php:99
+    Stack trace:
+    #0 /rd/research.local/spartan-test/examples/3-web-tests/web-server.php(24): Pages-&gt;error3(Array)
+    #1 /rd/research.local/spartan-test/examples/3-web-tests/web-server.php(12): Pages::_dispatch(\'/error3\')
+    #2 {main}
+      thrown', '/rd/research.local/spartan-test/examples/3-web-tests/web-server.php', '99'], "code"=>200];
+
+/parseError;
+    ["ErrorException"=>['Parse error', 'syntax error, unexpected end of file', '/rd/research.local/spartan-test/examples/3-web-tests/web-server.php(103) : eval()\'d code', '1'], "code"=>200];
+
+# restoring normal behaviour
+; stest\i('webtest')->error_as_exception = 1;

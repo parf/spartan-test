@@ -2,6 +2,10 @@
 
 namespace stest;
 
+use stest\helper\InstanceConfig; // dependency injectoion
+use stest\helper\Console;        // colored output
+use function stest\helper\x2s;   // var_export alike
+
 /**
  * Spartan Test 3.0 - php 7.1 testing framework done right
  * RTFM: README.md
@@ -18,18 +22,18 @@ function I(/*string | array */ $name, array $args=[]) { # Instance
     if (is_array($name)) {
         [$name, $i] = $name;
         $k = $name.":".json_encode($args);
-        helper\InstanceConfig::$I[$k] = $i;
+        InstanceConfig::$I[$k] = $i;
         return $i;
     }
     $k = $name.":".json_encode($args);
-    if ($i = @helper\InstanceConfig::$I[$k])
+    if ($i = @InstanceConfig::$I[$k])
         return $i;
-    $class = @helper\InstanceConfig::$config[$name]; // class name
+    $class = @InstanceConfig::$config[$name]; // class name
     if (! $class)
         throw new \DomainException("No definition for instance $name");
     if (is_array($class)) // Actual ClassName Provided by method
         $class = $class($args);
-    return helper\InstanceConfig::$I[$k] = new $class($args);
+    return InstanceConfig::$I[$k] = new $class($args);
 }
 
 // ----------------------------------------
@@ -39,7 +43,6 @@ function I(/*string | array */ $name, array $args=[]) { # Instance
 
 const VERSION = 3.0;
 
-// ----------------------------------------
 //
 // INTERNAL
 //
@@ -48,6 +51,15 @@ class STest {
 
     static $ARG;
     static $TESTS;
+
+    // WEB TEST RELATED DATA
+    static $DOMAIN = "";
+    static $HEADERS = [];
+    static $BODY = "";
+    static $INFO = [];
+    static $URL = "";     // last URL used, if set used as REFERRER
+    static $PATH = "";    // last PATH used
+    static $COOKIE = [];  // array cookie => value
 
     // optionExpand Short to LongOption or [Option => value, ...]
     static $optionExpand = [
@@ -93,7 +105,9 @@ class STest {
      * Usage:
      *   \STest::error("message");
      */
-    static function error(string $message) {
+    static function error(/*string*/ $message) {
+        if (! is_string($message))
+            $message = var_export($message, 1);
         throw new ErrorException($message);
     }
 
@@ -132,11 +146,11 @@ class STest {
     function init($argv) {
         self::parseArgs($argv);
         // setup console
-        I(['out', helper\Console::i(@self::$ARG)]); // color, silent, syslog
+        I(['out', Console::i(@self::$ARG)]); // color, silent, syslog
         if (@self::$ARG['debug'])
             I('out')->e("{green}Spartan Test v".VERSION."{/} on ".gethostname()." at ".date("Y-m-d H:i")."\n");
-        if (! self::$TESTS && ! @self::$ARG['tag'])
-            self::$ARG = ["help" => 1];
+        if (! self::$TESTS)
+            self::$ARG += ["help" => 1];
         set_error_handler('\\stest\\Error::handler', E_ALL);
     }
 
@@ -145,8 +159,10 @@ class STest {
         $this->init($argv);
         foreach (self::$ARG as $a => $v) {
             $a = str_replace("-", "_", $a); // "-" to "_"
-            if (is_callable(["stest\\STest_Global_Commands", $a]))
-                STest_Global_Commands::$a($v);
+            if (is_callable(["stest\\STest_Global_Commands", $a])) {
+                if (($r = STest_Global_Commands::$a($v)) !== null)
+                    die("$r\n");
+            }
         }
         foreach (self::$TESTS as $test)
             $this->runTest($test);
@@ -155,7 +171,7 @@ class STest {
     function runTest($file) {
         $this->file = $file;
         try {
-            helper\InstanceConfig::init($file);
+            InstanceConfig::init($file);
             $T = helper\Parser::Reader($file);
         } catch(\Exception $ex) {
             i('out')->e("*** {alert}$file{/}. Error: ".$ex->getMessage());
@@ -202,6 +218,10 @@ class STest {
  *  @see  Readme.md file for details: how to write/execute tests
  */
 class STest_Global_Commands {
+
+    /**
+     * Any non-null return value treated as STOP signal, @see STest->run
+     */
 
     /**
      * show every line being tested (-v)
@@ -270,7 +290,7 @@ class STest_Global_Commands {
         $e = [i('out'), 'e'];
         $h = function ($h, $title) use ($e) {
             $e("{head}%s{/}\n", $title);
-            $e($h[""]. "\n");
+            $e($h["@"]. "\n"); // class doc
             foreach ($h as $method => $doc) {
                 if (! $method || $method{0} == '_')
                     continue;
@@ -297,7 +317,16 @@ class STest_Global_Commands {
      * execute text based on tag value and "# @tag space-demimited-tag-list" tag comment, @see --tag for more details
      */
     static function tag($v) {
-        STest_File_Commands::tag($v);
+        if ($v === true) {
+            $e = [i('out'), 'e'];
+            $e("{head}STest --tag=\"...\" option{/}\n");
+            $e("comma separated list of tag groups, test will be executed if it matches any group\n");
+            $e("{blue}tag1,tag2,tag3{/} - execute test if it have tag1 or tag2 or tag3\n");
+            $e("{blue}tag1 tag2,tag3{/} - execute test if it have (tag1 and tag2) or tag3\n");
+            $e("{blue}-tag1{/} - execute test if it does NOT have tag1\n");
+            $e("{blue}tag1 -tag2{/} - execute test if it have tag1 and does not have tag2\n");
+        }
+        return "";
     }
 
     /**
@@ -357,12 +386,13 @@ class STest_File_Commands {
                     throw new StopException("Stopping on first error");
             };
             $exp = trim($expected, ";");
-            if ($exp{0} == '~') { // ~XXX special tests
-                if ($err = self::_special_test($exp, $got))
+            if (@$exp{0} == '~') { // ~XXX special tests
+                if ($err = self::_custom_result_syntax($exp, $got))
                     $showError($err);
                 return;
             }
-            $got = helper\x2s($got, @$ARG['sort']);
+            $got = x2s($got, @$ARG['sort']);   // result-as-php-code-string
+            $got = str_replace("\n", "\n    ", $got); // result identation
             if ($exp == $got)
                 return;
             if (@$ARG['generate']) { // generate all results in test
@@ -380,7 +410,7 @@ class STest_File_Commands {
                 return;
             }
 
-            $showError("expected: {cyan}".$exp."{/}\n  got: {red}$got{/}");
+            $showError("expect: {cyan}".$exp."{/}\n  got:   {red}$got{/}");
         };
 
         @$ARG['verbose'] && i('out')->e("*** {head}%s{/}\n", $__t->filename);
@@ -404,9 +434,12 @@ class STest_File_Commands {
                 if ($__type  == "test") {
                     $__t->tests++;
                     try {
+                        if ($__error = Error::get())
+                            $__err("-- {alert}stest-internal unexpected error{/}: ". x2s($__error));  // this should NOT happend
+                        $__code_ = self::_custom_test_syntax($__code); // so far only web tests have custom syntax
                         @$ARG['verbose'] && i('out')->e("{cyan}%s{/}\n", $__code);
                         ob_start();
-                        $__rz = eval("return $__code");
+                        $__rz = eval("return $__code_");
                         $__out = ob_get_clean();
                         if ($__out)
                             $__rz  = [$__rz, '$' => $__out];
@@ -417,7 +450,7 @@ class STest_File_Commands {
                     } catch(\Exception $__ex) {
                         $__rz = [get_class($__ex), $__ex->getMessage()];
                     }
-                    @$ARG['verbose'] && i('out')->e("    {green}%s{/}\n", helper\x2s($__rz));
+                    @$ARG['verbose'] && i('out')->e("    {green}%s{/}\n", $__line__tp_v_r[1][2] /*x2s($__rz) */);
                     $__tester($__line__tp_v_r[1][2], $__rz, $__line, $__code);
                 } // if-test
             }
@@ -430,7 +463,7 @@ class STest_File_Commands {
             if ($reason === "Stop")
                 i('out')->e("*** {head}%s{/} {warn}Test stopped{/} at line $__line : $m\n", $__t->filename);
             else
-                $__err("{alert}$reason{/} at line $line: $m", $class);
+                $__err("{alert}$reason{/} at line $__line: $m\n    {cyan}$__code{/}", $class);
             i('reporter')->$reason($__t->filename, ['message' => $m]);
             return;
         }
@@ -457,14 +490,46 @@ class STest_File_Commands {
 
     /**
      * INTERNAL
-     * special "~XXX" tests
+     * custom (non php compatible) result syntax
+     * custom results looks like  "~ ..."
+     *
+     * TEST
+     *     ~               // non-empty string
+     *     ~~              // non-empty result: if (!$x) FAIL;
+     *     ~ "SubString"   // have substring
+     *     ~ Class         // is-descentant
+     *     ~ []            // is-array
+     *     ~ [$a, $b, ..]  // is $a and $b are in resulting array
+     *     ~ [key=>val]    // is in resulting array
+     *     ~ /regexp/x     // is result matching regexp
+     *     ~ method args   // special method (todo)
+     *
      * @see examples/special-tests.stest
      */
-    static private function _special_test($exp, $got) /*: ?string*/ { # error | null
+    static private function _custom_result_syntax(string $exp, $got) /*: ?string*/ { # error | null
+        if (strpos($exp, "\n")) { // several tests
+            foreach(explode("\n", $exp) as $exp) {
+                if ($r = self::_custom_result_syntax($exp, $got))
+                    return $r;
+            }
+            return;
+        }
+        # echo "<< $exp >>\n";
         $x = trim($exp, "~ ");
         $err = ""; // test-error found
+        if (! $x) { // "~" case = IS NOT EMPTY STRING CASE
+            if (trim($exp) == '~~')
+                return $got ? null : "non empty result expected";
+            if (! is_string($got))
+                return "string expected got:".gettype($got);
+            if (! $got)
+                return "non empty string expected got: empty string";
+            return;
+        }
         switch ($x{0}) {
             case '"': // "substring"
+                if (! is_string($got))
+                    return "string expected got:".gettype($got);
                 $x = eval("return $x;");
                 if (strpos($got, $x) !== false)
                     return;
@@ -477,17 +542,17 @@ class STest_File_Commands {
                     if (! is_int($k)) {
                         if (@$got[$k] == $e)
                             continue;
-                        return " array-element {cyan}\"$k\" => ".helper\x2s($e)."{/} expected";
+                        return " array-element {cyan}\"$k\" => ".x2s($e)."{/} expected";
                     }
                     if (! in_array($e, $got))
-                        return " array-element-expected: {cyan}".helper\x2s($e)."{/}";
+                        return " array-element-expected: {cyan}".x2s($e)."{/}";
                 }
                 break;
             case '/': // regexp
                 if (! is_string($got))
-                    return "regexp match - string expected got:{cyan}".helper\x2s($got)."{/}";
+                    return "regexp match - string expected got:{cyan}".x2s($got)."{/}";
                 if (! preg_match($x, $got))
-                    return " regexp match expected {cyan}".helper\x2s($x)."{/}";
+                    return " regexp match expected {cyan}".x2s($x)."{/}";
                 break;
             default:
                 @[$op, $arg] = explode(" ", $x, 2);
@@ -497,12 +562,46 @@ class STest_File_Commands {
                     if (! is_a($got, $op))
                         return "{cyan}$op{/} descendant object expected, got {red}".get_class($got)."{/} object";
                 }
-
-                $err = "{alert}Unsupported test{/} $exp";
+                $err = "{alert}un-implelemented test{/} $exp";
                 break;
         }
         return $err;
     }
+
+    /**
+     * INTERNAL
+     * custom (non php compatible) test syntax
+     * @see so far only web tests uses custom test syntax examples/web-tests.stest
+     */
+    static private function _custom_test_syntax(string $test) : string { # modified code
+        if (! $test)
+            throw new ErrorException("Empty Test");
+        # /$path  == Webtest::GET
+        if ($test{0} == '/') {
+            $test = trim($test, ";");
+            @[$path, $args] = explode(" ", $test, 2);
+            if (! $args)
+                $args = "[]";
+            return "\stest\I('webtest')->get('$path', $args);";
+        }
+        # POST /$path  == Webtest::GET
+        if (! strncasecmp($test, "post /", 5)) {
+            $test = trim(substr($test, 5), ";");
+            @[$path, $args] = explode(" ", $test, 2);
+            if (! $args)
+                $args = "[]";
+            return "\stest\I('webtest')->post('$path', $args);";
+        }
+
+
+        return $test;
+    }
+
+/*
+    static function webtest_get(string $url, array $args=[]) {
+        return "web-test";
+    }
+    */
 
     /**
      * `cat` processed test to stdout (add missing semicolons, correct identation)
@@ -549,15 +648,7 @@ class STest_File_Commands {
      * Execute test that matches given tags description, @see --tag for details
      */
     static function tag($v) {
-        if ($v === true) {
-            $e = [i('out'), 'e'];
-            $e("{head}STest --tag=\"...\" option{/}\n");
-            $e("comma separated list of tag groups, test will be executed if it matches any group\n");
-            $e("{blue}tag1,tag2,tag3{/} - execute test if it have tag1 or tag2 or tag3\n");
-            $e("{blue}tag1 tag2,tag3{/} - execute test if it have (tag1 and tag2) or tag3\n");
-            $e("{blue}-tag1{/} - execute test if it does NOT have tag1\n");
-            $e("{blue}tag1 -tag2{/} - execute test if it have tag1 and does not have tag2\n");
-        }
+
     }
 
     /**
@@ -583,8 +674,8 @@ class Error {  // error handler
 
     // return error (if any), clean up error info
     static function get() { # string or array with errors
-        $e=self::$err;
-        self::$err = array();
+        $e = self::$err;
+        self::$err = [];
         return sizeof($e) == 1 ? $e[0] : $e;
     }
 
@@ -612,13 +703,11 @@ class Error {  // error handler
         $type = ($t = @$map[$level]) ? $t : "ERROR#$level";
         $e = "$type: $message";
         if (substr($file, 0, strlen(__FILE__)) != __FILE__)
-            $e = array($e, $file, $line);
+            $e = [$e, $file, $line];
         array_push(self::$err, $e);
     }
 
 } // class Error
-
-
 
 
 

@@ -1,0 +1,120 @@
+#!/bin/env stest
+<?php
+
+; STest::$DOMAIN = "127.0.0.2:8080";
+
+; $fp = fsockopen("127.0.0.2", 8080, $errno, $errstr, 5);
+  if (! $fp)
+     \STest::stop("no webserver running on ".STest::$DOMAIN." : $errno / $errstr");
+
+# Whole content test
+/;
+    'Welcome to test server';
+
+# Substring present test(s)
+/;
+    ~ "test";
+    ~ "server";
+    ~ "Welcome";
+
+# Regexp check
+/;
+    ~ /Test Server/i;
+
+/some-path/xxx;
+    ["code"=>404, "size"=>31];
+# response body for non 200-code pages:
+\STest::$INFO['body'];
+    'Page "/some-path/xxx" Not Found';
+
+# /info - show GET/POST/COOKIES info
+/info?p2=v2;
+    'GET /info?p2=v2 HTTP/1.1
+    GET {"p2":"v2"}';
+# using PHP variables as arguments
+; $a = ['p1' => 'v & 1'];
+/info $a;
+    'GET /info?p1=v+%26+1 HTTP/1.1
+    GET {"p1":"v & 1"}';
+# combining two methods
+/info?x=1 $a;
+    'GET /info?x=1&p1=v+%26+1 HTTP/1.1
+    GET {"x":"1","p1":"v & 1"}';
+
+# POST
+POST /info $a;
+    'POST /info HTTP/1.1
+    POST {"p1":"v & 1"}';
+
+# get and post at the same time
+POST /info?x=1 $a;
+    'POST /info?x=1 HTTP/1.1
+    POST {"p1":"v & 1"}
+    GET {"x":"1"}';
+
+# cookies set by remote page
+/setcookie?k=test&v=3d;
+    'cookie set';
+
+\STest::$HEADERS['Set-Cookie'];
+    ['test=3d', 'test_=3d'];
+
+\STest::$COOKIE;
+    ["test"=>'3d', "test_"=>'3d'];
+
+/cookies;
+    'COOKIE {"test":"3d","test_":"3d"}';
+
+# HTTP_REFERER - we always use previous URL as a REFERER
+# previous URL is kept in:
+\STest::$URL;
+    'http://127.0.0.2:8080/cookies';
+/server?field=HTTP_REFERER;
+    '_SERVER {"HTTP_REFERER":"http://127.0.0.2:8080/cookies"}';
+
+/redirect;
+    ["code"=>302, "redirect"=>'http://example.com/myOtherPage.php'];
+# checking only code
+/redirect?code=301 ['url' => 'http://xxx'];
+    ["code"=>301, "redirect"=>'http://xxx'];
+# in case of non "200" response, BODY is an array
+STest::$BODY;
+    ["code"=>301, "redirect"=>'http://xxx'];
+# just check http_code, ignore rest
+/redirect?code=301;
+    ~ ['code' => 301];
+/redirect?code=302;
+    ["code"=>302, "redirect"=>'http://example.com/myOtherPage.php'];
+/redirect?code=303;
+    ["code"=>303, "redirect"=>'http://example.com/myOtherPage.php'];
+
+/non_empty_response;
+    'bla bla';
+
+# plain "~" - perform all usual tests, make sure http_code = 200
+# make sure respose is not empty string (not an array)
+# You can just list lots of urls and use "~" as a test
+/non_empty_response;
+    ~;
+
+# @TODO
+# test lots of urls in parallel
+# https://stackoverflow.com/questions/9308779/php-parallel-curl-requests
+; $urls = ["/sleep", "/sleep?t=2", "/sleep?t=3"];
+/[$urls];
+    ["code"=>404, "size"=>25];
+\STest::$INFO['body'];
+    'Page "/[$urls]" Not Found';
+; $urls = "
+    /sleep
+    /sleep?t=2
+    /sleep?t=3
+    ";
+/[$urls];
+    ["code"=>404, "size"=>25];
+\STest::$INFO['body'];
+    'Page "/[$urls]" Not Found';
+
+1+
+  2;
+    3;

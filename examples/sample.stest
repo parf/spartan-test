@@ -91,3 +91,23 @@ $r;
 
 ; $ARG['sort'] = 1; // restore default mode (result sorting);
 
+# result escaping
+"abc\"xx\"";
+    "abc\"xx\"";
+
+"abc\ndef\nghi";
+    ~ "ghi";
+
+# multi-line result set
+"abc\ndef\nghi";
+    "abc
+    def
+    ghi";
+
+# multi-line test, multi-line result
+"abc
+  def
+  ";
+    "abc
+      def
+      ";

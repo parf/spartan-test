@@ -7,6 +7,7 @@
 
 namespace stest\helper;
 
+include __DIR__."/Curl.inc.php";
 
 class InstanceConfig {
 
@@ -134,8 +135,10 @@ function parseArgs(array $argv) : array { # [$options, $args]
 function x2s(/* mixed */ $x, $sort_keys = 0, int $deep=0) : string {
     if ($deep > 10)
         return "'nesting too deep!!'";
-    if (is_string($x))
-        return "\"$x\"";
+    if (is_string($x)) {
+        #return "\"".str_replace('"', '\\"', $x)."\"";
+        return var_export($x, true);
+    }
     if ($x === NULL)
         return "NULL";
     if (is_bool($x))
@@ -148,7 +151,7 @@ function x2s(/* mixed */ $x, $sort_keys = 0, int $deep=0) : string {
         return sprintf("%G", $x); // short presentation of float
     if (! is_array($x))
         return "\"$x\""; // to_string
-    if (($cnt = count($x)) > 20)
+    if (($cnt = count($x)) > 30)
         return "\"... $cnt items\"";
     if ($sort_keys)
         ksort($x);
@@ -262,16 +265,29 @@ class Parser {
             if ($l && $l{0} == ' ')
                 return;
             $rz = ""; // result
-            while ([$nl, $s] = $I->getKV()) {
+            while ([$nl, $s] = $I->getKV()) { // nl - next-line#
                 if (!$s || $s{0} != ' ') {
                     $I->putKV([$nl, $s]);
                     break;
                 }
                 if (substr($s, 0, 4) === '    ') { // 4 spaces or tab
                     $rz = $s;
+                    while ([$nl, $s] = $I->getKV()) { // multi-line result set
+                        if (substr($s, 0, 4) === '    ') {
+                            $rz .= "\n$s"; // substr($s, 4);
+                        } else {
+                            $I->putKV([$nl, $s]);
+                            break;
+                        }
+                    }
                     break;
                 }
-                $l .= "\n".$s;
+                if (substr($s, 0, 3) === '   ') { // 3
+                    throw new \stest\SyntaxErrorException("Syntax Error on Line $ln: '$s'.\n".
+                        " Test-Result should be idented by 4 spaces\n".
+                        " Multi-line test should be idented by 2 spaces");
+                }
+                $l .= "\n".$s;  // spacing less than 4: multi-line test
             }
             $l = trim($l);
             $rz = trim($rz);
@@ -577,7 +593,7 @@ class Console {
     // apply sprintf
     /* protected */ static function r(string $s, array $args) {
         $s = preg_replace_callback("!{([a-z_/]+)}!s", [get_called_class(), "r_callback"], $s);
-        return sprintf($s, ...$args);
+        return $args ? sprintf($s, ...$args) : $s;
     }
 
     // r("...") callback
@@ -669,7 +685,7 @@ class Documentor {
             $d = str_replace(["/**", "*/"], "", $d);
             return trim(preg_replace("!^[/ ]+\* ?!m", "", $d));
         };
-        $D[""] = $doc($rc);
+        $D["@"] = $doc($rc);
         foreach ($rc->getMethods() as $m) {
             $D[$m->name] = $doc($m);
         }
@@ -691,7 +707,7 @@ class Reporter {
      * called upon successful test execution
      */
     function success(string $test, array $stats = []) {
-        echo __METHOD__."(".x2s(func_get_args()).")\n";
+#        echo __METHOD__."(".x2s(func_get_args()).")\n";
     }
 
     /**
@@ -706,7 +722,7 @@ class Reporter {
      * called upon UN-successful test execution (at least one test failed)
      */
     function fail(string $test, array $stats = []) {
-        echo __METHOD__."(".x2s(func_get_args()).")\n";
+#       echo __METHOD__."(".x2s(func_get_args()).")\n";
     }
 
     /**
@@ -724,7 +740,7 @@ class Reporter {
      * stats['message'] contains message
      */
     function alert(string $test, array $stats = []) {
-        echo __METHOD__."(".x2s(func_get_args()).")\n";
+#        echo __METHOD__."(".x2s(func_get_args()).")\n";
     }
 
 }
@@ -769,3 +785,5 @@ class Alerter {
     }
 
 }
+
+

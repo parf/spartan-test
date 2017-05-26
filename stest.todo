@@ -13,58 +13,24 @@ Ideas:
 
 
 STEP 1:
-  ✔ * simple tests @done (17-05-05 13:37)
-  * basic options
-  * config reader
-    global, local
-  * execution policy
-  * reporting
 
-  ✘ * special case for "if, for, foreach, switch" keywords @cancelled (17-05-05 13:37)
+ ☐ STEST - public static methods ONLY
 
-   ✔ multi-line expressions and tests (right way) @done (17-05-05 13:37)
-    special cases for expressions ("; x\n  x\n  x....") << 2 chars indent
+ ☐ docs
 
-  ☐ STest::enable / disable
-    Ability to Skip Some Tests Based on user-defined conditions
-    ^^^ HOW TO RE-ENABLE ??? - need special syntax - ";; "
-
- ✔ Switch to i("XX") model - use common singletons @done (17-05-04 17:57)
-
-  ✔ Console::e(" sprintf pattern ", ...) @done (17-05-08 10:21)
-
- ✔ 1st error @done (17-05-08 10:38)
-
- ✔ -h (doc) @done (17-05-08 15:48)
-
- ✔ array sorting @done (17-05-08 13:05)
- ✔ PHP notices & errors @done (17-05-08 13:05)
-
- ✔ config @done (17-05-10 14:23)
-
- ☐ --new << ?? - idea execute previous expression
-
- ☐ ~ tests
-   ~ "SubString"
-   ~ [$ArrayItem]
-   ~ method $args
-   ~ is Class
- ☐ /URL [...]
-
- ☐ composer package
-   https://knpuniversity.com/screencast/question-answer-day/create-composer-package
-   https://getcomposer.org/doc/articles/vendor-binaries.md
+ ☐ switch Error Handler Modes - stest mode around eval, report mode otherwise
 
  ☐ "@tag" support - analyze 1st 5-ve comments in file for "# @tag space-delimited tag list"
     stest --tag="tag1 -tag2, tag3"   # (tag1 but no tag2) or (tag3)
 
- ☐ testFailAlert
-
- ☐ Alerter::
-     ✔ Syslog, json @done (17-05-11 17:10)
-     ☐ logs
+ ☐ run-all-tests (using parallel)
+   ☐ ##X test ok, ##Y tests failed calls
 
  ☐ isProd, isDVP, isCI
+
+ ☐ composer package
+   https://knpuniversity.com/screencast/question-answer-day/create-composer-package
+   https://getcomposer.org/doc/articles/vendor-binaries.md
 
  ☐ AutoGenerate test for a given class
    ☐ static methods (along with params)
@@ -72,35 +38,31 @@ STEP 1:
 
  ☐ Split InstanceConfig to Instance and Config:  C(...)
 
- ✔ syslog reporting @done (17-05-10 15:48)
-
  ☐ reporting:
    success / fail / alert
    ☐ --error-as-alert support
 
- ☐ docs
-
- ☐ rewrite special test -
-   should only return ERR !!!
-
- ☐ rewrite test loop
-   no early returns return
-
- ☐ incorporate smart array compare
+ ☐ incorporate smart array & string compare
     incorporate smart string compare
     show/highlight only changed / removed parts
 
-TODO :
- ✔ do not re-ident "; expressions" @done (17-05-05 13:37)
- ✔ variable name clash @done (17-05-05 13:16)
+  ☐ STest::enable / disable
+    Ability to Skip Some Tests Based on user-defined conditions
+    ^^^ HOW TO RE-ENABLE ??? - need special syntax - ";; "
+
+ ☐ --new << ?? - idea execute previous expression
+
+ ☐ /[$urls] test - parallel curl test
 
 STEP 2:
   * Web tests
     * prod / stable / ci / local tests
     easy switch
-  * "~ .. " tests
+  ☐ * "~ .. " tests
+    "~" = non empty string
+    ~ [301 => null]
 
-
+ ☐ smart param parsing for Pages::dispatch
 
 STEP 3:
   ☐ tags
@@ -281,3 +243,50 @@ OLD:
 
 
 
+
+
+＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
+Archive:
+ ✔ TEST-result spacing @done (17-05-26 17:49) @project(STEP 1)
+  LINE 2      << 2 spaces - multi-line test
+  "RESULT"  << 4 spaces - TEST result
+  "3 spaces" << ERROR !!!
+ ✔ missing line#: @done (17-05-24 16:18) @project(STEP 1)
+  ➤ ./test-1.stest
+  *** /rd/research.local/spartan-test/examples/3-web-tests/test-1.stest
+  Error at line : test_empty: Empty Response
+ ✔ /URL [...] @done (17-05-22 10:05) @project(STEP 1)
+ ✔ multi-line result @done (17-05-16 15:48) @project(STEP 1)
+  (ident 4 chars)
+ ✔ ~ tests @done (17-05-12 17:13) @project(STEP 1)
+  ~ "SubString"
+  ~ [$ArrayItem]
+  ~ method $args
+  ~ is Class
+ ✔ rewrite test loop @done (17-05-12 17:13) @project(STEP 1)
+  no early returns return
+ ✔ rewrite special test - @done (17-05-12 17:13) @project(STEP 1)
+  should only return ERR !!!
+ ✘ logs @cancelled (17-05-12 17:12) @project(STEP 1)
+ ✔ testFailAlert @done (17-05-12 17:12) @project(STEP 1)
+ ✔ Alerter:: @done (17-05-12 17:12) @project(STEP 1)
+ ✔ Syslog, json @done (17-05-11 17:10) @project(STEP 1)
+ ✔ syslog reporting @done (17-05-10 15:48) @project(STEP 1)
+ ✔ config @done (17-05-10 14:23) @project(STEP 1)
+ ✔ -h (doc) @done (17-05-08 15:48) @project(STEP 1)
+ ✔ array sorting @done (17-05-08 13:05) @project(STEP 1)
+ ✔ PHP notices & errors @done (17-05-08 13:05) @project(STEP 1)
+ ✔ 1st error @done (17-05-08 10:38) @project(STEP 1)
+ ✔ Console::e(" sprintf pattern ", ...) @done (17-05-08 10:21) @project(STEP 1)
+ ✘ * special case for "if, for, foreach, switch" keywords @cancelled (17-05-05 13:37) @project(STEP 1)
+ ✔ multi-line expressions and tests (right way) @done (17-05-05 13:37) @project(STEP 1)
+  special cases for expressions ("; x\n  x\n  x....") << 2 chars indent
+ ✔ do not re-ident "; expressions" @done (17-05-05 13:37) @project(TODO )
+ ✔ * simple tests @done (17-05-05 13:37) @project(STEP 1)
+  * basic options
+  * config reader
+  global, local
+  * execution policy
+  * reporting
+ ✔ variable name clash @done (17-05-05 13:16) @project(TODO )
+ ✔ Switch to i("XX") model - use common singletons @done (17-05-04 17:57) @project(STEP 1)
