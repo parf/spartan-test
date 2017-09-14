@@ -1,0 +1,25 @@
+#!/bin/sh
+
+#
+# HELP
+
+if [ $1 == '--help' ]; then
+  echo "Usage: stest-all [OPTION] [TOP-DIRECTORY]"
+  echo "execute all tests in current or given directory (and subdirectories) in parallel"
+  echo 
+  echo Options
+  echo "  --tag=\"tag1 tag2 -tag3\" : execute tests matching tags"
+  echo "  --list - list tests"
+  echo " -v --verbose : show tests summary (by default only failed tests are displayed)
+  exit 1
+fi
+
+
+# special case "/" look for parent directory with init.php
+# https://unix.stackexchange.com/questions/13464/is-there-a-way-to-find-a-file-in-an-inverse-recursive-search/13474
+#
+
+# check for GNU parallel
+[[ $(type -P parallel) ]] || { echo "GNU parallel required"; exit 1; }
+
+find . -name "*.stest" -executable | parallel -j0 '{} -s'

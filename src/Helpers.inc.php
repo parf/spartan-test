@@ -33,7 +33,7 @@ class InstanceConfig {
         $DIR = $dir = realpath($file);
         while (($dir = dirname($dir)) != '/') {
             @\STest::$ARG['debug'] > 1 && print("Loading configs: $dir\n");
-            foreach (["stest-config.json", "stest-config.json.local", ".stest-config.json"] as $fn) {
+            foreach (["stest-config.json.local", "stest-config.json"] as $fn) {
                 $f = "$dir/$fn";
                 if (! file_exists($f))
                     continue;

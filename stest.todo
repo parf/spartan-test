@@ -38,6 +38,8 @@ STEP 1:
 
  ☐ Split InstanceConfig to Instance and Config:  C(...)
 
+ ☐ change POST syntax to "/path POST .."
+
  ☐ reporting:
    success / fail / alert
    ☐ --error-as-alert support
@@ -53,6 +55,8 @@ STEP 1:
  ☐ --new << ?? - idea execute previous expression
 
  ☐ /[$urls] test - parallel curl test
+
+ ☐  Exception in init.php
 
 STEP 2:
   * Web tests
