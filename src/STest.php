@@ -398,6 +398,9 @@ class STest_File_Commands {
             if (@$ARG['generate']) { // generate all results in test
                 $__t->fail++;
                 $expected = $got.";"; // save corrected result
+                $__err("CODE: {bold}{red}L$line{/}: $code");
+                $__err(" old: {red}$exp{/}");
+                $__err(" new: {blue}$got{/}");
                 return;
             }
             $code = str_replace("\n", " ", $code);
@@ -449,6 +452,8 @@ class STest_File_Commands {
                         throw $__ex;
                     } catch(\Exception $__ex) {
                         $__rz = [get_class($__ex), $__ex->getMessage()];
+                    } catch(\Throwable $__ex) {
+                        $__rz = ["Throwable:".get_class($__ex), $__ex->getMessage()];
                     }
                     @$ARG['verbose'] && i('out')->e("    {green}%s{/}\n", $__line__tp_v_r[1][2] /*x2s($__rz) */);
                     $__tester($__line__tp_v_r[1][2], $__rz, $__line, $__code);

@@ -143,8 +143,11 @@ function x2s(/* mixed */ $x, $sort_keys = 0, int $deep=0) : string {
         return "NULL";
     if (is_bool($x))
         return $x ? "true" : "false";
-    if (is_object($x))
-        return "\"Instance of ".get_class($x)."\"";
+    if (is_object($x)) {
+        if (method_exists($x, '__toString'))
+            return "\"".get_class($x).":$x\"";
+        return "\"Instance(".get_class($x).")\"";
+    }
     if (is_int($x))
         return $x;
     if (is_float($x))
