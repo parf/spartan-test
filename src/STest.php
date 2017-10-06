@@ -431,7 +431,7 @@ class STest_File_Commands {
                     } catch(StopException $__ex) {
                         throw $__ex;
                     } catch(\Exception $__ex) {
-                        throw new ErrorException("Unexpected exception ".get_class($ex)." ".$ex->getMessage());
+                        throw new ErrorException("Unexpected exception ".get_class($__ex)." ".$__ex->getMessage());
                     }
                 } // if-expr
                 if ($__type  == "test") {
@@ -452,6 +452,8 @@ class STest_File_Commands {
                         throw $__ex;
                     } catch(\Exception $__ex) {
                         $__rz = [get_class($__ex), $__ex->getMessage()];
+                    } catch(\Error $__ex) {
+                        $__rz = ["Error:".get_class($__ex), $__ex->getMessage()];
                     } catch(\Throwable $__ex) {
                         $__rz = ["Throwable:".get_class($__ex), $__ex->getMessage()];
                     }

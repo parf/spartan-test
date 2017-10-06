@@ -145,8 +145,8 @@ function x2s(/* mixed */ $x, $sort_keys = 0, int $deep=0) : string {
         return $x ? "true" : "false";
     if (is_object($x)) {
         if (method_exists($x, '__toString'))
-            return "\"".get_class($x).":$x\"";
-        return "\"Instance(".get_class($x).")\"";
+            return var_export(get_class($x).":".$x, 1);
+        return var_export("Instance(".get_class($x).")", 1);
     }
     if (is_int($x))
         return $x;
