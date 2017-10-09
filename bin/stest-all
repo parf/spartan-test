@@ -3,14 +3,14 @@
 #
 # HELP
 
-if [ $1 == '--help' ]; then
+if [ "$1" == "--help" ]; then
   echo "Usage: stest-all [OPTION] [TOP-DIRECTORY]"
   echo "execute all tests in current or given directory (and subdirectories) in parallel"
   echo 
   echo Options
   echo "  --tag=\"tag1 tag2 -tag3\" : execute tests matching tags"
   echo "  --list - list tests"
-  echo " -v --verbose : show tests summary (by default only failed tests are displayed)
+  echo " -v --verbose : show tests summary (by default only failed tests are displayed)"
   exit 1
 fi
 
