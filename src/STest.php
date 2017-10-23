@@ -396,10 +396,14 @@ class STest_File_Commands {
             if ($exp == $got)
                 return;
             if (@$ARG['generate']) { // generate all results in test
-                $__t->fail++;
                 $expected = $got.";"; // save corrected result
                 $__err("CODE: {bold}{red}L$line{/}: $code");
-                $__err(" old: {red}$exp{/}");
+                if ($exp) {
+                    $__t->fail++;
+                    $__err(" old: {red}$exp{/}");
+                } else {
+                    $__t->new++;
+                }
                 $__err(" new: {blue}$got{/}");
                 return;
             }
