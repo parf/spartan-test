@@ -54,11 +54,11 @@ $loader = require $COMPOSER_DIRECTORY . '/vendor/autoload.php';
 # $loader->addPsr4(....);
 ```
 alternatively you can create file:
-`stest-config.json` or `stest-config.json.local`: with
+`stest-config.json` or `stest-config.local.json`: with
 `{"init":"your-init-file-name.php"}`
 
 INSTALL
 -------
     mkdir -p ~/src ~/bin
     git clone https://github.com/parf/spartan-test.git ~/src/spartan-test
-    ln -s ~/src/spartan-test/spartan-test ~/bin
+    ln -s ~/src/spartan-test/stest ~/bin

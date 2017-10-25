@@ -472,7 +472,7 @@ class STest_File_Commands {
             $m = $__ex->getMessage();
             $reason = str_replace(["Exception", "stest\\"], "", get_class($__ex)); // Stop/Error/Alert
             if ($reason === "Stop")
-                i('out')->e("*** {head}%s{/} {warn}Test stopped{/} at line $__line : $m\n", $__t->filename);
+                i('out')->e("*** {bg_blue}{white}{bold}%s{/}\n {warn}Test stopped{/} at line $__line : $m\n", $__t->filename);
             else
                 $__err("{alert}$reason{/} at line $__line: $m\n    {cyan}$__code{/}", $class);
             i('reporter')->$reason($__t->filename, ['message' => $m]);

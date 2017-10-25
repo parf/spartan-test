@@ -12,7 +12,36 @@ Ideas:
 - git-push-test script. install script on "test" server, then do "git push test" to test
 
 
+
+ Stest and tiers / environments:
+   ☐ tiers:
+     dvp  = development
+     test = staging, ci, stage
+     prod = production
+   ☐ defailt tier = "development"
+   ☐ specifying tier:
+     ☐ --tier="tier"   << force set tier
+     ☐ local config file
+       tier = "..."
+     ☐ global config file
+       ☐ tier:
+           dvp: host1, host2, host3
+   ☐ Using Tiers:
+     TIER == 'prod' {    << SYNTAX
+       ... TESTS
+     }
+     ☐  STest::$DOMAIN = ['tier' => ..., 'tier' =>]
+
+   ☐ Setting and using variables:
+     $NAME=XXX
+     STest::$DOMAIN = "$NAME.example.com"
+
+
 STEP 1:
+
+  ☐ stest && get_included_files
+    ☐ idea 1: same file
+    ☐ idea 2: .file
 
  ☐ STEST - public static methods ONLY
 
