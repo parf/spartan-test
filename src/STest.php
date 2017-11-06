@@ -565,16 +565,15 @@ class STest_File_Commands {
                 if (! preg_match($x, $got))
                     return " regexp match expected {cyan}".x2s($x)."{/}";
                 break;
-            default:
-                @[$op, $arg] = explode(" ", $x, 2);
-                if ($op && ! $arg) { # ~ ClassName case
-                    if (! is_object($got))
-                        return "Object expected";
-                    if (! is_a($got, $op))
-                        return "{cyan}$op{/} descendant object expected, got {red}".get_class($got)."{/} object";
-                }
-                $err = "{alert}un-implelemented test{/} $exp";
-                break;
+            default:  // ~ ClassName
+                if (strpos($x, " "))
+                    return "{cyan} unsupported test: '$x'{/} ";
+                if (! is_object($got))
+                    return "Object expected";
+                if (! is_a($got, $x))
+                    return "{cyan}$x{/} descendant object expected, got {red}".get_class($got)."{/} object";
+                if (is_a($got, $x))
+                    return; // is subclass
         }
         return $err;
     }

@@ -5,21 +5,39 @@
 #
 # using this tests will make your test php-incompatible
 #
+# this test will FAIL, this is intentional !!!
+#
 
-# intance-of
-new DateTime();
+# instance-of
+new DateTime;
     ~ DateTime;
-new DateTime();
+new DateTime;
     ~ Directory;
+
+# non-empty-string
+"a"
+    ~
+new DateTime;
+    ~
+323
+    ~
+""
+    ~
 
 # match substring
 "Cat jumped off the bed";
     ~ "off";
 "Cat jumped off the bed";
     ~ "Dog";
-# you can use php expressions inside a tes
+# you can use php expressions inside a test
 "Cat jumped off the bed";
     ~ "j".chr(117)."mped";
+
+# require non empty result 
+5-4
+    ~~
+5-5
+    ~~
 
 # in-array
 [1,2,3,4,5];
@@ -39,8 +57,10 @@ $a;
 $a;
     ~ ['c' => 3];
 # is array test
-$a;
-    ~ [];
+['a' => 1];
+    ~ [];  # is-array test
+"not-an-array"
+    ~ [];  # shoud fail
 
 # regexp
 "Lorem ipSum dolor sit amet, consectetur adipiscing elit";

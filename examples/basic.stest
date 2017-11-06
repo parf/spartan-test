@@ -27,7 +27,7 @@
 */
 ; $a = "a";
 $a.$a;
-    "aa";
+    'aa';
 
 1 +
   2 +
@@ -53,27 +53,27 @@ $a.$a;
 
 
 $r;
-    ["error"=>"NOTICE: Undefined variable: r"];
+    ["error"=>'NOTICE: Undefined variable: r'];
 
 /* one line comment */
 
-# This idented comments will automatically unindented
-/* idented one line comment */
-// idented comment
-# idented comment
+# This idented comments will be automatically unindented
+  /* idented one line comment */
+    // idented comment
+      # idented comment
 
 
 // stdout catching
 print("aaa");
-    [1, "$"=>"aaa"];
+    [1, "$"=>'aaa'];
 
-// Exception catching
+// Exceptions
 ; function ex() {
     throw new Exception("aaa");
   };
 
 ex();
-    ["Exception", "aaa"];
+    ['Exception', 'aaa'];
 
 // result sorting
 $r = ['b' => 2, 'c' => 3, 'a' => 1];
@@ -93,21 +93,22 @@ $r;
 
 # result escaping
 "abc\"xx\"";
-    "abc\"xx\"";
+    'abc"xx"';
 
+# substring in test
 "abc\ndef\nghi";
     ~ "ghi";
 
 # multi-line result set
 "abc\ndef\nghi";
-    "abc
+    'abc
     def
-    ghi";
+    ghi';
 
 # multi-line test, multi-line result
 "abc
   def
   ";
-    "abc
+    'abc
       def
-      ";
+      ';
