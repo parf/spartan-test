@@ -182,15 +182,17 @@ class WebTest {
         STest::$URL = $d.$path;
         STest::$PATH = $path;
         // HTTP CODE
-        $code = $r['http_code'];
+        $code = @$r['http_code'];
         if ($code == 200) {
             $this->_applyTests($r['body'], $r); // throw exception or place error inside STest::$BODY
         } else {
             // real BODY is in $INFO['BODY']
-            if ($code == 301 || $code == 302 || $code == 303)
-                STest::$BODY = ['code' => $code, 'redirect' => $r['redirect_url']];
-            else
+            if ($code == 301 || $code == 302 || $code == 303) {
+                $redirect = str_replace($d, '$DOMAIN', $r['redirect_url']);
+                STest::$BODY = ['code' => $code, 'redirect' => $redirect];
+            } else {
                 STest::$BODY = ['code' => $code, 'size' => strlen(STest::$BODY)]; // test with "~ ['code' => 404]"
+            }
         }
 
         if ($c = @STest::$HEADERS['Set-Cookie']) {

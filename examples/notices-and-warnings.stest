@@ -5,14 +5,14 @@
 # Default behaviour is E_ALL (php.ini error_reporting)
 # fail on all kinds of notices/warnings/errors/...
 $undefined;
-    ["error"=>"NOTICE: Undefined variable: undefined"];
+    ["error"=>'NOTICE: Undefined variable: undefined'];
 1/0;
-    ["error"=>"WARNING: Division by zero"];
+    ["error"=>'WARNING: Division by zero'];
 ; $a = ['a' => 1];
 $a['a'];
     1;
 $a['b'];
-    ["error"=>"NOTICE: Undefined index: b"];
+    ["error"=>'NOTICE: Undefined index: b'];
 @$a['b']; // safe way;
     NULL;
 
@@ -22,7 +22,7 @@ stest\Error::suppress_notices();
 $undefined;
     NULL;
 1/0;
-    ["error"=>"WARNING: Division by zero"];
+    ["error"=>'WARNING: Division by zero'];
 $a['b'];
     NULL;
 
@@ -45,19 +45,19 @@ E_NOTICE | E_WARNING;
 # suppress deprecated-warnings and warnings and notices
 ; class X { function a() { echo "x"; } };
 X::a();
-    ["error"=>"E_DEPRECATED: Non-static method X::a() should not be called statically"];
+    ["error"=>'E_DEPRECATED: Non-static method X::a() should not be called statically'];
 ; stest\Error::$error_reporting |= E_DEPRECATED;
 X::a();
-    [NULL, "$"=>"x"];
+    [NULL, "$"=>'x'];
 
 # explicit
 ; stest\Error::$error_reporting = E_DEPRECATED | E_NOTICE | E_WARNING;
 X::a($a['b']);
-    [NULL, "$"=>"x"];
+    [NULL, "$"=>'x'];
 
 # report notices, ignore deprecated
 # multiple errors combined
 ; stest\Error::$error_reporting = E_DEPRECATED;
 X::a($a['b'], $a['c']);
-    ["error"=>["NOTICE: Undefined index: b", "NOTICE: Undefined index: c"]];
+    ["error"=>['NOTICE: Undefined index: b', 'NOTICE: Undefined index: c']];
 

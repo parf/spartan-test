@@ -15,14 +15,18 @@ DESCRIPTION
 * Spartan test is a set of expressions and comments
     - types of expressions:
         + "; php-code" php code to execute, no testing
-        + "test-expressions" - php-code that product result
+        + "test-expression" - php-code that product result
         + "    result" - stored test-expression result (valid php code)
         + "    ~ custom-result-test" - function comparison (see below)
         + "/url-path" - (see web-test)
+        + "! test-expression" - critical test. Test execution will stop if this test failed
+
 * Spartan test reads test-file line by line
+
 * for test-expressions it calculate result, then compares it to stored result
     - if result exists and differ, error is generated
     - if no result stored in test-file, generated result is added to test-file
+
 * stest catches 
     - return values
     - exceptions

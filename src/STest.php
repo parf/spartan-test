@@ -300,8 +300,8 @@ class STest_Global_Commands {
             $e("\n");
         };
         $e("{bold}Spartan Test v".VERSION." minimalistic php 7.1 testing framework done right{/}\n");
-        $h ( helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), "Options");
-        $h ( helper\Documentor::classDoc("\\stest\\STest_File_Commands"), "Actions");
+        $h ( helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), "Global Options");
+        $h ( helper\Documentor::classDoc("\\stest\\STest_File_Commands"), "File Options");
         #echo json_encode(helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), JSON_PRETTY_PRINT), "\n";
         #echo json_encode(helper\Documentor::classDoc("\\stest\\STest_File_Commands"), JSON_PRETTY_PRINT), "\n";
     }
@@ -440,6 +440,11 @@ class STest_File_Commands {
                 } // if-expr
                 if ($__type  == "test") {
                     $__t->tests++;
+                    if ($__code{0} === '!') { // "! code" - turn ON stop-on-first-error for this line. ("!" symbol is ignored)
+                        if (! @$ARG['first_error'])
+                            $ARG['first_error'] = 'temp';
+                        $__code = substr($__code, 1);
+                    }
                     try {
                         if ($__error = Error::get())
                             $__err("-- {alert}stest-internal unexpected error{/}: ". x2s($__error));  // this should NOT happend
@@ -463,6 +468,8 @@ class STest_File_Commands {
                     }
                     @$ARG['verbose'] && i('out')->e("    {green}%s{/}\n", $__line__tp_v_r[1][2] /*x2s($__rz) */);
                     $__tester($__line__tp_v_r[1][2], $__rz, $__line, $__code);
+                    if ('temp' === @$ARG['first_error'])
+                        unset($ARG['first_error']);
                 } // if-test
             }
             //
@@ -474,7 +481,7 @@ class STest_File_Commands {
             if ($reason === "Stop")
                 i('out')->e("*** {bg_blue}{white}{bold}%s{/}\n {warn}Test stopped{/} at line $__line : $m\n", $__t->filename);
             else
-                $__err("{alert}$reason{/} at line $__line: $m\n    {cyan}$__code{/}", $class);
+                $__err("{alert}$reason{/} at line $__line: $m\n    {cyan}$__code{/}");
             i('reporter')->$reason($__t->filename, ['message' => $m]);
             return;
         }

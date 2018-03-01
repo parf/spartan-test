@@ -1,17 +1,23 @@
 #!/bin/env stest
 <?php
 
-; STest::$DOMAIN = "127.0.0.2:8080";
+# use --DOMAIN="https://my-domain" to change DOMAIN
+; STest::$DOMAIN = $ARG['DOMAIN'] ?? "127.0.0.2:8080";
 
-; $fp = fsockopen("127.0.0.2", 8080, $errno, $errstr, 5);
-  if (! $fp)
-     \STest::stop("no webserver running on ".STest::$DOMAIN." : $errno / $errstr");
-
-# Whole content test
-/;
+# "!" Critical Test
+# TEST will instantly fail if critical test failed
+!/;
     'Welcome to test server';
 
-# Substring present test(s)
+#; $fp = fsockopen("127.0.0.2", 8080, $errno, $errstr, 5);
+#  if (! $fp)
+#     \STest::stop("no webserver running on ".STest::$DOMAIN." : $errno / $errstr");
+
+# Substring content test
+/;
+    ~ "test server"
+
+# Substrings present
 /;
     ~ "test";
     ~ "server";
@@ -87,6 +93,11 @@ STest::$BODY;
     ["code"=>302, "redirect"=>'http://example.com/myOtherPage.php'];
 /redirect?code=303;
     ["code"=>303, "redirect"=>'http://example.com/myOtherPage.php'];
+
+# You current STest::$DOMAIN is replaced by $DOMAIN in redirect-urls
+# this way you may have many site aliases and use same TEST
+/redirect ['url' => 'a/b/c'];
+    ["code"=>302, "redirect"=>'$DOMAIN/a/b/c'];
 
 /non_empty_response;
     'bla bla';
