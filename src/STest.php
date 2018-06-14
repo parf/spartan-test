@@ -61,6 +61,8 @@ class STest {
     static $PATH = "";    // last PATH used
     static $COOKIE = [];  // array cookie => value
 
+    static $DIR;           // current directory
+
     // optionExpand Short to LongOption or [Option => value, ...]
     static $optionExpand = [
         // shortOption to longOption
@@ -170,6 +172,7 @@ class STest {
 
     function runTest($file) {
         $this->file = $file;
+        self::$DIR = \realpath(dirname($file));
         try {
             InstanceConfig::init($file);
             $T = helper\Parser::Reader($file);
