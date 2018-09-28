@@ -2,7 +2,7 @@
 <?php
 
 #
-# by default stest sorts all arrays usingb keys (unlimited depth)
+# by default stest sorts all arrays using keys (unlimited depth ksort)
 #
 
 // Default Case - sorting ON
@@ -13,7 +13,7 @@ $r;
     ["a"=>1, "b"=>2, "c"=>3, "d"=>["a"=>1, "b"=>2, "c"=>3]];
 
 // Turn off sorting
-; $ARG['sort'] = 0; 
+; $ARG['sort'] = 0;
 $r = ['b' => 2, 'c' => 3, 'a' => 1];
     ["b"=>2, "c"=>3, "a"=>1];
 ; $r['d'] = $r;
@@ -21,4 +21,5 @@ $r;
     ["b"=>2, "c"=>3, "a"=>1, "d"=>["b"=>2, "c"=>3, "a"=>1]];
 
 ; $ARG['sort'] = 1; // restore default mode (result sorting);
-
+$r;
+    ["a"=>1, "b"=>2, "c"=>3, "d"=>["a"=>1, "b"=>2, "c"=>3]];

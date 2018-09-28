@@ -2,7 +2,7 @@
 # math test
 2*2;    # tests have 0 identation, result must be idented by 4 spaces;
     4;
-; $x = M_PI / 6;  # php-expression prefixed by ";";
+; $x = M_PI / 6;  # php-expression prefixed by ";"; - no test performed for ";" prefixed code
 sin($x) < 2;
     true;
 range(3,4);

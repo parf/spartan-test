@@ -1,6 +1,9 @@
+#!/bin/env stest
 //
 // You can successfully or unsuccessfully stop test
 //
+# this test will FAIL, this is intentional !!!
+# this test will FAIL, this is intentional !!!
 
 # --test-stop
 # STest::stop - stop test successfull, call Reporter->stop (usually same as Reporter->success)

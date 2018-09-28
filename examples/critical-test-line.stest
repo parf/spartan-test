@@ -1,9 +1,10 @@
-//
+#!/bin/env stest
+#//
 // "! test" - critical-test (stop test if critical-test-line failed)
 //
 
 # stop test if error on following line
-! 1+1
+! 1+1;  # Critical test intentinally failed, script execution stopped with error condition
     3
 
 1+1

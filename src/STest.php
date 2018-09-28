@@ -122,6 +122,27 @@ class STest {
         throw new AlertException($message);
     }
 
+    /**
+     * Useful for debugging
+     * inspect $object
+     * show ClassName, ParentClass class_filename (non-common path wirh current test)
+     */
+    static function inspect(/* "object | string className" */ $object, $show_line = 0) {
+        $class = is_object($object) ? get_class($object) : $object;
+        $rc = new \ReflectionClass($class);
+        $filename = $rc->getFileName();
+        if ($p = $rc->getParentClass())
+            $class .= "(".$p->getName().")";
+        // remove common part of path
+        foreach (range(0, strlen($filename)) as $i) {
+            if (! isset($filename[$i]) || ! isset(self::$DIR[$i]) || $filename[$i] != self::$DIR[$i]) {
+                $filename = substr($filename, $i);
+                break;
+            }
+        }
+        return "$class $filename".($show_line ? " ".$rc->getStartLine() : "");
+    }
+
      /**
      * Enable TESTING (already enabled bu default, call after calling disable)
      * Usage:
@@ -443,6 +464,9 @@ class STest_File_Commands {
                 } // if-expr
                 if ($__type  == "test") {
                     $__t->tests++;
+                    if ($__code{0}.$__code{1} === '? ') { // "? code" - inspect code
+                        $__code = "STest::inspect(".trim(substr($__code, 2), ";").");";
+                    }
                     if ($__code{0} === '!') { // "! code" - turn ON stop-on-first-error for this line. ("!" symbol is ignored)
                         if (! @$ARG['first_error'])
                             $ARG['first_error'] = 'temp';
