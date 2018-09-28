@@ -4,6 +4,10 @@
 # use --DOMAIN="https://my-domain" to change DOMAIN
 ; STest::$DOMAIN = $ARG['DOMAIN'] ?? "127.0.0.2:8080";
 
+; $fp = fsockopen("127.0.0.2", 8080, $errno, $errstr, 5);
+  if (! $fp)
+     \STest::stop("no webserver running on ".STest::$DOMAIN." : $errno / $errstr");
+
 # "!" Critical Test
 # TEST will instantly fail if critical test failed
 !/;

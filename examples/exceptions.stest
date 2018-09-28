@@ -1,7 +1,8 @@
+#!/bin/env stest
 ; function ex() { 
      throw new Exception("hit the fan");
   };
 
 ex();
-    ["Exception", "hit the fan"];
+    ['Exception', 'hit the fan'];
 

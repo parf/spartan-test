@@ -1,3 +1,4 @@
+#!/bin/env stest
 /*
   How to ignore notices, warnings and other php messages in stest
 */

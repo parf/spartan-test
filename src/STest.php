@@ -489,7 +489,14 @@ class STest_File_Commands {
                     } catch(\Exception $__ex) {
                         $__rz = [get_class($__ex), $__ex->getMessage()];
                     } catch(\Error $__ex) {
-                        $__rz = ["Error:".get_class($__ex), $__ex->getMessage()];
+                        if (@$ARG['allowError']) {  // --allowError to not break on \Error Exceptions
+                            $__rz = ["Error:".get_class($__ex), $__ex->getMessage()];
+                        } else {
+                            $class = get_class($__ex);
+                            $_err = "Error: $class ".$__ex->getMessage();
+                            $trace = self::_backtrace($__ex);
+                            \STest::error("\Error Exception: $class Line: $__line.\nTrace:\n$trace");
+                        }
                     } catch(\Throwable $__ex) {
                         $__rz = ["Throwable:".get_class($__ex), $__ex->getMessage()];
                     }
@@ -532,6 +539,17 @@ class STest_File_Commands {
         $how = $fail ? "fail" : "success";
         i('reporter')->$how($__t->filename, array_filter(['tests' => $__t->tests, 'new' => $__t->new, 'fail' => $__t->fail]));
     }
+
+    // get useful part of exception's backtrace as string
+    // TODO - provide better backtrace - use getTrace
+    static private function _backtrace(\Throwable $ex) : string {
+        $trace = $ex->getTraceAsString();
+        $pos = strpos($trace, '/STest.php'); // find and cut part with STest backtrace
+        $trace = substr($trace, 0, $pos);
+        $pos = strrpos($trace, "\n");
+        return substr($trace, 0, $pos);
+    }
+
 
     /**
      * INTERNAL
