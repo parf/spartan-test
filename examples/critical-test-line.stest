@@ -1,4 +1,4 @@
-#!/bin/env stest
+#!/usr/bin/env stest
 #//
 // "! test" - critical-test (stop test if critical-test-line failed)
 //

@@ -1,4 +1,4 @@
-#!/bin/env stest
+#!/usr/bin/env stest
 # math test
 2*2;    # tests have 0 identation, result must be idented by 4 spaces;
     4;

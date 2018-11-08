@@ -1,4 +1,4 @@
-#!/bin/php
+#!/usr/bin/php
 <?php
 include __DIR__."/../src/STest.php";
 // RUN TESTS

@@ -1,4 +1,4 @@
-#!/bin/env stest
+#!/usr/bin/env stest
 //
 // useful debuging tool: "? expression" - inspect variable
 //

@@ -1,4 +1,4 @@
-#!/bin/env stest
+#!/usr/bin/env stest
 <?php
 
 # use --DOMAIN="https://my-domain" to change DOMAIN

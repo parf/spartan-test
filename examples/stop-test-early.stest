@@ -1,4 +1,4 @@
-#!/bin/env stest
+#!/usr/bin/env stest
 //
 // You can successfully or unsuccessfully stop test
 //

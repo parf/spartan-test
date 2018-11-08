@@ -1,4 +1,4 @@
-#!/bin/env stest
+#!/usr/bin/env stest
 <?php
 
 ; STest::$DOMAIN = "127.0.0.2:8080";

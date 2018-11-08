@@ -1,4 +1,4 @@
-#!/bin/env stest
+#!/usr/bin/env stest
 
 #
 # "~tests"

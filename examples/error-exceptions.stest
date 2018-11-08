@@ -1,4 +1,4 @@
-#!/bin/env stest
+#!/usr/bin/env stest
 
 # By default stest does not allow \Error exceptions
 # mark test as failed, shows backtrace
