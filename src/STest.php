@@ -605,7 +605,7 @@ class STest_File_Commands {
                     if (! is_int($k)) {
                         if (@$got[$k] == $e)
                             continue;
-                        return " array-element {cyan}\"$k\" => ".x2s($e)."{/} expected";
+                        return " array-element {cyan}\"$k\" => ".x2s($e)."{/} expected, got ".x2s(@$got[$k]);
                     }
                     if (! in_array($e, $got))
                         return " array-element-expected: {cyan}".x2s($e)."{/}";
