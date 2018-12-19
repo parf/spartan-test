@@ -493,9 +493,9 @@ class STest_File_Commands {
                             $__rz = ["Error:".get_class($__ex), $__ex->getMessage()];
                         } else {
                             $class = get_class($__ex);
-                            $_err = "Error: $class ".$__ex->getMessage();
+                            $_err = "\Error Exception: $class(\"".$__ex->getMessage()."\")";
                             $trace = self::_backtrace($__ex);
-                            \STest::error("\Error Exception: $class".($trace ? "\nTrace:\n$trace" : ""));
+                            \STest::error($_err.($trace ? "\nTrace:\n$trace" : ""));
                         }
                     } catch(\Throwable $__ex) {
                         $__rz = ["Throwable:".get_class($__ex), $__ex->getMessage()];
