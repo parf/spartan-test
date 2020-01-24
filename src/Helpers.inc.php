@@ -54,7 +54,7 @@ class InstanceConfig {
     static function _include_init($dir, $file) {
         if (! $file)
             return;
-        if ($file{0} === '/') {
+        if ($file[0] === '/') {
             @\STest::$ARG['debug'] && print("including $file\n");
             include_once $file;
             return;
@@ -92,7 +92,7 @@ function parseArgs(array $argv) : array { # [$options, $args]
     $args = [];
     array_shift($argv);
     foreach ($argv as $a) {
-        if ($a{0} !== '-') {
+        if ($a[0] !== '-') {
             $args[] = $a;
             continue;
         }
@@ -101,7 +101,7 @@ function parseArgs(array $argv) : array { # [$options, $args]
             exit(1);
         }
         // -abc
-        if ($a{1} !== '-') { // -ab == ['a' => true, 'b' -> true]
+        if ($a[1] !== '-') { // -ab == ['a' => true, 'b' -> true]
             if (strpos($a, "=")) {
                 echo "incorrect argument: $a\nuse --name=value instead";
                 exit(1);
@@ -219,7 +219,7 @@ class Parser {
             $l = trim($l);
             if (! $l)
                 return [$ln, ['br', '']];
-            if ($l{0} == '#' || substr($l, 0, 2) == '//')
+            if ($l[0] == '#' || substr($l, 0, 2) == '//')
                 return [$ln, ['comment', $l]];
             if ($l == '<?php') // treat as comment
                 return [$ln, ['comment', $l]];
@@ -246,10 +246,10 @@ class Parser {
         // PHP Expression
         // "; ..." and all idented lines after this
         $php_expr = function ($ln, $l, $I) {
-            if ($l{0} != ';')
+            if ($l[0] != ';')
                 return;
             while ([$nl, $s] = $I->getKV()) {
-                if (!$s || $s{0} !== ' ') { // empty line or non idented line
+                if (!$s || $s[0] !== ' ') { // empty line or non idented line
                     $I->putKV([$nl, $s]);
                     break;
                 }
@@ -258,18 +258,18 @@ class Parser {
             }
             $l = trim($l);
             // auto-fix missing ";"
-            if ($l{-1} !== ';')
+            if ($l[-1] !== ';')
                 $l .= ';';
             return [$ln, ['expr', $l]];
         };
 
         // TEST expression (many lines idented by (1..3) spaces), then (optional)result (idented by 4 spaces)
         $test = function ($ln, $l, $I) {
-            if ($l && $l{0} == ' ')
+            if ($l && $l[0] == ' ')
                 return;
             $rz = ""; // result
             while ([$nl, $s] = $I->getKV()) { // nl - next-line#
-                if (!$s || $s{0} != ' ') {
+                if (!$s || $s[0] != ' ') {
                     $I->putKV([$nl, $s]);
                     break;
                 }
@@ -295,9 +295,9 @@ class Parser {
             $l = trim($l);
             $rz = trim($rz);
             // auto-fix missing ";"
-            if ($l{-1} !== ';')
+            if ($l[-1] !== ';')
                 $l .= ';';
-            if ($rz && $rz{-1} !== ';')
+            if ($rz && $rz[-1] !== ';')
                 $rz .= ';';
             return [$ln, ['test', $l, $rz]];
         };
@@ -415,7 +415,7 @@ class Iterator_Put implements \Iterator  {
      */
     function process(array $handlers, $final_handler = ":alert") : array {
         if ($final_handler) {
-            if ($final_handler{0} == ':')
+            if ($final_handler[0] == ':')
                 $final_handler = "Iterator_Put::process_".substr($final_handler, 1);
             $handlers[] = $final_handler;
         }
@@ -441,7 +441,7 @@ class Iterator_Put implements \Iterator  {
      */
     function processKV(array $handlers, $final_handler = ":alert") : array {
         if ($final_handler) {
-            if ($final_handler{0} == ':')
+            if ($final_handler[0] == ':')
                 $final_handler = "Iterator_Put::process_".substr($final_handler, 1);
             $handlers[] = $final_handler;
         }

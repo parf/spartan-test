@@ -16,7 +16,7 @@ class Pages {
     PUBLIC static function _dispatch(string $path) {
         $W = new Pages();
         $p = str_replace(["-", ".", "/"], "_", trim($path, "/")) ?: "index";
-        if ($p{0} == '_')
+        if ($p[0] == '_')
             die("internal-only path: '$path' - '$p'");
         $m = [$W, $p];
         if (! is_callable($m))

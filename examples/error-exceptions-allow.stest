@@ -1,0 +1,14 @@
+#!/usr/bin/env stest
+
+# By default stest does not allow \Error exceptions
+# mark test as failed, shows backtrace
+# use "--allowError" or $ARG['allowError'] = 1; to allow \Error exceptions
+#
+# Allow to catch \Error exceptions
+; $ARG['allowError'] = 1;
+
+; class MyError extends \Error {};
+; $a = function () { throw new \MyError("Hit the Fan"); };
+
+$a();
+    ['Error:MyError', 'Hit the Fan'];

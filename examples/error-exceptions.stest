@@ -1,0 +1,14 @@
+#!/usr/bin/env stest
+
+#
+# Any \Error exception will mark test as failed
+# use --allowError or "; $ARG['allowError']=1;" to allow Error exceptions
+#
+
+; function ex() { 
+     throw new Error("hit the fan");
+  };
+
+ex();
+    ['Error:Error', 'hit the fan'];
+
