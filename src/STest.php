@@ -11,6 +11,13 @@ use function stest\helper\x2s;   // var_export alike
  * RTFM: README.md
  */
 
+/**
+ * todo:
+ *  - use color schemes instead of actual colors - implement at least two lightBG, darkBG (three - phpStorm terminal changes some colors)
+ *  - web services testing
+ *  - finish tags
+ */
+
 include __DIR__."/Helpers.inc.php";
 
 // poor-man DI - Dependency Injection
@@ -85,7 +92,7 @@ class STest {
 
     /**
      * stop test execution successfully
-     * can be overriden by "--force"
+     * can be overridden by "--force"
      *
      * Usage:
      *   \STest::stop("message");            << test disable
@@ -171,7 +178,7 @@ class STest {
         // setup console
         I(['out', Console::i(@self::$ARG)]); // color, silent, syslog
         if (@self::$ARG['debug'])
-            I('out')->e("{green}Spartan Test v".VERSION."{/} on ".gethostname()." at ".date("Y-m-d H:i")."\n");
+        I('out')->e("{green}Spartan Test v".VERSION."{/} on ".gethostname()." at ".date("Y-m-d H:i")."\n");
         if (! self::$TESTS)
             self::$ARG += ["help" => 1];
         set_error_handler('\\stest\\Error::handler', E_ALL);
@@ -192,6 +199,7 @@ class STest {
     }
 
     function runTest($file) {
+
         $this->file = $file;
         self::$DIR = \realpath(dirname($file));
         try {
@@ -265,7 +273,7 @@ class STest_Global_Commands {
     static function color() {}
 
     /**
-     * show erorrs only (-s)
+     * show errors only (-s)
      */
     static function silent() {}
 
@@ -364,6 +372,12 @@ class STest_Global_Commands {
      * Debug test - some methods will provide additional information
      */
     static function debug() {}
+
+
+    /**
+     * for use in "crontab": no-colors, show errors only
+     */
+    static function cron() {}
 
 } // class STest_Global_Commands
 
@@ -522,7 +536,7 @@ class STest_File_Commands {
 
         $dur = microtime(1) - $__t->start;
         $stat = "tests: ".$__t->tests;
-        if ($dur > 0.1) // require at least 0.1 sec
+        if ($dur > 0.1 || @$ARG['verbose']) // require at least 0.1 sec
             $stat .= " (".sprintf("%0.2f", $dur)."s)";
         if ($new = $__t->new)
             $stat .= ", {blue}{bold}new: $new{/}";
