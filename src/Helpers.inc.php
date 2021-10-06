@@ -20,6 +20,9 @@ class InstanceConfig {
     // InstanceName | InstanceName:params => instance
     static $I = [];
 
+    static function debug($message, $level = 1) {
+       (\STest::$ARG['debug'] ?? 0) >= $level && print($message."\n");
+    }
     static function init($file = false) {
         $base = __DIR__."/config.json";
         if (! self::$baseConfig)
@@ -32,12 +35,12 @@ class InstanceConfig {
             return;
         $DIR = $dir = realpath($file);
         while (($dir = dirname($dir)) != '/') {
-            @\STest::$ARG['debug'] > 1 && print("Loading configs: $dir\n");
+            self::debug("Loading configs: $dir");
             foreach (["stest-config.local.json", "stest-config.json"] as $fn) {
                 $f = "$dir/$fn";
                 if (! file_exists($f))
                     continue;
-                @\STest::$ARG['debug'] && print(" - $f\n");
+		self::debug(" - $f", 2);
                 $d = json_decode(file_get_contents($f), 1);
                 if (is_null($d))
                     throw new \ErrorException("Can't parse config '$f'", 1);
@@ -55,17 +58,17 @@ class InstanceConfig {
         if (! $file)
             return;
         if ($file[0] === '/') {
-            @\STest::$ARG['debug'] && print("including $file\n");
+            self::debug("including $file");
             include_once $file;
             return;
         }
         while (($dir = dirname($dir)) != '/') {
             $f = "$dir/$file";
             if (! file_exists($f)) {
-                @\STest::$ARG['debug'] > 1 && print(" - missing $f\n");
+	        self::debug(" - missing $f", 2);
                 continue;
             }
-            @\STest::$ARG['debug'] && print(" - $f\n");
+	    self::debug(" - $f");
             include_once $f;
             break;
         }
@@ -601,7 +604,7 @@ class Console {
 
     // r("...") callback
     static function r_callback($match) {
-        if ($m = @self::$style[$match[1]])
+        if ($m = self::$style[$match[1]]??0)
             return $m;
         return $match[0]; // original !!
     }

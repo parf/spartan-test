@@ -33,7 +33,7 @@ function I(/*string | array */ $name, array $args=[]) { # Instance
         return $i;
     }
     $k = $name.":".json_encode($args);
-    if ($i = @InstanceConfig::$I[$k])
+    if ($i = InstanceConfig::$I[$k]??0)
         return $i;
     $class = @InstanceConfig::$config[$name]; // class name
     if (! $class)
@@ -324,7 +324,7 @@ class STest_Global_Commands {
             $e("{head}%s{/}\n", $title);
             $e($h["@"]. "\n"); // class doc
             foreach ($h as $method => $doc) {
-                if (! $method || $method{0} == '_')
+                if (! $method || $method[0] == '_')
                     continue;
                 $e("  {blue}{bold}%s{/}", str_pad($method, 16));
                 $e(" {grey}%s{/}\n", str_replace("\n", "\n                   ", $doc));
@@ -420,20 +420,20 @@ class STest_File_Commands {
                 // FAILED TEST
                 $__t->fail++;
                 $__err("{alert}L$line{/}: {red}$code{/}\n $err");
-                if (@$ARG['first_error'])
+                if ($ARG['first_error']??0)
                     throw new StopException("Stopping on first error");
             };
             $exp = trim($expected, ";");
-            if (@$exp{0} == '~') { // ~XXX special tests
+            if (($exp[0]??0) === '~') { // ~XXX special tests
                 if ($err = self::_custom_result_syntax($exp, $got))
                     $showError($err);
                 return;
             }
-            $got = x2s($got, @$ARG['sort']);   // result-as-php-code-string
+            $got = x2s($got, $ARG['sort']??"");   // result-as-php-code-string
             $got = str_replace("\n", "\n    ", $got); // result identation
             if ($exp == $got)
                 return;
-            if (@$ARG['generate']) { // generate all results in test
+            if ($ARG['generate']??0) { // generate all results in test
                 $expected = $got.";"; // save corrected result
                 $__err("CODE: {bold}{red}L$line{/}: $code");
                 if ($exp) {
@@ -458,7 +458,8 @@ class STest_File_Commands {
             $showError("expect: {cyan}".$exp."{/}\n  got:   {red}$got{/}");
         };
 
-        @$ARG['verbose'] && i('out')->e("*** {head}%s{/}\n", $__t->filename);
+	$ARG['verbose'] = $ARG['verbose']??0;
+        $ARG['verbose'] && i('out')->e("*** {head}%s{/}\n", $__t->filename);
 
         try {
             //
@@ -478,10 +479,10 @@ class STest_File_Commands {
                 } // if-expr
                 if ($__type  == "test") {
                     $__t->tests++;
-                    if ($__code{0}.$__code{1} === '? ') { // "? code" - inspect code
+                    if ($__code[0].$__code[1] === '? ') { // "? code" - inspect code
                         $__code = "STest::inspect(".trim(substr($__code, 2), ";").");";
                     }
-                    if ($__code{0} === '!') { // "! code" - turn ON stop-on-first-error for this line. ("!" symbol is ignored)
+                    if ($__code[0] === '!') { // "! code" - turn ON stop-on-first-error for this line. ("!" symbol is ignored)
                         if (! @$ARG['first_error'])
                             $ARG['first_error'] = 'temp';
                         $__code = substr($__code, 1);
@@ -503,7 +504,7 @@ class STest_File_Commands {
                     } catch(\Exception $__ex) {
                         $__rz = [get_class($__ex), $__ex->getMessage()];
                     } catch(\Error $__ex) {
-                        if (@$ARG['allowError']) {  // --allowError to not break on \Error Exceptions
+                        if ($ARG['allowError']??0) {  // --allowError to not break on \Error Exceptions
                             $__rz = ["Error:".get_class($__ex), $__ex->getMessage()];
                         } else {
                             $class = get_class($__ex);
@@ -516,7 +517,7 @@ class STest_File_Commands {
                     }
                     @$ARG['verbose'] && i('out')->e("    {green}%s{/}\n", $__line__tp_v_r[1][2] /*x2s($__rz) */);
                     $__tester($__line__tp_v_r[1][2], $__rz, $__line, $__code);
-                    if ('temp' === @$ARG['first_error'])
+                    if ('temp' === ($ARG['first_error']??0))
                         unset($ARG['first_error']);
                 } // if-test
             }
@@ -547,7 +548,7 @@ class STest_File_Commands {
         }
 
         // save test when '--generate' option, or new items were added and no tests failed
-        if (($__t->new && ! $__t->fail) || @$ARG['generate'])
+        if (($__t->new && ! $__t->fail) || ($ARG['generate']??0))
             self::save($__t->T);
 
         $how = $fail ? "fail" : "success";
@@ -603,7 +604,7 @@ class STest_File_Commands {
                 return "non empty string expected got: empty string";
             return;
         }
-        switch ($x{0}) {
+        switch ($x[0]) {
             case '"': // "substring"
                 if (! is_string($got))
                     return "string expected got:".gettype($got);
@@ -653,7 +654,7 @@ class STest_File_Commands {
         if (! $test)
             throw new ErrorException("Empty Test");
         # /$path  == Webtest::GET
-        if ($test{0} == '/') {
+        if ($test[0] == '/') {
             $test = trim($test, ";");
             @[$path, $args] = explode(" ", $test, 2);
             if (! $args)
@@ -760,7 +761,7 @@ class Error {  // error handler
     // if you want to suppress something else - change Error::$error_reporting
 
     // Error::handler
-    static function handler($level, $message, $file, $line, $context) {
+    static function handler($level, $message, $file, $line) {
         // you can hide notices and warnings with @
         // you can't hide errors
         if (!error_reporting() && ($level == E_WARNING || $level == E_NOTICE))
