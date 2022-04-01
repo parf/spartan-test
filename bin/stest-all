@@ -8,10 +8,10 @@ if [ "$1" == "--help" ]; then
   echo "execute all tests in current or given directory (and subdirectories) in parallel"
   echo
   echo Options
-  echo "  --tag=\"tag1 tag2 -tag3\" : execute tests matching tags"
-  echo "  --list - list tests"
+#  echo "  --tag=\"tag1 tag2 -tag3\" : execute tests matching tags" - not implemented yet
+  echo "  --list : list tests"
 #  echo " -v  : verbose - show test names"   << DEFAULT
-  echo " -q    : quite - show only errors"
+  echo "  -q     : quite - show only errors"
   exit 1
 fi
 
@@ -20,14 +20,21 @@ if [ "$1" == "--list" ]; then
     exit
 fi
 
-# special case "/" look for parent directory with init.php
-# https://unix.stackexchange.com/questions/13464/is-there-a-way-to-find-a-file-in-an-inverse-recursive-search/13474
-#
-
 # check for GNU parallel
 [[ $(type -P parallel) ]] || { echo "GNU parallel required"; exit 1; }
 
+quite=0
 if [ "$1" == "-q" ]; then
+  quite=1
+  shift
+fi
+
+if [ ! -z "$1" ]; then
+  cd $1
+fi
+
+# show errors only (in STDERR)
+if [ $quite == 1 ]; then
   find . -name "*.stest" -executable | parallel -j0 '{} -s'
   exit
 fi
