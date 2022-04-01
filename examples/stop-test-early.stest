@@ -2,21 +2,21 @@
 //
 // You can successfully or unsuccessfully stop test
 //
-# this test will FAIL, this is intentional !!!
+
 # this test will FAIL, this is intentional !!!
 
 # --test-stop
 # STest::stop - stop test successfull, call Reporter->stop (usually same as Reporter->success)
-; @$ARG['test-stop'] && STest::stop("no database found - stop");
+; ($ARG['test-stop'] ?? 0) && STest::stop("no database found - stop");
 
 # --test-error
 # STest::error - stop test as failed, call Reporter->error
-; @$ARG['test-error'] && STest::error("no database found - error condition");
+; ($ARG['test-error'] ?? 0) && STest::error("no database found - error condition");
 
 # --test-alert
 # STest::alert - stop test as failed, call Reporter->alert
 # for production systems you should send SMS/Slack alert
-; @$ARG['test-alert'] && STest::alert("no database found - alert condition");
+; ($ARG['test-alert'] ?? 0) && STest::alert("no database found - alert condition");
 
 
 // sample usecase below
@@ -30,7 +30,7 @@
 //
 
 # using "--no-db" to emulate absense of database
-; $db_connection = function () use ($ARG) { return @$ARG['no-db'] ? 0 : 1; };
+; $db_connection = function () use ($ARG) { return ($ARG['no-db']??0) ? 0 : 1; };
 
 # Stoping test via STest::stop(..)
 # Test stopped this way is not considered as a failed test

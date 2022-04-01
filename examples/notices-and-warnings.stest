@@ -3,37 +3,42 @@
   How to ignore notices, warnings and other php messages in stest
 */
 
+# Allow \Error exceptions in test
+; $ARG['allowError'] = 1;
+
 # Default behaviour is E_ALL (php.ini error_reporting)
 # fail on all kinds of notices/warnings/errors/...
 $undefined;
-    ["error"=>'NOTICE: Undefined variable: undefined'];
+    ["error"=>'WARNING: Undefined variable $undefined'];
 1/0;
-    ["error"=>'WARNING: Division by zero'];
+    ['Error:DivisionByZeroError', 'Division by zero'];
 ; $a = ['a' => 1];
 $a['a'];
     1;
 $a['b'];
-    ["error"=>'NOTICE: Undefined index: b'];
-@$a['b']; // safe way;
+    ["error"=>'WARNING: Undefined array key "b"'];
+$a['b']??null; // safe way;
     NULL;
 
 # suppress notices
 stest\Error::suppress_notices();
     NULL;
 $undefined;
-    NULL;
+    ["error"=>'WARNING: Undefined variable $undefined'];
 1/0;
-    ["error"=>'WARNING: Division by zero'];
+    ['Error:DivisionByZeroError', 'Division by zero'];
 $a['b'];
-    NULL;
+    ["error"=>'WARNING: Undefined array key "b"'];
 
 # suppress warnings (usually this is a bad idea)
 stest\Error::suppress_warnings();
     NULL;
 $undefined;
     NULL;
+$a['b'];
+    NULL;
 1/0;
-    INF;
+    ['Error:DivisionByZeroError', 'Division by zero'];
 
 # You can suppress more !!
 # set stest\Error::$error_reporting to any value (~ of value as in php.ini error_reporting)
@@ -46,19 +51,19 @@ E_NOTICE | E_WARNING;
 # suppress deprecated-warnings and warnings and notices
 ; class X { function a() { echo "x"; } };
 X::a();
-    ["error"=>'E_DEPRECATED: Non-static method X::a() should not be called statically'];
+    ['Error:Error', 'Non-static method X::a() cannot be called statically'];
 ; stest\Error::$error_reporting |= E_DEPRECATED;
 X::a();
-    [NULL, "$"=>'x'];
+    ['Error:Error', 'Non-static method X::a() cannot be called statically'];
 
 # explicit
 ; stest\Error::$error_reporting = E_DEPRECATED | E_NOTICE | E_WARNING;
 X::a($a['b']);
-    [NULL, "$"=>'x'];
+    ['Error:Error', 'Non-static method X::a() cannot be called statically'];
 
 # report notices, ignore deprecated
 # multiple errors combined
 ; stest\Error::$error_reporting = E_DEPRECATED;
 X::a($a['b'], $a['c']);
-    ["error"=>['NOTICE: Undefined index: b', 'NOTICE: Undefined index: c']];
+    ['Error:Error', 'Non-static method X::a() cannot be called statically'];
 

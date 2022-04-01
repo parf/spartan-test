@@ -6,7 +6,7 @@
 
   Default test for old-api, when "-b" or "--b" option specified new-api is used
 
-;  if ($ARG['b']) {
+;  if ($ARG['b']??0) {
       include "new-api.php";
    } else {
       include "old-api.php";
@@ -16,7 +16,7 @@
 
 
 ; $def = function ($a) { return $a; };
-; if (@$ARG['b']) { // check for -b option
+; if ($ARG['b']??0) { // check for -b option
      $def = function ($a) { return 2 * $a; };
   };
 

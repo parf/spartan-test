@@ -1,0 +1,24 @@
+{
+    "name": "parf/spartan-test",
+    "description": "PHP 8 Unit and Web Testing Utility",
+    "keywords": ["unit test", "web test", "utility"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Sergey Parf",
+            "email": "sergey.porfiriev@gmail.com"
+        }
+    ],
+    "type": "project",
+    "bin": ["bin/stest", "bin/stest-all"],
+    "require": {
+		"php": ">=8.0"
+    },
+    "require-dev": {
+    },    
+  "scripts": {
+    "test": "bin/stest-all",
+    "test-quite": "bin/stest-all -q",
+    "test-list": "bin/stest-all --list"
+  }    
+}

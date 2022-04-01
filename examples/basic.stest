@@ -53,14 +53,14 @@ $a.$a;
 
 
 $r;
-    ["error"=>'NOTICE: Undefined variable: r'];
+    ["error"=>'WARNING: Undefined variable $r'];
 
 /* one line comment */
 
 # This idented comments will be automatically unindented
-  /* idented one line comment */
-    // idented comment
-      # idented comment
+/* idented one line comment */
+// idented comment
+# idented comment
 
 
 // stdout catching

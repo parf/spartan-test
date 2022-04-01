@@ -1,10 +1,10 @@
 SPARTAN-TEST
 ============
 
-Minimalistic PHP 7 Unit Testing Framework / Web Testing Framework
+Minimalistic PHP 7, PHP 8 Unit Testing Framework / Web Testing Framework
 
 Write your tests in style:
-* your tests should be easier than your code
+* tests should be simple
 * run your tests as executable file
 * test your code and/or test web pages
 * test is ~ php code, minimal learning curve
