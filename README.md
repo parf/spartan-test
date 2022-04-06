@@ -49,17 +49,13 @@ range(3,4);
 
 USING STEST
 -----------
-Upon start stest looks for `init.php` file in test directory and in parent directories, and includes it.
-Place this file on top directory of your file hierarachy. 
-This file should setup autoloader and may look like this:
+create file starting with
 ```
-$COMPOSER_DIRECTORY = __DIR__;
-$loader = require $COMPOSER_DIRECTORY . '/vendor/autoload.php';
-# $loader->addPsr4(....);
+#!/bin/env stest
+<?php
+
+# your test
 ```
-alternatively you can create file:
-`stest-config.json` or `stest-config.local.json`: with
-`{"init":"your-init-file-name.php"}`
 
 INSTALL
 -------
