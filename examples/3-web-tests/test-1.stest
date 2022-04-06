@@ -4,6 +4,9 @@
 # use --DOMAIN="https://my-domain" to change DOMAIN
 ; STest::$DOMAIN = $ARG['DOMAIN'] ?? "127.0.0.2:8080";
 
+# Silently & Successfuly Stop test when service is not running, (default behaviour: fire error, stop test)
+\hb\Curl::test(STest::$DOMAIN , 'stop');
+
 # "!" Critical Test
 # TEST will instantly fail if critical test failed
 !/;
@@ -104,7 +107,7 @@ STest::$BODY;
 /non_empty_response;
     ~;
 
-# @TODO
+# @TODO - NOT IMPLEMENTED YET
 # test lots of urls in parallel
 # https://stackoverflow.com/questions/9308779/php-parallel-curl-requests
 ; $urls = ["/sleep", "/sleep?t=2", "/sleep?t=3"];
@@ -121,7 +124,3 @@ STest::$BODY;
     ["code"=>404, "size"=>25];
 \STest::$INFO['body'];
     'Page "/[$urls]" Not Found';
-
-1+
-  2;
-    3;

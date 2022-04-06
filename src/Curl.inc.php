@@ -13,7 +13,7 @@ class Curl {
      * test is service's port is active
      * @throws \stest\StopException
      */
-    static function test(string $url)  {
+    static function test(string $url, $level = "error")  {
         $d = \parse_url($url);
         $host = $d['host'] ?? "";
         if (! $host)
@@ -21,7 +21,7 @@ class Curl {
         $port = $d['port'] ?? ( (\strtolower($d['scheme'] ?? "") === 'https') ? 443 : 80);
         $fp = fsockopen($host, $port, $errno, $errstr, 5);
         if (! $fp)
-            \STest::stop("no service on `$url` port:$port : err#$errno '$errstr'");
+            \STest::$level("no service on `$url` port:$port : err#$errno '$errstr'");
         fclose($fp);
     }
 
@@ -121,7 +121,7 @@ class Curl {
                 }
             }
             $info['headers'] = $h;
-            $info['body'] = substr($data, @$info['header_size']);
+            $info['body'] = substr($data, $info['header_size']??0);
         } else {
             $info['body'] = $data;
         }
@@ -140,30 +140,13 @@ class WebTest {
 
     // mostly internal/debug-level
     // when set code-200 discovered errors reported as \stest\ErrorExceptions
-    // when unset code-200 discovered errors reported inside \STestLL$BODY
+    // when unset code-200 discovered errors reported inside \STest::$BODY
     public $error_as_exception = 1;
 
     function __construct() {
         if (! STest::$DOMAIN)
-            STest::error("no DOMAIN configured");
-        $this->test("no service running on ".STest::$DOMAIN);
-
-        echo "CHECK OK ".STest::$DOMAIN, "\n";
-    }
-
-    function test($message, $level = "stop") {
-        $levels = ['stop', 'error', 'alert'];
-        #if (! $levels[$level])
-        #    throw new \RuntimeException("Error Processing Request");
-        $d = STest::$DOMAIN;
-        if (! $d)
-            throw new \stest\ErrorException("Set STest::\$DOMAIN first");
-        $u = parse_url($d);
-        $s = strtolower($u['scheme']??"") ?: "http";
-        $port = $u['port'] ?? ($s == 'https' ? 443 : 80);
-        if(fsockopen($u['host'], 80, $errno, $errstr, 5))
-            return;
-        STest::$level($message);
+            STest::error("no DOMAIN configured, set STest::\$DOMAIN first");
+        Curl::test(STest::$DOMAIN); // fast check if service online
     }
 
     // report discovered error on code=200 page

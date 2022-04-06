@@ -466,7 +466,7 @@ class STest_File_Commands {
             $showError("expect: {cyan}".$exp."{/}\n  got:   {red}$got{/}");
         };
 
-	$ARG['verbose'] = $ARG['verbose']??0;
+	    $ARG['verbose'] = $ARG['verbose']??0;
         $ARG['verbose'] && i('out')->e("*** {head}%s{/}\n", $__t->filename);
 
         try {
@@ -790,7 +790,7 @@ class Error {  // error handler
                           E_STRICT       => 'E_STRICT',
                           E_DEPRECATED   => 'E_DEPRECATED',
                           );
-        $type = ($t = @$map[$level]) ? $t : "ERROR#$level";
+        $type = $map[$level] ?? "ERROR#$level";
         $e = "$type: $message";
         if (substr($file, 0, strlen(__FILE__)) != __FILE__)
             $e = [$e, $file, $line];
