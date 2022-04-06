@@ -48,29 +48,33 @@ class InstanceConfig {
             }
         }
         // lookup init file, include it
-        self::_include_init($DIR, self::$config['init']);
+        $init_files = (array) (self::$config['init'] ?? []);
+        foreach ($init_files as $init) {
+            if (self::_include_init($DIR, $init))
+                break;
+        }
     }
 
     // include init file
     // absolute path: include right away
     // relative path: look for file in current, parent directories, include first found
-    static function _include_init($dir, $file) {
+    static function _include_init($dir, $file) { # "$file" - included file, null - not included
         if (! $file)
             return;
         if ($file[0] === '/') {
             self::debug("including $file");
             include_once $file;
-            return;
+            return $file;
         }
         while (($dir = dirname($dir)) != '/') {
             $f = "$dir/$file";
             if (! file_exists($f)) {
-	        self::debug(" - missing $f", 2);
+    	        self::debug(" - missing $f", 2);
                 continue;
             }
-	    self::debug(" - $f");
+    	    self::debug(" - loading init file $f");
             include_once $f;
-            break;
+            return $f;
         }
     }
 }
