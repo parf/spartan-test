@@ -34,13 +34,18 @@ class InstanceConfig {
         if (! $file)
             return;
         $DIR = $dir = realpath($file);
+        if (! $DIR)
+            die("Can't access file `$file`");
+
         while (($dir = dirname($dir)) != '/') {
             self::debug("Loading configs: $dir");
+            if (! $dir)
+                break;
             foreach (["stest-config.local.json", "stest-config.json"] as $fn) {
                 $f = "$dir/$fn";
                 if (! file_exists($f))
                     continue;
-		self::debug(" - $f", 2);
+        		self::debug(" - $f", 2);
                 $d = json_decode(file_get_contents($f), 1);
                 if (is_null($d))
                     throw new \ErrorException("Can't parse config '$f'", 1);
@@ -67,6 +72,8 @@ class InstanceConfig {
             return $file;
         }
         while (($dir = dirname($dir)) != '/') {
+            if (! $dir)
+                break;
             $f = "$dir/$file";
             if (! file_exists($f)) {
     	        self::debug(" - missing $f", 2);

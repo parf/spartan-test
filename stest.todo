@@ -2,7 +2,7 @@
 
 Ideas:
 
-- Php 7.1 code testing framework
+- Php 8.1 code testing framework
 - Simple ez-to maintain tests implemented as PHP code
 - Integrated web testing framework
 - Pluggable alert & statistic modules
@@ -11,6 +11,12 @@ Ideas:
 - parallel test execution (using gnu-parallel)
 - git-push-test script. install script on "test" server, then do "git push test" to test
 
+
+
+TODO
+ [ ] Web Test - check service presense on domain:port before first call, auto-fail if port is down
+
+---- OLD - for review 
 
 
  Stest and tiers / environments:

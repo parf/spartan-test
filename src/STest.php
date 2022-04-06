@@ -48,7 +48,7 @@ function I(/*string | array */ $name, array $args=[]) { # Instance
 // PUBLIC
 //
 
-const VERSION = 3.0;
+const VERSION = "3.0.1";
 
 //
 // INTERNAL
@@ -256,13 +256,13 @@ class STest_Global_Commands {
      */
 
     /**
-     * show every line being tested (-v)
+     * (-v) show every line being tested
      * stest -v filename.stest
      */
     static function verbose() {}
 
     /**
-     * re-generate test. replace all results (-g)
+     * (-g) re-generate test. replace all results
      */
     static function generate() {}
 
@@ -273,7 +273,7 @@ class STest_Global_Commands {
     static function color() {}
 
     /**
-     * show errors only (-s)
+     * (-s) show errors on STDERR only, suppress any STDOUT
      */
     static function silent() {}
 
@@ -283,13 +283,13 @@ class STest_Global_Commands {
     static function syslog() {}
 
     /**
-     * stop on first error encountered in test (-1)
+     * (-1) stop on first error encountered in test
      * inside test: "; $ARG['first_error'] = 1;"
      */
     static function first_error() {}
 
     /**
-     * do not stop \STest::stop, stop on Error/Alert however (-f)
+     * (-f) ignore \STest::stop, stop on \STest::Error/Alert however
      */
     static function force() {}
 
@@ -314,6 +314,14 @@ class STest_Global_Commands {
     }
 
     /**
+     * Print current version
+     */
+    static function version() {
+        echo VERSION, "\n";
+        exit(0);
+    }
+
+    /**
      * this help
      */
     static function help() {
@@ -331,8 +339,8 @@ class STest_Global_Commands {
             }
             $e("\n");
         };
-        $e("{bold}Spartan Test v".VERSION." minimalistic php 7.1 testing framework done right{/}\n");
-        $h ( helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), "Global Options");
+        $e("{bold}Spartan Test v".VERSION." minimalistic php 8.[01] testing framework done right{/}\n");
+        $h ( helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), "Global Options --\$option");
         $h ( helper\Documentor::classDoc("\\stest\\STest_File_Commands"), "File Options");
         #echo json_encode(helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), JSON_PRETTY_PRINT), "\n";
         #echo json_encode(helper\Documentor::classDoc("\\stest\\STest_File_Commands"), JSON_PRETTY_PRINT), "\n";
