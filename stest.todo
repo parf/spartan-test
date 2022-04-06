@@ -14,9 +14,29 @@ Ideas:
 
 
 TODO
- [ ] Web Test - check service presense on domain:port before first call, auto-fail if port is down
+ ☐ Web Test - check service presense on domain:port before first call, auto-fail if port is down
+   ; $fp = fsockopen("127.0.0.2", 8080, $errno, $errstr, 5);
+   if (! $fp)
+     \STest::error("no webserver running on ".STest::$DOMAIN." : $errno / $errstr");
 
----- OLD - for review 
+ ✔ Web Test - check https ; http2.0 @done (22-04-06 16:11)
+ ☐ Web Test - post json for APIs - add syntax POST-JS $uri $data
+
+ ☐ review examples, remove junk
+
+ ☐ implement tags
+   tag,tag,-tag,+tag   ; "," works as &&; + work as "or"
+
+ ☐ alerts
+    ☐ script | url
+    ☐ discord/telegram
+
+ ☐ better docs
+
+
+OLD - review old ideas:
+
+
 
 
  Stest and tiers / environments:
@@ -24,7 +44,7 @@ TODO
      dvp  = development
      test = staging, ci, stage
      prod = production
-   ☐ defailt tier = "development"
+   ☐ default tier = "development"
    ☐ specifying tier:
      ☐ --tier="tier"   << force set tier
      ☐ local config file
@@ -45,11 +65,11 @@ TODO
 
 STEP 1:
 
-  ☐ stest && get_included_files
-    ☐ idea 1: same file
-    ☐ idea 2: .file
+  ✘ stest && get_included_files @cancelled (22-04-06 16:13)
+    ✘ idea 1: same file @cancelled (22-04-06 16:13)
+    ✘ idea 2: .file @cancelled (22-04-06 16:13)
 
- ☐ STEST - public static methods ONLY
+ ✘ STEST - public static methods ONLY @cancelled (22-04-06 16:13)
 
  ☐ docs
 
@@ -58,12 +78,12 @@ STEP 1:
  ☐ "@tag" support - analyze 1st 5-ve comments in file for "# @tag space-delimited tag list"
     stest --tag="tag1 -tag2, tag3"   # (tag1 but no tag2) or (tag3)
 
- ☐ run-all-tests (using parallel)
-   ☐ ##X test ok, ##Y tests failed calls
+ ✔ run-all-tests (using parallel) @done (22-04-06 16:13)
+   ✘ ##X test ok, ##Y tests failed calls @cancelled (22-04-06 16:14)
 
- ☐ isProd, isDVP, isCI
+ ✘ isProd, isDVP, isCI @cancelled (22-04-06 16:14)
 
- ☐ composer package
+ ✔ composer package @done (22-04-06 16:14)
    https://knpuniversity.com/screencast/question-answer-day/create-composer-package
    https://getcomposer.org/doc/articles/vendor-binaries.md
 
@@ -73,7 +93,7 @@ STEP 1:
 
  ☐ Split InstanceConfig to Instance and Config:  C(...)
 
- ☐ change POST syntax to "/path POST .."
+ ✘ change POST syntax to "/path POST .." @cancelled (22-04-06 16:14)
 
  ☐ reporting:
    success / fail / alert
@@ -91,7 +111,7 @@ STEP 1:
 
  ☐ /[$urls] test - parallel curl test
 
- ☐  Exception in init.php
+ ✘  Exception in init.php @cancelled (22-04-06 16:14)
 
 STEP 2:
   * Web tests
@@ -106,11 +126,14 @@ STEP 2:
 STEP 3:
   ☐ tags
   ☐ run-all-tests (@tags)
-  ☐ parallel execution (via parallel)
+  ✔ parallel execution (via parallel) @done (22-04-06 16:13)
   ☐ inotify readers
 
 
 STEP 4:
+
+
+
   ☐ web alert system
   ☐ iphone / android notification app
 
