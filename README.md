@@ -49,7 +49,7 @@ range(3,4);
 
 USING STEST
 -----------
-create file starting with
+create file `$filename.stest` starting with
 ```
 #!/bin/env stest
 <?php
@@ -57,8 +57,24 @@ create file starting with
 # your test
 ```
 
-INSTALL
+then do `chmod +x $filename.stest` to make it executable
+
+
+# Composer / Laravel Autoload Integration
+upon start spartan test includes `bootstrap/autoload.php` or `vendor/autoload` or `init.php` file from current or parent directories
+
+You can specify your autoload file using "--init=$path_filename" option or via `stest.config` file
+
+
+INSTALL (GIT)
 -------
     mkdir -p ~/src ~/bin
     git clone https://github.com/parf/spartan-test.git ~/src/spartan-test
     ln -s ~/src/spartan-test/stest ~/bin
+
+
+INSTALL (COMPOSER)
+-------
+    composer require parf/spartan-test
+    ln -s ./vendor/bin/stest ~/bin
+    ln -s ./vendor/bin/stest-all ~/bin
