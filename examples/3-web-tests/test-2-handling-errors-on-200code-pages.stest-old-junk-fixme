@@ -2,10 +2,7 @@
 <?php
 
 ; STest::$DOMAIN = "127.0.0.2:8080";
-
-; $fp = fsockopen("127.0.0.2", 8080, $errno, $errstr, 5);
-  if (! $fp)
-     \STest::stop("no webserver running on ".STest::$DOMAIN." : $errno / $errstr");
+; \hb\Curl::test(STest::$DOMAIN);
 
 # All following tests will produce error in normal case scenario,
 # we are modifying default behaviour:

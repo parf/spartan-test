@@ -4,22 +4,14 @@
 # use --DOMAIN="https://my-domain" to change DOMAIN
 ; STest::$DOMAIN = $ARG['DOMAIN'] ?? "127.0.0.2:8080";
 
-; $fp = fsockopen("127.0.0.2", 8080, $errno, $errstr, 5);
-  if (! $fp)
-     \STest::stop("no webserver running on ".STest::$DOMAIN." : $errno / $errstr");
-
 # "!" Critical Test
 # TEST will instantly fail if critical test failed
 !/;
     'Welcome to test server';
 
-#; $fp = fsockopen("127.0.0.2", 8080, $errno, $errstr, 5);
-#  if (! $fp)
-#     \STest::stop("no webserver running on ".STest::$DOMAIN." : $errno / $errstr");
-
 # Substring content test
 /;
-    ~ "test server"
+    ~ "test server";
 
 # Substrings present
 /;
@@ -86,10 +78,10 @@ POST /info?x=1 $a;
     ["code"=>302, "redirect"=>'http://example.com/myOtherPage.php'];
 # checking only code
 /redirect?code=301 ['url' => 'http://xxx'];
-    ["code"=>301, "redirect"=>'http://xxx'];
+    ["code"=>301, "redirect"=>'http://xxx/'];
 # in case of non "200" response, BODY is an array
 STest::$BODY;
-    ["code"=>301, "redirect"=>'http://xxx'];
+    ["code"=>301, "redirect"=>'http://xxx/'];
 # just check http_code, ignore rest
 /redirect?code=301;
     ~ ['code' => 301];

@@ -9,6 +9,22 @@ use \STest;
  */
 class Curl {
 
+    /**
+     * test is service's port is active
+     * @throws \stest\StopException
+     */
+    static function test(string $url)  {
+        $d = \parse_url($url);
+        $host = $d['host'] ?? "";
+        if (! $host)
+            throw new \Error("can't parse hostname from url=$url");
+        $port = $d['port'] ?? ( (\strtolower($d['scheme'] ?? "") === 'https') ? 443 : 80);
+        $fp = fsockopen($host, $port, $errno, $errstr, 5);
+        if (! $fp)
+            \STest::stop("no service on `$url` port:$port : err#$errno '$errstr'");
+        fclose($fp);
+    }
+
     static function get($url, array $params = [], array $curl_opts = [], array $opts = []) {
         return self::rq($url, $params, "GET", $curl_opts, $opts);
     }
@@ -32,7 +48,7 @@ class Curl {
      *
      */
     static function rq($url, array $params = [], $method = "GET", array $curl_opts = [], array $opts = []) { #
-        $timeout = @$opts['timeout'] ?: 5; // 5 sec
+        $timeout = ($opts['timeout']??0) ?: 5; // 5 sec
         $default = [
             CURLOPT_RETURNTRANSFER => 1,
             CURLOPT_USERAGENT => 'HB::Curl',
@@ -70,7 +86,7 @@ class Curl {
         $ch = curl_init();
         curl_setopt_array($ch, $curl_opts + $default);
         $data = false;
-        foreach (range(1, @$opts['retries'] ?: 1) as $r) {
+        foreach (range(1, $opts['retries'] ?? 1) as $r) {
             $data = curl_exec($ch);
             if ($data !== false)
                 break;
@@ -80,11 +96,15 @@ class Curl {
             return ['error' => curl_error($ch)];
         $info = curl_getinfo($ch);
 
-        if (@$opts['headers']) {
+        if ($opts['headers'] ?? 0) {
             $h = [];
-            $headers = substr($data, 0, @$info['header_size']); // as string
+            $headers = substr($data, 0, $info['header_size'] ?? 0); // as string
             foreach (explode("\n", $headers) as $e) {
-                @[$k, $v] = explode(":", $e, 2);
+                $kv = explode(":", $e, 2);
+                if (count($kv) == 1) {
+                    $kv = ["", $kv[0]];
+                }
+                [$k, $v] = $kv;
                 $k = trim($k);
                 if (! $k)
                     continue;
@@ -123,16 +143,24 @@ class WebTest {
     // when unset code-200 discovered errors reported inside \STestLL$BODY
     public $error_as_exception = 1;
 
+    function __construct() {
+        if (! STest::$DOMAIN)
+            STest::error("no DOMAIN configured");
+        $this->test("no service running on ".STest::$DOMAIN);
+
+        echo "CHECK OK ".STest::$DOMAIN, "\n";
+    }
+
     function test($message, $level = "stop") {
         $levels = ['stop', 'error', 'alert'];
-        if (! $levels[$level])
-            throw new \RuntimeException("Error Processing Request");
+        #if (! $levels[$level])
+        #    throw new \RuntimeException("Error Processing Request");
         $d = STest::$DOMAIN;
         if (! $d)
             throw new \stest\ErrorException("Set STest::\$DOMAIN first");
         $u = parse_url($d);
-        $s = strtolower(@$u['scheme']) ?: "http";
-        $port = @$u['port'] ?: ($s == 'https' ? 443 : 80);
+        $s = strtolower($u['scheme']??"") ?: "http";
+        $port = $u['port'] ?? ($s == 'https' ? 443 : 80);
         if(fsockopen($u['host'], 80, $errno, $errstr, 5))
             return;
         STest::$level($message);
@@ -195,7 +223,7 @@ class WebTest {
             }
         }
 
-        if ($c = @STest::$HEADERS['Set-Cookie']) {
+        if ($c = STest::$HEADERS['Set-Cookie'] ?? 0) {
             foreach ((array)$c as $kv) {
                 [$k, $v] = explode('=', $kv);
                 STest::$COOKIE[$k] = $v;

@@ -104,7 +104,7 @@ class STest {
     static function stop(string $message, int $until_yyyymmdd = 0) {
         if ($until_yyyymmdd && (int) date("Ymd") < $until_yyyymmdd)
             return;
-        if (@self::$ARG['force'])
+        if (self::$ARG['force'] ?? 0)
             return;
         throw new StopException($message);
     }
@@ -177,7 +177,7 @@ class STest {
         self::parseArgs($argv);
         // setup console
         I(['out', Console::i(@self::$ARG)]); // color, silent, syslog
-        if (@self::$ARG['debug'])
+        if (self::$ARG['debug']??0)
         I('out')->e("{green}Spartan Test v".VERSION."{/} on ".gethostname()." at ".date("Y-m-d H:i")."\n");
         if (! self::$TESTS)
             self::$ARG += ["help" => 1];
@@ -491,7 +491,7 @@ class STest_File_Commands {
                         $__code = "STest::inspect(".trim(substr($__code, 2), ";").");";
                     }
                     if ($__code[0] === '!') { // "! code" - turn ON stop-on-first-error for this line. ("!" symbol is ignored)
-                        if (! @$ARG['first_error'])
+                        if (! ($ARG['first_error']??0))
                             $ARG['first_error'] = 'temp';
                         $__code = substr($__code, 1);
                     }
@@ -664,7 +664,10 @@ class STest_File_Commands {
         # /$path  == Webtest::GET
         if ($test[0] == '/') {
             $test = trim($test, ";");
-            @[$path, $args] = explode(" ", $test, 2);
+            $r = explode(" ", $test, 2);
+            if (count($r) == 1)
+                $r = [$r[0], ""];
+            [$path, $args] = $r;
             if (! $args)
                 $args = "[]";
             return "\stest\I('webtest')->get('$path', $args);";
@@ -774,6 +777,8 @@ class Error {  // error handler
         // you can't hide errors
         if (!error_reporting() && ($level == E_WARNING || $level == E_NOTICE))
             return;
+        if (STest::$ARG['debug']??0)
+            echo "\n$level, $message, $file, $line\n";
         if ($level & self::$error_reporting) // allow people to debug ugly code
             return;
         static $map=array(
