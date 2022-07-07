@@ -155,7 +155,7 @@ class WebTest {
             STest::error($message);  // << throw stest\ErrorException
             return;
         }
-        STest::$BODY = ['ErrorException' => $message, 'code' => @STest::$INFO['http_code']];
+        STest::$BODY = ['ErrorException' => $message, 'code' => STest::$INFO['http_code'] ?? "?"];
     }
 
     function get(string $path, array $args = []) {
@@ -185,15 +185,15 @@ class WebTest {
         }
         $r = \hb\Curl::rq($d.$path, $args, $method, $curl_opts, ['headers' => 1]);
         // HEADERS
-        STest::$HEADERS = @$r['headers'];
+        STest::$HEADERS = $r['headers'] ?? [];
         unset($r['headers']);
         // BODY
         STest::$INFO = $r;
-        STest::$BODY = trim(@$r['body']);
+        STest::$BODY = trim($r['body'] ?? "");
         STest::$URL = $d.$path;
         STest::$PATH = $path;
         // HTTP CODE
-        $code = @$r['http_code'];
+        $code = $r['http_code'] ?? 999;
         if ($code == 200) {
             $this->_applyTests($r['body'], $r); // throw exception or place error inside STest::$BODY
         } else {

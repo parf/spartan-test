@@ -23,13 +23,36 @@ TODO
 
  ☐ alerts
     ☐ script | url
-    ☐ discord/telegram
+
+ ☐ universal hb-message package
+    ☐ url (get|post|post-js)
+    ☐ discord
+    ☐ telegram
+    ☐ twilio
+   ☐  SET: set of methods with priorities / settings
+    ☐ message.$method => descr
+ ☐ universal hb-alert package
+   command 2>&1 >/dev/null | hb-alert
+    ☐ - spam control
+    ☐ - skip X (per method)
+    ☐ - escalation()
+    ☐ script | hb-message destination
+
+ ☐ Confugurable alerting
+   @see messaging channels (u can configure multiple destinations, and rules there)
+   alert.$NAME
 
  ☐ better docs
 
 
-OLD - review old ideas:
+ ☐ rename: STest::$DOMAIN to STest::$HOST
 
+ ☐ parallel web testing /[url,url,url]
+
+ ☐ failure detection
+
+
+OLD - review old ideas:
 
 
 
