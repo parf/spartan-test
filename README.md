@@ -16,10 +16,14 @@ DESCRIPTION
     - types of expressions:
         + "; php-code" php code to execute, no testing
         + "test-expression" - php-code that product result
-        + "    result" - stored test-expression result (valid php code)
+        + "    result" - stored test-expression result (valid php code) 
         + "    ~ custom-result-test" - function comparison (see below)
         + "/url-path" - (see [web-test](/web-tests.md))
         + "! test-expression" - critical test. Test execution will stop if this test failed
+
+    Basic test example: (https://github.com/parf/spartan-test/blob/main/examples/1-basics/1-first-test.stest)
+    Custom comparison methods: (https://github.dev/parf/spartan-test/blob/main/examples/1-basics/special-tests.stest)
+
 
 * Spartan test reads test-file line by line
 
