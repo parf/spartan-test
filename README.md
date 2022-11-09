@@ -18,7 +18,7 @@ DESCRIPTION
         + "test-expression" - php-code that product result
         + "    result" - stored test-expression result (valid php code)
         + "    ~ custom-result-test" - function comparison (see below)
-        + "/url-path" - (see web-test)
+        + "/url-path" - (see [web-test](/web-tests.md))
         + "! test-expression" - critical test. Test execution will stop if this test failed
 
 * Spartan test reads test-file line by line
