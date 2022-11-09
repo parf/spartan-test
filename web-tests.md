@@ -27,3 +27,10 @@ You can specify `realm` in (sorted by priority):
 
 ### When you realm naming is not that simple - provide your own callback
 specify `"realmUriMethod"="Class::method"` in stest config files: `stest-config.json` or `stest-config.json.local` 
+
+
+## Under the hood
+Web test uses `STest::$domain` as current domain.\
+`STest::domain()` method implement realm/domain magic, runs `\hb\Curl::test(STest::$DOMAIN , 'stop' | 'fail')`
+
+You can still change domain at any time by modifiying STest::$DOMAIN
