@@ -13,19 +13,20 @@ see more in [examples/web-test](https://github.com/parf/spartan-test/blob/main/e
 # Running Web-test on different servers - Testing Realms
 
 Simplest way to run a web-test on a different server is to use `--domain="domain-to-run-test.com"`\
-Command line option will override ~~STest::domain()~~ setting
+Command line option will override `STest::domain()` setting
 
 Alternative way is to use **REALMS**: `--realm=my-realm`\
-Resulting url will be: `my-realm.example.com`
+By default resulting realm-url will be: `my-realm.example.com`
 
 You can specify `realm` in (sorted by priority):
 1. `--realm=my-realm`
 2. SHELL environment variable `$STEST_REALM`
     *  run test as:   `STEST_REALM=my-realm ./filename.stest`
     *  or set realm somewhere in ~/.profile and just run stest
-5. specify `"realm"="value"` in stest config files: `stest-config.json` or `stest-config.json.local` 
+5. provide `"realm"="value"` in stest config files: `stest-config.json` or `stest-config.json.local` 
+6. provide `"realmDetectMethod"="Class::method"` in stest config files: `stest-config.json` or `stest-config.json.local` 
 
-### When you realm naming is not that simple - provide your own callback
+### Custom Realm-URLs - provide your own callback
 specify `"realmUriMethod"="Class::method"` in stest config files: `stest-config.json` or `stest-config.json.local` 
 
 
