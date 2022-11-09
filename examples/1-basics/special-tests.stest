@@ -6,6 +6,7 @@
 # using this tests will make your test php-incompatible
 #
 # this test will FAIL, this is intentional !!!
+# run this test with "-v" option to see whats tested and what is failing and why
 #
 
 # instance-of

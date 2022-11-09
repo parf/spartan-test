@@ -11,9 +11,9 @@
 # show Class Name, Parent Class Name, Filename (hides part of path common for the script and class filename)
 #
 ? new Test();
-    'Test /init.php';
+    'Test init.php';
 ? new TestB();
-    'TestB(Test) /init.php';
+    'TestB(Test) init.php';
 ? "TestB";
-    'TestB(Test) /init.php';
+    'TestB(Test) init.php';
 

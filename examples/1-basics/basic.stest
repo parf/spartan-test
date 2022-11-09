@@ -14,7 +14,7 @@
 1+2;
     3;
 
-1+2;  # test comment 24+34;
+1+2;  # test comment
     3;
 
 1+3;

@@ -1,0 +1,20 @@
+#!/usr/bin/env stest
+<?php
+
+# @TODO - NOT IMPLEMENTED YET
+# test lots of urls in parallel
+# https://stackoverflow.com/questions/9308779/php-parallel-curl-requests
+; $urls = ["/sleep", "/sleep?t=2", "/sleep?t=3"];
+/[$urls];
+    ["code"=>404, "size"=>25];
+\STest::$INFO['body'];
+    'Page "/[$urls]" Not Found';
+; $urls = "
+    /sleep
+    /sleep?t=2
+    /sleep?t=3
+    ";
+/[$urls];
+    ["code"=>404, "size"=>25];
+\STest::$INFO['body'];
+    'Page "/[$urls]" Not Found';

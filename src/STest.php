@@ -778,9 +778,9 @@ class STest_File_Commands {
     /**
      * Execute test that matches given tags description, @see --tag for details
      */
-    static function tag($v) {
-
-    }
+    #static function tag($v) {
+    #
+    #}
 
     /**
      * show parsed unprocessed test text
@@ -789,6 +789,20 @@ class STest_File_Commands {
         foreach ($T as [$ln, $tv]) {
             echo "$ln: ", json_encode($tv, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), "\n";
         }
+    }
+
+    /**
+     * web-test: override STest::domain(...)
+     */
+    static function domain($T) {
+
+    }
+
+    /**
+     * web-test: add realm to domain specified in STest::domain(...)
+     */
+    static function realm($T) {
+
     }
 
 
