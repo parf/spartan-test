@@ -1,5 +1,30 @@
 # Spartan Test 3.x todo (PlainTask format)
 
+2022-??-??:
+ ☐ STest
+   ☐ STest::domain("radaris.com")   -- default https:// ;  honors realm
+   ☐ stest --realm  -- support custom-provided realm function
+     default: STest::realm($realm, $schema, $host)
+   ☐ STest::once("1day")  - run *unmodified* script once a day only
+      using strtotime()
+     state kept in memcache key: stest:hash(filename):last-modified-time
+     config C('memcache') OR /tmp/stest/$user/once.json
+   ☐ STest::failOnce("1day")  - FAIL *unmodified* script once a day only
+   ☐ STest::suspend("yyyy-mm-dd", "period") -- disable REST of the test
+   ☐ STest::suspendError("yyyy-mm-dd", "period") .. ex: 1day 1week -
+      disable Errors as Errors reporting; test will be still executed
+   ☐ Stest --once - auto add once for a test ; --once=reset; --once=ignore
+   ☐ Stest --failOnce - FAIL *unmodified* script once a day only
+   ☐ stest-all -o "--extra args" (support passing args to all tests)
+   ☐ stest-all --realm    same-as   stest-all -o "--realm=..."
+   ☐ Stest --tag=tag,tag,-tag,+tag
+   ☐ stest-all --tag support
+   ☐ stest-all --parallel="args"
+   ☐ stest-all --find="args"
+   ☐ stest-all --once=""  == stest-all -o "--once=..."
+
+
+
 Ideas:
 
 - Php 8.1 code testing framework

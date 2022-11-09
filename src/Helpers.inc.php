@@ -23,6 +23,7 @@ class InstanceConfig {
     static function debug($message, $level = 1) {
        (\STest::$ARG['debug'] ?? 0) >= $level && print($message."\n");
     }
+
     static function init($file = false) {
         $base = __DIR__."/config.json";
         if (! self::$baseConfig)

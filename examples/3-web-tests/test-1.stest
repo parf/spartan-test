@@ -1,11 +1,10 @@
 #!/usr/bin/env stest
 <?php
 
-# use --DOMAIN="https://my-domain" to change DOMAIN
-; STest::$DOMAIN = $ARG['DOMAIN'] ?? "127.0.0.2:8080";
-
-# Silently & Successfuly Stop test when service is not running, (default behaviour: fire error, stop test)
-\hb\Curl::test(STest::$DOMAIN , 'stop');
+# assign STest::$DOMAIN domain, then test availability of web service; fail if it not there
+# honor --domain; --realm; ENV[STEST_REALM]
+; STest::domain("http://127.0.0.2:8080");
+# ; STest::domain("http://127.0.0.2:8080", "stop"); - if no service on port - silently fail w/o error
 
 # "!" Critical Test
 # TEST will instantly fail if critical test failed

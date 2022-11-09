@@ -7,7 +7,7 @@
 ; $ARG['allowError'] = 1;
 
 # Default behaviour is E_ALL (php.ini error_reporting)
-# fail on all kinds of notices/warnings/errors/...
+# include all kinds of notices/warnings/... into test
 $undefined;
     ["error"=>'WARNING: Undefined variable $undefined'];
 1/0;
@@ -17,12 +17,12 @@ $a['a'];
     1;
 $a['b'];
     ["error"=>'WARNING: Undefined array key "b"'];
-$a['b']??null; // safe way;
+$a['b'] ?? null; // safe way;
     NULL;
 
 # suppress notices
-stest\Error::suppress_notices();
-    NULL;
+; stest\Error::suppress_notices();
+   
 $undefined;
     ["error"=>'WARNING: Undefined variable $undefined'];
 1/0;
@@ -31,8 +31,8 @@ $a['b'];
     ["error"=>'WARNING: Undefined array key "b"'];
 
 # suppress warnings (usually this is a bad idea)
-stest\Error::suppress_warnings();
-    NULL;
+; stest\Error::suppress_warnings();
+ 
 $undefined;
     NULL;
 $a['b'];

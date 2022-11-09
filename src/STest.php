@@ -20,7 +20,7 @@ use function stest\helper\x2s;   // var_export alike
 
 include __DIR__."/Helpers.inc.php";
 
-// poor-man DI - Dependency Injection
+// poor-man DI - Dependency Injection Container
 //
 // I($name)                     - get / create new named instance
 // I($name, [arg1, arg2, ...])  - get / create new named-with-params instance
@@ -35,7 +35,7 @@ function I(/*string | array */ $name, array $args=[]) { # Instance
     $k = $name.":".json_encode($args);
     if ($i = InstanceConfig::$I[$k]??0)
         return $i;
-    $class = @InstanceConfig::$config[$name]; // class name
+    $class = InstanceConfig::$config[$name] ?? null; // class name
     if (! $class)
         throw new \DomainException("No definition for instance $name");
     if (is_array($class)) // Actual ClassName Provided by method
@@ -48,7 +48,7 @@ function I(/*string | array */ $name, array $args=[]) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.0.3";
+const VERSION = "3.1.0";
 
 //
 // INTERNAL
@@ -130,6 +130,13 @@ class STest {
     }
 
     /**
+     * show debug messages to STDERR when --debug=$level and level<=asked-level
+     */
+    static function debug($message, $level = 1) {
+       (self::$ARG['debug'] ?? 0) >= $level && fwrite(STDERR, $message."\n");
+    }
+
+    /**
      * Useful for debugging
      * inspect $object
      * show ClassName, ParentClass class_filename (non-common path wirh current test)
@@ -150,8 +157,45 @@ class STest {
         return "$class $filename".($show_line ? " ".$rc->getStartLine() : "");
     }
 
+
+    /**
+     * set domain for web-test ($ARG['DOMAIN'])
+     *   honor --domain override, solve --realm
+     *
+     * realm is searched in:
+     *   --realm ; ENV `STEST_REALM` shell variable ; stest-config.json[.local] files
+     *   x.stest --realm=xxx
+     *   STEST_REALM=test x.stest
+     *   ./x.stest    // realm in stest-config.json[.local] file
+     *
+     * test domain for availability:
+     *     fail_action =  "stop" | "error" | "alert"
+     */
+    static function domain(string $domain, string $fail_action="error") {
+        if ($t = STest::$ARG['domain']??0) { # --domain="..." - overrides all
+            $domain = $t;
+        }
+        if (strpos($domain, "//") === false)    # //domain | scheme://domain
+            $domain = "https://".$domain;   // default scheme: https
+        $realm =
+            (STest::$ARG['realm'] ?? getenv("STEST_REALM")) ?:
+                (InstanceConfig::$config['realm'] ?? null);
+        if ($realm) {
+            self::debug(" - realm: $realm", 3);
+            $r = parse_url($domain);
+            if ($m = InstanceConfig::$config['realmUriMethod']??0) {
+                self::debug(" - using realmUriMethod: $m", 2);
+                $domain = $m($r); // parsed URI see @parse_url
+            } else {
+                $domain = $r['scheme']."://".$realm.".".$r['host']; // default realm is: scheme://$realms.domain
+            }
+        }
+        \hb\Curl::test($domain, $fail_action);
+        STest::$DOMAIN = $domain;
+    }
+
      /**
-     * Enable TESTING (already enabled bu default, call after calling disable)
+     * Enable TESTING (already enabled by default, call after calling disable)
      * Usage:
      *   \STest::enable();
      */
@@ -199,7 +243,6 @@ class STest {
     }
 
     function runTest($file) {
-
         $this->file = $file;
         self::$DIR = \realpath(dirname($file));
         try {
@@ -626,9 +669,9 @@ class STest_File_Commands {
                     return "array expected";
                 foreach ($x as $k => $e) { // e - element
                     if (! is_int($k)) {
-                        if (@$got[$k] == $e)
+                        if (($got[$k]??null) == $e)
                             continue;
-                        return " array-element {cyan}\"$k\" => ".x2s($e)."{/} expected, got ".x2s(@$got[$k]);
+                        return " array-element {cyan}\"$k\" => ".x2s($e)."{/} expected, got ".x2s($got[$k]??"null");
                     }
                     if (! in_array($e, $got))
                         return " array-element-expected: {cyan}".x2s($e)."{/}";

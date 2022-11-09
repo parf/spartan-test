@@ -14,14 +14,21 @@ class Curl {
      * @throws \stest\StopException
      */
     static function test(string $url, $level = "error")  {
+        static $test_done = [];
+        if ($test_done[$url]??0)
+            return; // avoid extra tests
         $d = \parse_url($url);
         $host = $d['host'] ?? "";
         if (! $host)
             throw new \Error("can't parse hostname from url=$url");
         $port = $d['port'] ?? ( (\strtolower($d['scheme'] ?? "") === 'https') ? 443 : 80);
-        $fp = fsockopen($host, $port, $errno, $errstr, 5);
-        if (! $fp)
+        \STest::debug(" - Curl::test($host:$port)", 2);
+        $fp = @fsockopen($host, $port, $errno, $errstr, 5);
+        if (! $fp) {
             \STest::$level("no service on `$url` port:$port : err#$errno '$errstr'");
+            return;
+        }
+        $test_done[$url] = 1;
         fclose($fp);
     }
 
@@ -66,7 +73,7 @@ class Curl {
             // CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
 
         ];
-        if (@$opts['headers'])
+        if ($opts['headers'] ?? 0)
             $curl_opts += [CURLOPT_HEADER => 1];
 
         if ($method === 'POST') {
