@@ -23,4 +23,7 @@ You can specify `realm` in (sorted by priority):
 2. SHELL environment variable `$STEST_REALM`
     *  run test as:   `STEST_REALM=my-realm ./filename.stest`
     *  or set realm somewhere in ~/.profile and just run stest
-5. specify realm in stest config files: `stest-config.json` or `stest-config.json.local` 
+5. specify `"realm"="value"` in stest config files: `stest-config.json` or `stest-config.json.local` 
+
+### When you realm naming is not that simple - provide your own callback
+specify `"realmUriMethod"="Class::method"` in stest config files: `stest-config.json` or `stest-config.json.local` 
