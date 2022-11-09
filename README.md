@@ -22,7 +22,7 @@ DESCRIPTION
         + "! test-expression" - critical test. Test execution will stop if this test failed
 
 * Examples
-    - [Basic test example](https://github.com/parf/spartan-test/blob/main/examples/1-basics/1-first-test.stest)\
+    - [Basic test example](https://github.com/parf/spartan-test/blob/main/examples/1-basics/1-first-test.stest)
     - (advanced) [Custom comparison methods](https://github.dev/parf/spartan-test/blob/main/examples/1-basics/special-tests.stest)
     - [Web-tests](/web-tests.md)
 
