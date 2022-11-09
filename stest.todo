@@ -2,9 +2,10 @@
 
 2022-??-??:
  ☐ STest
-   ☐ STest::domain("radaris.com")   -- default https:// ;  honors realm
-   ☐ stest --realm  -- support custom-provided realm function
+   [x] STest::domain("radaris.com")   -- default https:// ;  honors realm
+   [x] stest --realm  -- support custom-provided realm function
      default: STest::realm($realm, $schema, $host)
+     
    ☐ STest::once("1day")  - run *unmodified* script once a day only
       using strtotime()
      state kept in memcache key: stest:hash(filename):last-modified-time
