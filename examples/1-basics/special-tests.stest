@@ -1,5 +1,5 @@
 #!/usr/bin/env stest
-
+<?php
 #
 # "~tests"
 #
@@ -34,7 +34,7 @@ new DateTime;
 "Cat jumped off the bed";
     ~ "j".chr(117)."mped";
 
-# require non empty result 
+# require non empty result
 5-4
     ~~
 5-5
@@ -72,4 +72,3 @@ $a;
 
 "Lorem ipSum dolor sit amet, consectetur adipiscing ElIt";
     ~ /elit$/i;
-
