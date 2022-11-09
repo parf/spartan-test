@@ -12,17 +12,19 @@ Write your tests in style:
 
 DESCRIPTION
 -----------
-* Spartan test is a set of expressions and comments
+* Spartan test is a set of expressions and their results
     - types of expressions:
         + "; php-code" php code to execute, no testing
-        + "test-expression" - php-code that product result
+        + "test-expression" - php-code that produce result
         + "    result" - stored test-expression result (valid php code) 
-        + "    ~ custom-result-test" - function comparison (see below)
-        + "/url-path" - (see [web-test](/web-tests.md))
+        + "    ~ custom-result-test" - custom comparison method (see below)
+        + "/url-path" - (see web-tests below)
         + "! test-expression" - critical test. Test execution will stop if this test failed
 
-    Basic test example: (https://github.com/parf/spartan-test/blob/main/examples/1-basics/1-first-test.stest)
-    Custom comparison methods: (https://github.dev/parf/spartan-test/blob/main/examples/1-basics/special-tests.stest)
+* Examples
+    - [Basic test example](https://github.com/parf/spartan-test/blob/main/examples/1-basics/1-first-test.stest)\
+    - (advanced) [Custom comparison methods](https://github.dev/parf/spartan-test/blob/main/examples/1-basics/special-tests.stest)
+    - [Web-tests](/web-tests.md)
 
 
 * Spartan test reads test-file line by line
