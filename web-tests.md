@@ -30,7 +30,10 @@ specify `"realmUriMethod"="Class::method"` in stest config files: `stest-config.
 
 
 ## Under the hood
-Web test uses `STest::$domain` as current domain.\
-`STest::domain()` method implement realm/domain magic, runs `\hb\Curl::test(STest::$DOMAIN , 'stop' | 'fail')`
+Web test uses `STest::$DOMAIN` as current domain.\
+You can still change its value at any time or add any custom logic around it
 
-You can still change domain at any time by modifiying STest::$DOMAIN
+`STest::domain()` method implement realm/domain magic, then runs `\hb\Curl::test(STest::$DOMAIN , 'stop' | 'fail')`
+
+
+
