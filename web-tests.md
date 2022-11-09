@@ -8,7 +8,7 @@ allows you to simulate activity on sites, then test apply tests on results
 
 All cookies preserved, so you can do logins, and test registered users areas.
 
-see more examples / details in `examples/web-test`
+see more in [examples/web-test](https://github.com/parf/spartan-test/blob/main/examples/3-web-tests/test-1.stest)
 
 # Running Web-test on different servers - Testing Realms
 
