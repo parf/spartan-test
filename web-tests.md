@@ -9,3 +9,18 @@ allows you to simulate activity on sites, then test apply tests on results
 All cookies preserved, so you can do logins, and test registered users areas.
 
 see more examples / details in `examples/web-test`
+
+# Running Web-test on different servers - Testing Realms
+
+Simplest way to run a web-test on a different server is to use `--domain="domain-to-run-test.com"`\
+Command line option will override ~~STest::domain()~~ setting
+
+Alternative way is to use **REALMS**: `--realm=my-realm`\
+Resulting url will be: `my-realm.example.com`
+
+You can specify `realm` in (sorted by priority):
+1. `--realm=my-realm`
+2. SHELL environment variable `$STEST_REALM`
+    *  run test as:   `STEST_REALM=my-realm ./filename.stest`
+    *  or set realm somewhere in ~/.profile and just run stest
+5. specify realm in stest config files: `stest-config.json` or `stest-config.json.local` 
