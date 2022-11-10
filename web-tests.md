@@ -1,8 +1,9 @@
 # Web Tests
 
-Allows you to simulate activity on sites\
+Let you simulate request-response activity on sites\
+You can anazyze results: search for substrings, check http codes, redirects and more\
 All cookies preserved - so you can emulate logins, and test registered users areas\
-Every time we got results from remote web-server we check them for php-errors (see WebTest::test_PHPError() method)\
+Every time we got results from remote web-server we check them for php-errors blocks (see WebTest::test_PHPError() method)\
 and then we apply all user checks specified in your stest
 
 see more in [examples/web-test](https://github.com/parf/spartan-test/blob/main/examples/3-web-tests/)
