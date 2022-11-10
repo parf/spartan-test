@@ -1,11 +1,6 @@
 # Web Tests
 
 allows you to simulate activity on sites, then test apply tests on results
-
-1. start your test with `; STest::domain("example.com");`
-2. `/path` or `/path?arg=value` or `/path ['arg' => 'value', ...]` will fetch page from url
-3. `POST /path` will do post 
-
 All cookies preserved, so you can do logins, and test registered users areas.
 
 see more in [examples/web-test](https://github.com/parf/spartan-test/blob/main/examples/3-web-tests/)
@@ -37,4 +32,8 @@ You can still change its value at any time or add any custom logic around it
 `STest::domain()` method implement realm/domain magic, then runs `\hb\Curl::test(STest::$DOMAIN , 'stop' | 'fail')`
 
 
+1. start your test with `; STest::domain("example.com");`
+2. `/path` or `/path?arg=value` or `/path ['arg' => 'value', ...]` will fetch page from url
+3. `POST /path` will do post 
 
+see [example with docs](https://github.com/parf/spartan-test/blob/main/examples/3-web-tests/)
