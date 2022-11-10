@@ -13,8 +13,8 @@ see more in [examples/web-test](https://github.com/parf/spartan-test/blob/main/e
 Simplest way to run a web-test on a different server is to use `--domain="domain-to-run-test.com"`\
 Command line option will override `STest::domain()` setting
 
-Alternative way is to use **REALMS**: `--realm=my-realm`\
-By default resulting realm-url will be: `my-realm.example.com`
+Alternative way is to use **REALMS**:
+By default resulting realm-url will be: `$realm.yourdomain.com`
 
 You can specify `realm` in (sorted by priority):
 1. `--realm=my-realm`
@@ -29,14 +29,11 @@ specify `"realmUriMethod"="Class::method"` in stest config files: `stest-config.
 
 
 ## Under the hood
-Web test uses `STest::$DOMAIN` as current domain.\
-You can still change its value at any time or add any custom logic around it
+Web test uses `STest::$DOMAIN` as a current domain.\
+You can change its value at any time or add any custom logic around it
 
-`STest::domain()` method implement realm/domain magic, then runs `\hb\Curl::test(STest::$DOMAIN , 'stop' | 'fail')`
-
-
-1. start your test with `; STest::domain("example.com");`
-2. `/path` or `/path?arg=value` or `/path ['arg' => 'value', ...]` will fetch page from url
-3. `POST /path` will do post 
+`STest::domain()` method implement realm/domain magic:
+- then it assigns calculated domain to STest::$DOMAIN
+- then runs `\hb\Curl::test(STest::$DOMAIN, 'stop' | 'fail')`
 
 see [example with docs](https://github.com/parf/spartan-test/blob/main/examples/3-web-tests/)
