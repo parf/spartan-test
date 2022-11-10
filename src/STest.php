@@ -160,13 +160,7 @@ class STest {
 
     /**
      * set domain for web-test ($ARG['DOMAIN'])
-     *   honor --domain override, solve --realm
-     *
-     * realm is searched in:
-     *   --realm ; ENV `STEST_REALM` shell variable ; stest-config.json[.local] files
-     *   x.stest --realm=xxx
-     *   STEST_REALM=test x.stest
-     *   ./x.stest    // realm in stest-config.json[.local] file
+     *   honor --domain override, supports realms
      *
      * test domain for availability:
      *     fail_action =  "stop" | "error" | "alert"
@@ -177,10 +171,7 @@ class STest {
         }
         if (strpos($domain, "//") === false)    # //domain | scheme://domain
             $domain = "https://".$domain;   // default scheme: https
-        $realm =
-            (STest::$ARG['realm'] ?? getenv("STEST_REALM")) ?:
-                (InstanceConfig::$config['realm'] ?? null);
-        if ($realm) {
+        if ($realm = static::_realm($domain)) {
             self::debug(" - realm: $realm", 3);
             $r = parse_url($domain);
             if ($m = InstanceConfig::$config['realmUriMethod']??0) {
@@ -190,8 +181,26 @@ class STest {
                 $domain = $r['scheme']."://".$realm.".".$r['host']; // default realm is: scheme://$realms.domain
             }
         }
-        \hb\Curl::test($domain, $fail_action);
+        \hb\Curl::test($domain, $fail_action); // check if web-server is up
         STest::$DOMAIN = $domain;
+    }
+
+    /**
+     * get current realm
+     * default search order:
+     *   cli option: --realm=...
+     *   realmDetectMethod callback from config files
+     *   shell variable: `STEST_REALM`
+     *   stest-config.json[.local] files
+     */
+    static function _realm(string $domain = "") : string {
+        $realm = null;
+        if ($m = InstanceConfig::$config['realmDetectMethod']??0) {
+            self::debug(" - using realmDetectMethod: $m", 2);
+            $realm = $m();
+        }
+        return (STest::$ARG['realm'] ?? $realm ?? getenv("STEST_REALM")) ?:
+               (InstanceConfig::$config['realm'] ?? "");
     }
 
      /**
@@ -727,12 +736,6 @@ class STest_File_Commands {
 
         return $test;
     }
-
-/*
-    static function webtest_get(string $url, array $args=[]) {
-        return "web-test";
-    }
-    */
 
     /**
      * `cat` processed test to stdout (add missing semicolons, correct identation)

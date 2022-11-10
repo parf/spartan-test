@@ -8,6 +8,7 @@
 namespace stest\helper;
 
 include __DIR__."/Curl.inc.php";
+include __DIR__."/WebTest.inc.php";
 
 class InstanceConfig {
 
