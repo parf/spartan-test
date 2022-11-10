@@ -1,8 +1,8 @@
 # Web Tests
 
-allows you to simulate activity on sites, then test apply tests on results
-All cookies preserved, so you can do logins, and test registered users areas.
-Every time we got results from remote web-server we check them for php-errors (see WebTest::test_PHPError() method)
+Allows you to simulate activity on sites\
+All cookies preserved - so you can emulate logins, and test registered users areas\
+Every time we got results from remote web-server we check them for php-errors (see WebTest::test_PHPError() method)\
 and then we apply all user checks specified in your stest
 
 see more in [examples/web-test](https://github.com/parf/spartan-test/blob/main/examples/3-web-tests/)
