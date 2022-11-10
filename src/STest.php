@@ -539,10 +539,12 @@ class STest_File_Commands {
                 } // if-expr
                 if ($__type  == "test") {
                     $__t->tests++;
-                    if ($__code[0].$__code[1] === '? ') { // "? code" - inspect code
+                    // "? code" - inspect code
+                    if ($__code[0].$__code[1] === '? ') {
                         $__code = "STest::inspect(".trim(substr($__code, 2), ";").");";
                     }
-                    if ($__code[0] === '!') { // "! code" - turn ON stop-on-first-error for this line. ("!" symbol is ignored)
+                    // "! code" - turn ON stop-on-first-error for this line. ("!" symbol is ignored)
+                    if ($__code[0] === '!') {
                         if (! ($ARG['first_error']??0))
                             $ARG['first_error'] = 'temp';
                         $__code = substr($__code, 1);
@@ -550,7 +552,8 @@ class STest_File_Commands {
                     try {
                         if ($__error = Error::get())
                             $__err("-- {alert}stest-internal unexpected error{/}: ". x2s($__error));  // this should NOT happend
-                        $__code_ = self::_custom_test_syntax($__code); // so far only web tests have custom syntax
+                        // so far only web tests have custom syntax
+                        $__code_ = self::_custom_test_syntax($__code);
                         @$ARG['verbose'] && i('out')->e("{cyan}%s{/}\n", $__code);
                         ob_start();
                         $__rz = eval("return $__code_");
