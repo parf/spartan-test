@@ -51,10 +51,13 @@ range(3,4);
     [3, 4];
 ```
 
+@see [more complex example](https://github.com/parf/spartan-test/blob/main/examples/1-basics/basic.stest)
+
 ### Array Result Sorting
 By default all results arrays are sorted by keys (unlimited DEPTH)\
 To turn off this behaviour add `$ARG['sort']=0;`; to re-enable it back `$ARG['sort']=0;`
 
+@see (https://github.com/parf/spartan-test/blob/main/examples/2-advanced/result-sorting.stest)
 
 # Advanced Syntax / Advanced Tests
 
@@ -75,6 +78,8 @@ Instead of result you can use one(or more) advanced tests
 `~ [key=>val]`    - KEY => VALUE is in resulting array
 
 `~ /regexp/x`     - is result matching regexp
+
+@see [special tests](https://github.com/parf/spartan-test/blob/main/examples/1-basics/special-tests.stest)
 
 ### You can have several Advanced tests for one expression
 

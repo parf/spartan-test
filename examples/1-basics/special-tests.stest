@@ -3,9 +3,9 @@
 #
 # "~tests"
 #
-# using this tests will make your test php-incompatible
+# using advanced syntax will make your test php-incompatible (script is no longer a valid php program)
 #
-# this test will FAIL, this is intentional !!!
+# this test will FAIL, and this is intentional !!!
 # run this test with "-v" option to see whats tested and what is failing and why
 #
 
