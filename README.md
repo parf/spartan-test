@@ -40,3 +40,7 @@ INSTALL (COMPOSER)
     composer require parf/spartan-test
     ln -s ./vendor/bin/stest ~/bin
     ln -s ./vendor/bin/stest-all ~/bin
+
+
+- `stest` provides testing framework
+- `stest-all` runs all or specific tests in parallel (gnu-parallel utility required)

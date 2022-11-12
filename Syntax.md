@@ -92,14 +92,17 @@ Instead of result you can use one(or more) advanced tests
 
 ```
 
-
 # Build-in STest Methods
 
 - `STest::domain()` - @see web-tests
-- `STest::stop($message)` - stop test execution w/o error  (--force option ignores all stops)
+- `STest::stop($message)` - stop test execution w/o error  (`--force` option ignores all ::stop)\
    example: `if (date("l") != "Monday") \STest::stop("Monday-only test");`
 - `STest::stop($message, int $until_yyyymmdd)` - disable test until date
-
+- `STest::error($message)` - stop test execution with Error
+- `STest::alert($message)` - stop test execution with Alert
+- `STest::debug($message, $level)` - show text to STDERR when `--debug=$level >= $level`
+- `STest::inspect(/* "object | string className" */ $object, $show_line = 0)` - backend for `? object`
+- `STest::runTest($file)`  -  execute OTHER stest in current context
 
 # Web Tests
 
