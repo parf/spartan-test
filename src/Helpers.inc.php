@@ -78,7 +78,7 @@ class InstanceConfig {
                 break;
             $f = "$dir/$file";
             if (! file_exists($f)) {
-    	        self::debug(" - missing $f", 2);
+    	        self::debug(" - missing $f", 3);
                 continue;
             }
     	    self::debug(" - loading init file $f");

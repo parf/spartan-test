@@ -7,7 +7,7 @@ use stest\helper\Console;        // colored output
 use function stest\helper\x2s;   // var_export alike
 
 /**
- * Spartan Test 3.0 - php 7.1 testing framework done right
+ * Spartan Test 3.1 - php 8.x testing framework done right
  * RTFM: README.md
  */
 
@@ -166,27 +166,37 @@ class STest {
      *     fail_action =  "stop" | "error" | "alert"
      */
     static function domain(string $domain, string $fail_action="error") {
+        self::debug(" - domain-in: $domain", 4);
         if ($t = STest::$ARG['domain']??0) { # --domain="..." - overrides all
             $domain = $t;
         }
         if (strpos($domain, "//") === false)    # //domain | scheme://domain
             $domain = "https://".$domain;   // default scheme: https
-        if ($realm = static::_realm($domain)) {
-            self::debug(" - realm: $realm", 3);
-            $r = parse_url($domain);
-            if ($m = InstanceConfig::$config['realmUriMethod']??0) {
-                self::debug(" - using realmUriMethod: $m", 2);
-                $domain = $m($r); // parsed URI see @parse_url
-            } else {
-                $domain = $r['scheme']."://".$realm.".".$r['host']; // default realm is: scheme://$realms.domain
-            }
-        }
+        if ($realm = static::_realm($domain))
+            $domain = static::_realmUrl($domain, $realm);
         \hb\Curl::test($domain, $fail_action); // check if web-server is up
         STest::$DOMAIN = $domain;
+        self::debug(" - domain: $domain", 2);
     }
 
     /**
-     * get current realm
+     * build realm url - method for overloading
+     * default: scheme://$realm.$domain
+     */
+    static function _realmUrl(string $domain, string $realm ) : string {
+        self::debug(" - realm: $realm", 3);
+        $r = parse_url($domain);
+        if ($m = InstanceConfig::$config['realmUriMethod']??0) {
+            self::debug(" - using realmUriMethod: $m", 4);
+            $domain = $m($r); // parsed URI see @parse_url
+        } else {
+            $domain = $r['scheme']."://".$realm.".".$r['host']; // default realm is: scheme://$realms.domain
+        }
+        return $domain;
+    }
+
+    /**
+     * get current realm - method for overloading
      * default search order:
      *   cli option: --realm=...
      *   realmDetectMethod callback from config files
@@ -299,7 +309,8 @@ class STest {
 
 /**
  *
- *  @see  Readme.md file for details: how to write/execute tests
+ * @see  Readme.md file for details: how to write/execute tests
+ * @see  See github for lastest/most complete docs: https://github.com/parf/spartan-test
  */
 class STest_Global_Commands {
 
@@ -800,16 +811,16 @@ class STest_File_Commands {
     /**
      * web-test: override STest::domain(...)
      */
-    static function domain($T) {
-
-    }
+    #static function domain($T) {
+    #    // php-doc only usage
+    #}
 
     /**
      * web-test: add realm to domain specified in STest::domain(...)
      */
-    static function realm($T) {
-
-    }
+    #static function realm($T) {
+    #   // php-doc only usage
+    #}
 
 
 } // class STest_File_Commands
@@ -838,8 +849,10 @@ class Error {  // error handler
     static function handler($level, $message, $file, $line) {
         // you can hide notices and warnings with @
         // you can't hide errors
-        if (!error_reporting() && ($level == E_WARNING || $level == E_NOTICE))
+        if (!error_reporting() && ($level == E_WARNING || $level == E_NOTICE)) {
+            STest::debug("\ndebug(4) $level, $message, $file, $line", 4);
             return;
+        }
         if (STest::$ARG['debug']??0)
             echo "\n$level, $message, $file, $line\n";
         if ($level & self::$error_reporting) // allow people to debug ugly code
