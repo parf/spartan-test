@@ -81,6 +81,8 @@ You can specify `realm` in (sorted by priority):
 5. provide `"realm"="value"` in stest config files: `stest-config.json` or `stest-config.json.local` 
 6. provide `"realmDetectMethod"="Class::method"` in stest config files: `stest-config.json` or `stest-config.json.local` 
 
+// to disable realms in configs or environment - use `stest --realm` or `stest --realm=""`
+
 ### Custom Realm-URLs - provide your own callback
 specify `"realmUriMethod"="Class::method"` in stest config files: `stest-config.json` or `stest-config.json.local` 
 

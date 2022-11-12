@@ -209,6 +209,8 @@ class STest {
             self::debug(" - using realmDetectMethod: $m", 2);
             $realm = $m();
         }
+        if ((STest::$ARG['realm']??0) === true)  // --realm - disable realms
+            return "";
         return (STest::$ARG['realm'] ?? $realm ?? getenv("STEST_REALM")) ?:
                (InstanceConfig::$config['realm'] ?? "");
     }
