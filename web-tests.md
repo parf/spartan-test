@@ -8,6 +8,63 @@ and then we apply all user checks specified in your stest
 
 see more in [examples/web-test](https://github.com/parf/spartan-test/blob/main/examples/3-web-tests/)
 
+# Simple Web Test
+
+Every web test must start with: `\STest::domain("your-domain.com")` line
+
+by default we test `https://` version; to test http - specify it `\STest::domain("http://your-domain.com")`
+
+### to emulate GET query use
+
+- `/path/script`
+- `/path/script?arg=value`
+- `/path/script ["arg" => $value, ...]`
+- `/path/script $arguments`
+
+### to emulate POST queries use
+
+- `POST /path/script`
+- `POST /path/script?arg=value`
+- `POST /path/script ["arg" => $value, ...]`
+- `POST /path/script $arguments`
+
+### Redirects
+result - response-code AND redirect location
+```
+/redirect?code=302;
+    ["code"=>302, "redirect"=>'http://example.com/myOtherPage.php'];
+/redirect?code=303;
+    ["code"=>303, "redirect"=>'http://example.com/myOtherPage.php'];
+/redirect?code=301;
+    ~ ['code' => 301];          # special test, testing response-code ONLY
+```
+
+### SPECIAL-HARD-CODED value of '$DOMAIN' in redirect FIELD
+```
+# You current STest::$DOMAIN is replaced by $DOMAIN in redirect-urls
+# this way you may have many site aliases and use same TEST
+/redirect ['url' => 'a/b/c'];
+    ["code"=>302, "redirect"=>'$DOMAIN/a/b/c'];
+```
+
+### After ANY query we leave all information in variables:
+
+- `STest::$DOMAIN`  - domain to use for queries
+
+- `STest::$URL`  - url used for previous query
+
+- `STest::$PATH`  - last PATH used
+
+- `STest::$BODY`  - returned body
+
+- `STest::$COOKIE`  - all cookies set by remote web site
+
+- `STest::$HEADERS`  - all headers from last query
+
+- `STest::$INFO`  - full array with INFO returned by Curl
+
+
+
 # Running Web-test on different servers - Testing Realms
 
 Simplest way to run a web-test on a different server is to use `--domain="domain-to-run-test.com"`\

@@ -10,16 +10,8 @@ Write your tests in style:
 * test is ~ php code, minimal learning curve
 * less cruft, more fun
 
-DESCRIPTION
------------
-* Spartan test is a set of expressions and their results
-    - types of expressions:
-        + "; php-code" php code to execute, no testing
-        + "test-expression" - php-code that produce result
-        + "    result" - stored test-expression result (valid php code) 
-        + "    ~ custom-result-test" - custom comparison method (see below)
-        + "/url-path" - (see web-tests below)
-        + "! test-expression" - critical test. Test execution will stop if this test failed
+- [Syntax](https://github.com/parf/spartan-test/blob/main/Syntax.md)
+- [Web Tests](https://github.com/parf/spartan-test/blob/main/web-tests.md)
 
 * Examples
     - [Basic test example](https://github.com/parf/spartan-test/blob/main/examples/1-basics/1-first-test.stest)
@@ -27,49 +19,10 @@ DESCRIPTION
     - [Web-tests](/web-tests.md)
 
 
-* Spartan test reads test-file line by line
-
-* for test-expressions it calculate result, then compares it to stored result
-    - if result exists and differ, error is generated
-    - if no result stored in test-file, generated result is added to test-file
-
-* stest catches 
-    - return values
-    - exceptions
-    - stdout output (echo, print)
-    - php notices/warnings and errors
-
-Sample spartan test:
-```
-#!/bin/env stest
-# first line makes test an executable script
-# math test
-2*2;    # test have 0 identation, result must be idented by 4 spaces;
-    4;
-; $x = M_PI / 6;  # php-expression prefixed by ";";
-sin($x) < 2;
-    true;
-range(3,4);
-    [3, 4];
-```
-
-USING STEST
------------
-create file `$filename.stest` starting with
-```
-#!/bin/env stest
-<?php
-
-# your test
-```
-
-then do `chmod +x $filename.stest` to make it executable
-
-
 # Composer / Laravel Autoload Integration
 upon start spartan test includes `bootstrap/autoload.php` or `vendor/autoload` or `init.php` file from current or parent directories
 
-You can specify your autoload file using "--init=$path_filename" option or via `stest.config` file
+You can specify your custom autoload file using "--init=$path_filename" option or via `stest.config` file
 
 
 INSTALL (GIT)

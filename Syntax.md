@@ -100,6 +100,7 @@ So it is easy to emulate user's behaviour on sites
 At bare minimum, web tests require all pages to be non-empty `code 200` (http success) pages\
 Also when standard `php-error output` found on a page - error will be raised
 
+@see [Web Tests](https://github.com/parf/spartan-test/blob/main/web-tests.md)
 
 ---
 
