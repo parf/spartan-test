@@ -61,12 +61,19 @@ To turn off this behaviour add `$ARG['sort']=0;`; to re-enable it back `$ARG['so
 Instead of result you can use one(or more) advanced tests
 
 `~`   - test for NON empty string
+
 `~~`  - test for NON empty result:   `if (! $result) FAIL();`
+
 `~ "substring"`  - substring present
+
 `~ Class`  - is-descendant
+
 `~ []`            - is-array
+
 `~ [$a, $b, ..]`  - VALUES $a and $b are in resulting array
+
 `~ [key=>val]`    - KEY => VALUE is in resulting array
+
 `~ /regexp/x`     - is result matching regexp
 
 ### You can have several Advanced tests for one expression
