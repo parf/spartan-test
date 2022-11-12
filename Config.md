@@ -17,3 +17,7 @@ Typical Config Looks like:
  "realmDetectMethod":  your "Class::method" to detect realm (like from server name or your config)
 }
 ```
+
+To extend STest - extend standard STest class with your functionality, specify new class in config file
+
+For example: extend Reporter - send Slack messages when stest finished with Alert or Error

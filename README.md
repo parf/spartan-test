@@ -12,11 +12,14 @@ Write your tests in style:
 
 - [Syntax](https://github.com/parf/spartan-test/blob/main/Syntax.md)
 - [Web Tests](https://github.com/parf/spartan-test/blob/main/web-tests.md)
+- [Config](https://github.com/parf/spartan-test/blob/main/Config.md)
 
 * Examples
     - [Basic test example](https://github.com/parf/spartan-test/blob/main/examples/1-basics/1-first-test.stest)
     - (advanced) [Custom comparison methods](https://github.dev/parf/spartan-test/blob/main/examples/1-basics/special-tests.stest)
     - [Web-tests](/web-tests.md)
+
+* to see more help just run `stest --help` or `stest-all --help`
 
 
 # Composer / Laravel Autoload Integration
