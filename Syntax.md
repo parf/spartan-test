@@ -92,6 +92,15 @@ Instead of result you can use one(or more) advanced tests
 
 ```
 
+
+# Build-in STest Methods
+
+- `STest::domain()` - @see web-tests
+- `STest::stop($message)` - stop test execution w/o error  (--force option ignores all stops)
+   example: `if (date("l") != "Monday") \STest::stop("Monday-only test");`
+- `STest::stop($message, int $until_yyyymmdd)` - disable test until date
+
+
 # Web Tests
 
 Web tests emulates web site queries, they kept all cookies and http_refferers\

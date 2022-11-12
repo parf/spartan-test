@@ -102,9 +102,9 @@ class STest {
      *
      */
     static function stop(string $message, int $until_yyyymmdd = 0) {
-        if ($until_yyyymmdd && (int) date("Ymd") < $until_yyyymmdd)
-            return;
         if (self::$ARG['force'] ?? 0)
+            return;
+        if ($until_yyyymmdd && (int) date("Ymd") < $until_yyyymmdd)
             return;
         throw new StopException($message);
     }
