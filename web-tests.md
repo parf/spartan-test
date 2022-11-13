@@ -12,16 +12,16 @@ see more in [examples/web-test](https://github.com/parf/spartan-test/blob/main/e
 
 Every web test must start with: `\STest::domain("your-domain.com")` line
 
-by default we test `https://` version; to test http - specify it `\STest::domain("http://your-domain.com")`
+default is `https://` version; to test http - specify it explicitly `\STest::domain("http://your-domain.com")`
 
-### to emulate GET query use
+### GET queries
 
 - `/path/script`
 - `/path/script?arg=value`
 - `/path/script ["arg" => $value, ...]`
 - `/path/script $arguments`
 
-### to emulate POST queries use
+### POST queries
 
 - `POST /path/script`
 - `POST /path/script?arg=value`
