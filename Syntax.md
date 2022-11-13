@@ -3,17 +3,17 @@ Minimalistic PHP 7, PHP 8 Unit Testing Framework / Web Testing Framework
 
 * Spartan test reads test-file line by line
 
-line read can be a:
+Line read can be a:
  - php-expression
  - test-expression (or just `test`)
  - test-result
  - comment
 
-* for test-expressions it calculate result, then compares it to stored result
+* For test-expressions it calculate result, then compares it to stored result
     - if result exists and differ, error is generated
     - if no result stored in test-file, generated result is added to test-file
 
-* stest catches
+* STest catches
     - return values
     - exceptions (throwable)
     - stdout output (echo, print)
@@ -122,7 +122,7 @@ Also when standard `php-error output` found on a page - error will be raised
 
 USING STEST
 -----------
-create file `$filename.stest` starting with
+Create file `$filename.stest` starting with
 ```
 #!/bin/env stest
 <?php
@@ -130,4 +130,4 @@ create file `$filename.stest` starting with
 # your test
 ```
 
-then do `chmod +x $filename.stest` to make it executable
+Then do `chmod +x $filename.stest` to make it executable
