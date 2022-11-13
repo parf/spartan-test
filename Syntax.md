@@ -106,11 +106,10 @@ Instead of result you can use one(or more) advanced tests
 
 # Web Tests
 
-Web tests emulates web site queries, they kept all cookies and http_refferers\
-So it is easy to emulate user's behaviour on sites
+Web tests emulates web site queries, they kept all cookies and http_refferers, so it is easy to emulate user's behaviour on sites
 
 At bare minimum, web tests require all pages to be non-empty `code 200` (http success) pages\
-Also when standard `php-error output` found on a page - error will be raised
+When standard `php-error output` found on a page, error will be raised
 
 @see [Web Tests](https://github.com/parf/spartan-test/blob/main/web-tests.md)
 
@@ -130,4 +129,4 @@ Create file `$filename.stest` starting with
 # your test
 ```
 
-Then do `chmod +x $filename.stest` to make it executable
+Then write `chmod +x $filename.stest` to make it executable
