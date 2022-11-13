@@ -4,20 +4,20 @@ Minimalistic PHP 7, PHP 8 Unit Testing Framework / Web Testing Framework
 * Spartan test reads test-file line by line
 
 Line read can be a:
- - php-expression
- - test-expression (or just `test`)
- - test-result
- - comment
+ - PHP-expression
+ - Test-expression (or just `test`)
+ - Test-result
+ - Comment
 
 * For test-expressions it calculate result, then compares it to stored result
     - if result exists and differ, error is generated
     - if no result stored in test-file, generated result is added to test-file
 
 * STest catches
-    - return values
-    - exceptions (throwable)
-    - stdout output (echo, print)
-    - php notices/warnings and errors
+    - Return values
+    - Exceptions (throwable)
+    - Stdout output (echo, print)
+    - PHP notices/warnings and errors
 
 
 BASIC SYNTAX
