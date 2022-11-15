@@ -7,9 +7,9 @@ Typical Config Looks like:
 ```
 {
  "init"    : ["bootstrap/autoload.php", "vendor/autoload.php", "init.php"],  # where to look and in what order for autoload methods
- "stest"   :"STest",       # CLASS to use for Base methods
  "reporter" :"stest\\helper\\Reporter",   # CLASS to use for Reporter
  "webtest" :"hb\\WebTest"   # CLASS to use for Web Tests
+ ~~"stest"   :"STest",       # CLASS to use for Base methods ~~
 
 # Optional variables
  "realm"   : realm to use for Web Tests
