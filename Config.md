@@ -9,7 +9,6 @@ Typical Config Looks like:
  "init"    : ["bootstrap/autoload.php", "vendor/autoload.php", "init.php"],  # where to look and in what order for autoload methods
  "reporter" :"stest\\helper\\Reporter",   # CLASS to use for Reporter
  "webtest" :"hb\\WebTest"   # CLASS to use for Web Tests
- ~~"stest"   :"STest",       # CLASS to use for Base methods ~~
 
 # Optional variables
  "realm"   : realm to use for Web Tests
@@ -21,3 +20,11 @@ Typical Config Looks like:
 To extend STest - extend standard STest class with your functionality, specify new class in config file
 
 For example: extend Reporter - send Slack messages when stest finished with Alert or Error
+
+
+
+
+Do not use: (so far system-only mapping)
+{
+ "stest"   :"STest",       # CLASS to use for Base methods
+}
