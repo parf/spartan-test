@@ -3,21 +3,21 @@ Minimalistic PHP 7, PHP 8 Unit Testing Framework / Web Testing Framework
 
 * Spartan test reads test-file line by line
 
-line read can be a:
- - php-expression
- - test-expression (or just `test`)
- - test-result
- - comment
+Line read can be a:
+ - PHP-expression
+ - Test-expression (or just `test`)
+ - Test-result
+ - Comment
 
-* for test-expressions it calculate result, then compares it to stored result
+* For test-expressions it calculate result, then compares it to stored result
     - if result exists and differ, error is generated
     - if no result stored in test-file, generated result is added to test-file
 
-* stest catches
-    - return values
-    - exceptions (throwable)
-    - stdout output (echo, print)
-    - php notices/warnings and errors
+* STest catches
+    - Return values
+    - Exceptions (throwable)
+    - Stdout output (echo, print)
+    - PHP notices/warnings and errors
 
 
 BASIC SYNTAX
@@ -106,11 +106,10 @@ Instead of result you can use one(or more) advanced tests
 
 # Web Tests
 
-Web tests emulates web site queries, they kept all cookies and http_refferers\
-So it is easy to emulate user's behaviour on sites
+Web tests emulates web site queries, they kept all cookies and http_refferers, so it is easy to emulate user's behaviour on sites
 
 At bare minimum, web tests require all pages to be non-empty `code 200` (http success) pages\
-Also when standard `php-error output` found on a page - error will be raised
+When standard `php-error output` found on a page, error will be raised
 
 @see [Web Tests](https://github.com/parf/spartan-test/blob/main/web-tests.md)
 
@@ -122,7 +121,7 @@ Also when standard `php-error output` found on a page - error will be raised
 
 USING STEST
 -----------
-create file `$filename.stest` starting with
+Create file `$filename.stest` starting with
 ```
 #!/bin/env stest
 <?php
@@ -130,4 +129,4 @@ create file `$filename.stest` starting with
 # your test
 ```
 
-then do `chmod +x $filename.stest` to make it executable
+Then write `chmod +x $filename.stest` to make it executable
