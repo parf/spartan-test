@@ -188,7 +188,7 @@ class STest {
         $r = parse_url($domain);
         if ($m = InstanceConfig::$config['realmUriMethod']??0) {
             self::debug(" - using realmUriMethod: $m", 4);
-            $domain = $m($r); // parsed URI see @parse_url
+            $domain = $m($r + ['realm' => $realm]); // parsed URI see @parse_url
         } else {
             $domain = $r['scheme']."://".$realm.".".$r['host']; // default realm is: scheme://$realms.domain
         }
@@ -207,7 +207,7 @@ class STest {
         $realm = null;
         if ($m = InstanceConfig::$config['realmDetectMethod']??0) {
             self::debug(" - using realmDetectMethod: $m", 2);
-            $realm = $m();
+            $realm = $m($domain);
         }
         if ((STest::$ARG['realm']??0) === true)  // --realm - disable realms
             return "";
