@@ -7,7 +7,7 @@ use stest\helper\Console;        // colored output
 use function stest\helper\x2s;   // var_export alike
 
 /**
- * Spartan Test 3.1 - php 8.x testing framework done right
+ * Spartan Test 3.1.x - php 8.x testing framework done right
  * RTFM: README.md
  */
 
@@ -48,7 +48,7 @@ function I(/*string | array */ $name, array $args=[]) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.1.0";
+const VERSION = "3.1.1";
 
 //
 // INTERNAL
