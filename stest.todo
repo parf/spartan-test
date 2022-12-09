@@ -7,9 +7,8 @@
      default: STest::realm($realm, $schema, $host)
      
    ☐ STest::once("1day")  - run *unmodified* script once a day only
-      using strtotime()
-     state kept in memcache key: stest:hash(filename):last-modified-time
-     config C('memcache') OR /tmp/stest/$user/once.json
+      use filemtime(script); keep in /tmp/stest/...
+   ☐ STest::once($to, "Class1 Class2")  - use max( filemtime( test, ... ClassDefFile($class) ))
    ☐ STest::failOnce("1day")  - FAIL *unmodified* script once a day only
    ☐ STest::suspend("yyyy-mm-dd", "period") -- disable REST of the test
    ☐ STest::suspendError("yyyy-mm-dd", "period") .. ex: 1day 1week -
