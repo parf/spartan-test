@@ -742,8 +742,11 @@ class STest_File_Commands {
         }
         # POST /$path  == Webtest::GET
         if (! strncasecmp($test, "post /", 5)) {
-            $test = trim(substr($test, 5), ";");
-            @[$path, $args] = explode(" ", $test, 2);
+		$test = trim(substr($test, 5), ";");
+	    $r = explode(" ", $test, 2);
+            if (count($r) == 1)
+                $r = [$r[0], ""];
+            [$path, $args] = $r;
             if (! $args)
                 $args = "[]";
             return "\stest\I('webtest')->post('$path', $args);";
