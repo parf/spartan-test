@@ -3,4 +3,6 @@
 [00:16:28] parf@parf  main /hbfr/spartan-test (0) 
 > git push --tags
 
+
+# webhook configured, no need to do this anymore
 go: https://packagist.org/packages/parf/spartan-test  ;   do "update"
