@@ -1,0 +1,6 @@
+[00:15:44] parf@parf  main /hbfr/spartan-test (0) 
+> git tag -s 3.1.4
+[00:16:28] parf@parf  main /hbfr/spartan-test (0) 
+> git push --tags
+
+go: https://packagist.org/packages/parf/spartan-test  ;   do "update"
