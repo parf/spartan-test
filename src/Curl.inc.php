@@ -91,7 +91,7 @@ class Curl {
                 ];
         }
         \STest::debug(" - Curl::$method url='".$curl_opts[CURLOPT_URL]."'", 2);
-	if ($curl_opts[CURLOPT_POSTFIELDS] ?? 0)
+    	if ($curl_opts[CURLOPT_POSTFIELDS] ?? 0)
             \STest::debug(" - postfields params='".$curl_opts[CURLOPT_POSTFIELDS]."'", 3);
         $ch = curl_init();
         curl_setopt_array($ch, $curl_opts + $default);

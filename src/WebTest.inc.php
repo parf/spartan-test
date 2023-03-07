@@ -87,10 +87,12 @@ class WebTest {
                 STest::$BODY = ['code' => $code, 'size' => strlen(STest::$BODY)]; // test with "~ ['code' => 404]"
             }
         }
-
-        if ($c = STest::$HEADERS['Set-Cookie'] ?? 0) {
+        if ($c = STest::$HEADERS['Set-Cookie'] ?? STest::$HEADERS['set-cookie'] ?? 0) {
             foreach ((array)$c as $kv) {
                 [$k, $v] = explode('=', $kv);
+                if ($p = strrpos($v, ";")) {
+                    $v = substr($v, 0, $p);
+                }
                 STest::$COOKIE[$k] = $v;
             }
         }
