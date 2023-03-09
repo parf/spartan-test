@@ -9,6 +9,7 @@ Spartan
 2011-08-24 - V1.3 - sets of minor changes, used in production
 2012-06-20 - v2.0 - githubbed, licensed as MIT. minor improvements
 2014-04-01 - v2.3 - support for foreach, array test syntax
+2023-03-09 - v2.4 - sync from rd codebase, php8 support, STest::stop support, more
 
 Author: Sergey Porfiriev <parf@comfi.com>
 License: MIT (http://www.opensource.org/licenses/mit-license.php)
@@ -21,7 +22,10 @@ TODO:
 
 */
 
-const VERSION = 2.3;
+class STEST_Exception extends Exception {}
+class STEST_STOP_Exception extends STEST_Exception {}
+
+const VERSION = 2.4;
 
 if (php_sapi_name() != 'cli')
     die("cli required");
@@ -35,34 +39,34 @@ if (! $argv)
 // Arguments
 $ARG=array(); // ARGS
 foreach($argv as $a)
-    if (@$a[0]=='-')
+    if ($a && $a[0]=='-')
         $ARG[$a]=1;
 
-if (@$ARG["--help"])
+if ($ARG["--help"]??0)
   return readfile(__DIR__.'/README.md');
 
-if (@$ARG["--example"])
+if ($ARG["--example"]??0)
   return readfile(__DIR__.'/examples/sample.test');
 
-if (@$ARG["--legal"])
+if ($ARG["--legal"]??0)
   return legal();
 
 // files from stdin support
-if (@$ARG['--'] || @$ARG['--stdin'])
+if (($ARG['--']??0) || ($ARG['--stdin']??0))
     $argv=file("php://stdin", FILE_IGNORE_NEW_LINES);
 
-if (@$ARG["--clean"])
+if ($ARG["--clean"]??0)
     $ARG["-g"] = 1;
 
-$__REGENERATE = @$ARG["-g"];
-$__STDOUT     = @$ARG["-o"];
-$__SILENT     = @$ARG["-s"] ||  @$ARG["--silent"];
+$__REGENERATE = $ARG["-g"]??0;
+$__STDOUT     = $ARG["-o"]??0;
+$__SILENT     = ($ARG["-s"]??0) || ($ARG["--silent"]??0);
 if ($__STDOUT)
     $__SILENT = 1;
 if ($__SILENT)
     $ARG["--nocolor"] = 1;
 
-if (@$ARG["-c"]) { // color test output
+if ($ARG["-c"]??0) { // color test output
     unset($ARG["--nocolor"]);
     $ARG["--color"] = 1;
     $__SILENT = 1;
@@ -72,10 +76,10 @@ $TERM = getenv("TERM");
 # console colors, only for xterm capable terminals
 if (strpos($TERM,'xterm')!==false || $TERM=='linux')
     $ARG["--color"]=1;
-if (@$ARG["--nocolor"])
+if ($ARG["--nocolor"]??0)
     unset($ARG["--color"]);
 $__NORM=$__BOLD=$__RED=$__BLUE=$__GREEN="";
-if (@$ARG["--color"]) {
+if ($ARG["--color"]??0) {
     $__NORM ="\033[0m";
     $__BOLD ="\033[1m";
     $__RED  ="\033[31m"; // error
@@ -99,12 +103,13 @@ while($__file = array_shift($argv)) {
                 break;
             if ( file_exists($path."/init.php") ) {
                 // allow notices in init.php
-                if (! isset($ARG["--no-error-handler"]))
-                     set_error_handler('Error::handler', E_ALL ^ E_NOTICE);
+                if (! isset($ARG["--no-error-handler"])){
+                    set_error_handler('_Error::handler', E_ALL ^ E_NOTICE);
+                }
 
                 include $path."/init.php";
 
-                if ($__z=Error::get()) { //
+                if ($__z=_Error::get()) { //
                     $__err=$__RED."PHP Error".$__NORM.": ".@__json_encode($__z)."\n";
                     fwrite(STDERR, $__err);
                     exit(1);
@@ -115,8 +120,8 @@ while($__file = array_shift($argv)) {
     }
 
     if ($__fn==1 && ! isset($ARG["--no-error-handler"])) {
-        set_error_handler('Error::handler', E_ALL);
-        Error::$suppress=0;
+        set_error_handler('_Error::handler', E_ALL);
+        _Error::$suppress=0;
     }
 
     if (! $__SILENT && ! $__REGENERATE)
@@ -187,17 +192,22 @@ while($__file = array_shift($argv)) {
         }
 
         // skip comments
-        if (! $__line || $__l2=='//' || $__l2=='<?' || $__l2=='?>' || (@$__line[0]=='#' && @$__line[1]!='>'))
+        if (! $__line || $__l2=='//' || $__l2=='<?' || $__l2=='?>' || (($__line[0]??"")=='#' && ($__line[1]??"")!='>'))
             continue;
         // <? - vi coloring fix
 
         // ";command" - execute and discard result
         if ($__l2[0]==';') {
-            $__z = "";
+            $__z = [];
             $__et = ""; // exception trace
             ob_start();
             try {
                 eval(ltrim($__line, " ;"));
+            } catch(STEST_STOP_Exception $__ex) {
+                $m = $__ex->getMessage();
+                if (! $__SILENT)
+                    echo "TEST STOPPED ($__file)\nReason: $m\n";
+                die();
             } catch(Exception $__ex) {
                 $__z = array(get_class($__ex), $__ex->getMessage(), $__ex->getCode());
                 $__et = $__ex->getTraceAsString();
@@ -206,7 +216,7 @@ while($__file = array_shift($argv)) {
                 array_pop($__et);
                 $__et = "      ".join("\n      ", $__et);
             }
-            if ($__e=Error::get())
+            if ($__e=_Error::get())
                 $__z[] = array("Error", $__e);
             if ($__ob=ob_get_clean())
                 $__z[] = array("Unexpected Output:", $__ob);
@@ -214,7 +224,7 @@ while($__file = array_shift($argv)) {
             if (! $__z)
                 continue;
             // ERRORS !!!
-            $__err = str_replace('],[', "],\n    [", substr(@__json_encode($__z), 1, -1));
+            $__err = str_replace('],[', "],\n    [", substr(__json_encode($__z), 1, -1));
             $__err = str_replace('\n', "\n      ", $__err);
             $__err = $__BOLD.$__RED.$__err.$__NORM;
             $__err ="Line $__l: PHP Error: '$__line\n    ".$__err;
@@ -266,13 +276,18 @@ while($__file = array_shift($argv)) {
                             ksort($___z);
                 }
             }
+
         } catch(Exception $__ex) {
+            $__z=array(get_class($__ex), $__ex->getMessage(), $__ex->getCode());
+        } catch (DivisionByZeroError $__ex) {
+            $__z=array(get_class($__ex), $__ex->getMessage(), $__ex->getCode());
+        } catch (Error $__ex) {
             $__z=array(get_class($__ex), $__ex->getMessage(), $__ex->getCode());
         }
         if (is_object($__z))
             $__z=array("class" => get_class($__z), $__z);
 
-        if ($__err=Error::get())
+        if ($__err=_Error::get())
             $__z=array($__err, $__z); // [error(s), result]
 
         $__ob=ob_get_clean();
@@ -284,7 +299,7 @@ while($__file = array_shift($argv)) {
                 $__z=array("r" => $__z, "out" => $__ob); // ["result" => .., "output" => ..]
         }
 
-        $__z=@__json_encode($__z);
+        $__z=__json_encode($__z);
         $__out[]="#=".$__z."\n";
     }
 
@@ -314,7 +329,7 @@ while($__file = array_shift($argv)) {
     }
 
     // do ./test --clean, then ./test -c | tail
-    if (@$ARG["-c"] && ! $__errs) { // color test output to stdout
+    if (($ARG["-c"]??"") && ! $__errs) { // color test output to stdout
         $__ml_comment = 0;
         $crap = array_flip( explode(" ", "# / < ?") );
         foreach ($__out as $o) {
@@ -341,7 +356,7 @@ while($__file = array_shift($argv)) {
         continue;
     }
 
-    if (@$ARG["--clean"]) {
+    if ($ARG["--clean"]??"") {
         echo "*** $__file cleaned\n";
         $r=array();
         foreach ($__out as $o)
@@ -391,7 +406,7 @@ function include_all($dirs, $ext=".php") {
     closedir($dir);
 } // include_all
 
-class Error {  // error handler
+class _Error {  // error handler
 
     PUBLIC static $suppress = 0;      // bit-mask to suppress errors
 
@@ -409,10 +424,14 @@ class Error {  // error handler
     // if you want to suppress something else - change Error::$suppress
 
     // Error::handler
-    static function handler ($level, $message, $file, $line, $context) {
+    static function handler ($level, $message, $file, $line) {
         // you can hide notices and warnings with @
         // you can't hide errors
         if (!error_reporting() && ($level == E_WARNING || $level == E_NOTICE))
+            return;
+
+	// php8 default error reporting is 4437 (0x1155)
+        if (error_reporting()==4437 && ($level == E_WARNING || $level == E_NOTICE))
             return;
 
         if ($level & self::$suppress) // allow people to debug ugly code
@@ -426,7 +445,7 @@ class Error {  // error handler
                           E_USER_NOTICE  => 'USER NOTICE',
                           E_STRICT       => 'E_STRICT',
                           );
-        $type = ($t = @$map[$level]) ? $t : "ERROR#$level";
+        $type = ($t = ($map[$level]??0)) ? $t : "ERROR#$level";
         $e = "$type: $message";
         if (substr($file, 0, strlen(__FILE__)) != __FILE__)
             $e = array($e, $file, $line);
@@ -469,6 +488,16 @@ LICENSE
   The MIT License (MIT) - http://www.opensource.org/licenses/mit-license.php
 ";
 }
+
+class STEST {
+
+    // stop test - no alerts
+    static function stop($message) {
+        throw new STEST_STOP_Exception($message);
+    }
+
+}
+
 
 # force emacs php-mode
 # Local Variables:
