@@ -1,0 +1,36 @@
+#!/usr/bin/env spartan-test
+// Suppressing Notices & Warnings
+<?
+;if (PHP_MAJOR_VERSION != 8) STEST::stop("Incorrect version php");
+?>
+
+$B;
+#=["WARNING: Undefined variable $B",null]
+
+// DEFINE B
+; $B=array();
+
+$B[12];
+#=["WARNING: Undefined array key 12",null]
+$B["abv"];
+#=["WARNING: Undefined array key \"abv\"",null]
+
+// Disable notices
+; _Error::suppress_notices();
+$B[12];
+#=["WARNING: Undefined array key 12",null]
+$B["abv"];
+#=["WARNING: Undefined array key \"abv\"",null]
+
+print (2+1/0);
+#=["DivisionByZeroError","Division by zero",0]
+
+// Disable warnings - 
+; _Error::suppress_warnings();
+
+// Yay - now i can delete by 0 
+print (2+1/0);
+#=["DivisionByZeroError","Division by zero",0]
+
+// Turn errors detection on (needed when you run multiple tests)
+; _Error::$suppress = 0;

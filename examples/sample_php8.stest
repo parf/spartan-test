@@ -1,0 +1,81 @@
+#!/usr/bin/env spartan-test
+/*
+ Make sure you have spartan-test in your path:
+   mkdir -p ~/src ~/bin
+   git clone git@github.com:parf/spartan-test.git ~/src/spartan-test
+   ln -s ~/src/spartan-test/spartan-test ~/bin
+*/
+<?
+;if (PHP_MAJOR_VERSION != 8) STEST::stop("Incorrect version php");
+// is 2+2 still 4?
+2+2;
+#=4
+$c=1;
+#=1
+$c>0;
+#=true
+$a=array(1,2,3);
+#=[1,2,3]
+new ArrayObject($a);
+#={"class":"ArrayObject","0":{"0":1,"1":2,"2":3}}
+range(1,3);
+#=[1,2,3]
+
+$f=function() { throw new Exception("Oops...", 120); };
+#={"class":"Closure","0":{}}
+$f();
+#=["Exception","Oops...",120]
+
+// STDOUT
+print("123");
+#={"r":1,"out":"123"}
+
+// php errors, warnings and notices
+trigger_error("trigger_error");
+#=["USER NOTICE: trigger_error",true]
+$a = "one-".(1/0);
+#=["DivisionByZeroError","Division by zero",0]
+
+// two errors at the same time
+trigger_error("one-".(1/0));
+#=["DivisionByZeroError","Division by zero",0]
+
+; $a=array();
+$a["a"];
+#=["WARNING: Undefined array key \"a\"",null]
+$a[1];
+#=["WARNING: Undefined array key 1",null]
+
+// suppress tests for this line
+; time();
+
+$a=array("a" => "AA", "b" => "BB");
+#={"a":"AA","b":"BB"}
+
+unset($a);
+#=null
+
+$a;
+#=["WARNING: Undefined variable $a",null]
+
+class S { static function x() { return "S::x"; } }
+#=null
+
+S::x();
+#="S::x"
+
+// load all files in this directory(and subdirs)
+// make sure that files can be loaded together: no syntax errors, class/function clashes
+// include_all("/home/parf/src/homebase/lib");
+
+# in order to get consistent results keys in arrays are always sorted
+$a = ["C" => 1, "c" => 2, "b" => 3, "a" => 1];
+#={"C":1,"a":1,"b":3,"c":2}
+$b = ["a" => 1, "c" => 2, "C" => 1, "b" => 3];
+#={"C":1,"a":1,"b":3,"c":2}
+$a == $b;
+#=true
+
+# hashes sorted 2 level deep
+$a = [ ["C" => 1, "c" => 2, "b" => 3, "a" => 1], ["a" => 1, "c" => 2, "C" => 1, "b" => 3]];
+#=[{"C":1,"a":1,"b":3,"c":2},{"C":1,"a":1,"b":3,"c":2}]

@@ -19,7 +19,7 @@
 ; class B { function t() { return "B"; } }
 
 // here is where all magic happend, spratan tests loads all options into hash $ARG
-; $API = @$ARG['-b'] ? new B() : new A();
+; $API = ($ARG['-b']??0) ? new B() : new A();
 
 $API->t();
 #="A"

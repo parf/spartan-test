@@ -6,6 +6,7 @@
    ln -s ~/src/spartan-test/spartan-test ~/bin
 */
 <?
+;if (PHP_MAJOR_VERSION != 7) STEST::stop("Incorrect version php");
 // is 2+2 still 4?
 2+2;
 #=4
@@ -32,21 +33,18 @@ print("123");
 // php errors, warnings and notices
 trigger_error("trigger_error");
 #=["USER NOTICE: trigger_error",true]
-1/0;
-#=["WARNING: Division by zero",false]
+$a = "one-".(1/0);
+#=["WARNING: Division by zero","one-INF"]
+
 // two errors at the same time
-trigger_error("one".(1/0));
-#=[["WARNING: Division by zero","USER NOTICE: one"],true]
+trigger_error("one-".(1/0));
+#=[["WARNING: Division by zero","USER NOTICE: one-INF"],true]
 
 ; $a=array();
 $a["a"];
 #=["NOTICE: Undefined index: a",null]
 $a[1];
 #=["NOTICE: Undefined offset: 1",null]
-
-// at least php 5 required
-substr(phpversion(), 0, 2)=='5.';
-#=true
 
 // suppress tests for this line
 ; time();
@@ -70,4 +68,14 @@ S::x();
 // make sure that files can be loaded together: no syntax errors, class/function clashes
 // include_all("/home/parf/src/homebase/lib");
 
-?>
+# in order to get consistent results keys in arrays are always sorted
+$a = ["C" => 1, "c" => 2, "b" => 3, "a" => 1];
+#={"C":1,"a":1,"b":3,"c":2}
+$b = ["a" => 1, "c" => 2, "C" => 1, "b" => 3];
+#={"C":1,"a":1,"b":3,"c":2}
+$a == $b;
+#=true
+
+# hashes sorted 2 level deep
+$a = [ ["C" => 1, "c" => 2, "b" => 3, "a" => 1], ["a" => 1, "c" => 2, "C" => 1, "b" => 3]];
+#=[{"C":1,"a":1,"b":3,"c":2},{"C":1,"a":1,"b":3,"c":2}]

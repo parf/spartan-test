@@ -1,0 +1,12 @@
+#!/usr/bin/env spartan-test
+
+/*
+ * STEST::stop()
+ *
+ * Example: stop tests if database is not available
+ */
+
+; $db_ok = 0;
+; if (! $db_ok) STEST::stop("database is not available");
+
+// normal case

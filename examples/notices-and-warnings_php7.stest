@@ -1,4 +1,7 @@
 #!/usr/bin/env spartan-test
+<?
+;if (PHP_MAJOR_VERSION != 7) STEST::stop("Incorrect version php");
+?>
 // Suppressing Notices & Warnings
 
 $B;
@@ -13,21 +16,21 @@ $B["abv"];
 #=["NOTICE: Undefined index: abv",null]
 
 // Disable notices
-; Error::suppress_notices();
+; _Error::suppress_notices();
 $B[12];
 #=null
 $B["abv"];
 #=null
 
-1/0;
-#=["WARNING: Division by zero",false]
+print (2+1/0);
+#={"r":["WARNING: Division by zero",1],"out":"INF"}
 
 // Disable warnings - 
-; Error::suppress_warnings();
+; _Error::suppress_warnings();
 
 // Yay - now i can delete by 0 
-1/0;
-#=false
+print (2+1/0);
+#={"r":1,"out":"INF"}
 
 // Turn errors detection on (needed when you run multiple tests)
-; Error::$suppress = 0;
+; _Error::$suppress = 0;

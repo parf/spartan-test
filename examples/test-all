@@ -1,2 +1,1 @@
-#!/bin/sh
-find . -name "*.stest" -executable -type f | ../spartan-test --
+find . -name "*.stest" | ../spartan-test --
