@@ -75,7 +75,11 @@ Instead of result you can use one(or more) advanced tests
 
 `~ [$a, $b, ..]`  - VALUES $a and $b are in resulting array
 
-`~ [key=>val]`    - KEY => VALUE is in resulting array
+`~ [key => val]`    - KEY => VALUE is in resulting array
+
+`~ [key => true]`    - KEY present
+
+`~ [key => false]`    - KEY *NOT* present
 
 `~ /regexp/x`     - is result matching regexp
 
