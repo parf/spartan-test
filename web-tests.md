@@ -28,6 +28,9 @@ default is `https://` version; to test http - specify it explicitly `\STest::dom
 - `POST /path/script ["arg" => $value, ...]`
 - `POST /path/script $arguments`
 
+### FOLLOWING links by link-text
+- `FOLLOW "link-text"`
+
 ### Redirects
 result - response-code AND redirect location
 ```
