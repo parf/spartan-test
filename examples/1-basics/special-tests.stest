@@ -1,4 +1,4 @@
-#!/usr/bin/env stest
+#!/usr/bin/env stest -v
 <?php
 #
 # "~tests"
@@ -43,6 +43,7 @@ new DateTime;
 # in-array
 [1,2,3,4,5];
     ~ [3];
+    ~ [4];  # can have MANY "~" tests after expression
 [1,2,3,4,5];
     ~ ["a"];
 # in-array - multiple values
@@ -53,6 +54,7 @@ $a = ['a' => 1, 'b' => 2];
     ~ ['a' => 1];
 $a;
     ~ ['a' => 1, 'b' => 2];
+    ~ ['a' => true, 'c' => false];   # true = key exists, false = key does not exists
 $a;
     ~ ['a' => 2];
 $a;
@@ -62,6 +64,20 @@ $a;
     ~ [];  # is-array test
 "not-an-array"
     ~ [];  # shoud fail
+
+
+# ~ [key => true/false] have special meaning - key exists/not-exists test
+
+# key exists test
+$a;
+    ~ ['a' => true];  
+$a;
+    ~ ['a' => false];  # should fail, key exists
+$a;
+    ~ ['c' => true];  # should fail, key does not exists
+$a;
+    ~ ['c' => false];  # ok, no such key
+
 
 # regexp
 "Lorem ipSum dolor sit amet, consectetur adipiscing elit";
