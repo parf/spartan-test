@@ -58,7 +58,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.1.4";
+const VERSION = "3.1.5";
 
 //
 // INTERNAL
@@ -111,7 +111,7 @@ class STest {
      * if (date("l") != "Monday") \STest::stop("Monday-only test");
      *
      */
-    static function stop(string $message, int $until_yyyymmdd = 0) {
+    static function stop(string $message, int $until_yyyymmdd = 0): void {
         if (self::$ARG['force'] ?? 0) {
             return;
         }
@@ -193,6 +193,48 @@ class STest {
         \hb\Curl::test($domain, $fail_action); // check if web-server is up
         STest::$DOMAIN = $domain;
         self::debug(" - domain: $domain", 2);
+    }
+
+    /**
+     * WebTest
+     * Run XQuery on recently Curled web-page content
+     * Ex:
+     * /path
+     *     ~;
+     * \STest::xq("/book/[@author='Dockins']");
+     * @param bool $as_array - see _xq method
+     */
+    static function xq(string $xpath, $as_array = false) {
+        return static::_xq(static::$INFO['body'], $xpath, $as_array);
+    }
+
+    /**
+     * Run XQuery on $html
+     * as_array == false - return matches as combined HTML
+     * as_array == true  - return array of HTML
+     * as_array == "dom" - return https://www.php.net/manual/en/domxpath.query.php result
+     */
+    static function _xq($html, $query, $as_array = false) {
+        $dom = new \DomDocument();
+        $dom->strictErrorChecking = false;
+        $dom->substituteEntities = false;
+        $dom->loadHTML($html);
+        $xpath = new \Domxpath($dom);
+        $nodeList = $xpath->query($query);
+        if ($as_array === 'dom') {
+            return $nodeList;
+        }
+        if (!$as_array) {
+            $r = "";
+            foreach ($nodeList as $domElement)
+                $r .= $dom->saveXML($domElement) . "\n";
+            $r = trim($r);
+        } else {
+            $r = array();
+            foreach ($nodeList as $domElement)
+                $r[] = $dom->saveXML($domElement);
+        }
+        return $r;
     }
 
     /**

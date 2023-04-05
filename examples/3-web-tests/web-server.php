@@ -115,4 +115,15 @@ class Pages {
         echo $t;
     }
 
+    # for xquery tests
+    function html() {
+	    echo "<html>
+		    <head><title>page title</title></head>
+		    <body>
+                       <h1>header #1 in body</h1>
+                       <h1>second h1</h1>
+                    </body>
+                 </html>";
+    }
+
 }

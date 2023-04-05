@@ -3,7 +3,7 @@
 
 # honor --domain; --realm; $ENV[STEST_REALM]
 # ; STest::domain("http://127.0.0.2:8080"); # default behaviour - fail if no service on port
-; STest::domain("http://127.0.0.2:8080", "stop"); # "stop" makes it silently fail w/o error
+; STest::domain("http://127.0.0.2:8080", "stop"); # "stop" makes it silently fail w/o error;
 
 # "!" Critical Test
 # TEST will instantly fail if critical test failed
@@ -104,3 +104,26 @@ STest::$BODY;
 # You can just list lots of urls and use "~" as a test
 /non_empty_response;
     ~;
+
+
+# xquery on recent query:
+
+/html;
+    ~;
+preg_replace("!\s+!", " ", \STest::$INFO['body']);
+    '<html> <head><title>page title</title></head> <body> <h1>header #1 in body</h1> <h1>second h1</h1> </body> </html>';
+
+\STest::xq("/html/head/title");
+    '<title>page title</title>';
+\STest::xq("/html/head/title/text()");
+    'page title';
+
+# get all matches as one string
+\STest::xq("//h1");
+    '<h1>header #1 in body</h1>
+    <h1>second h1</h1>';
+
+# get matches as array elements
+\STest::xq("//h1", 1);
+    ['<h1>header #1 in body</h1>', '<h1>second h1</h1>'];
+
