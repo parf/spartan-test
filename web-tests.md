@@ -30,6 +30,7 @@ default is `https://` version; to test http - specify it explicitly `\STest::dom
 
 ### FOLLOWING links by link-text
 - `FOLLOW "link-text"`
+same as 
 
 ### Redirects
 result - response-code AND redirect location
@@ -66,6 +67,30 @@ result - response-code AND redirect location
 
 - `STest::$INFO`  - full array with INFO returned by Curl
 
+
+# XQuery on recently executed GET/POST
+```
+/html;
+    ~;   # empty test, page is code200, no php errors
+\STest::xq("/html/head/title");
+    '<title>page title</title>';
+\STest::xq("/html/head/title/text()");
+    'page title';
+
+# get all matches as one string
+\STest::xq("//h1");  
+    '<h1>header #1 in body</h1>   
+    <h1>second h1</h1>'; 
+
+# get matches as array elements   
+\STest::xq("//h1", 1);  
+    ['<h1>header #1 in body</h1>', '<h1>second h1</h1>'];
+
+    
+\STest::xq("//a[text()='external-link']/@href");
+    'href="http://google.com"';
+
+```
 
 
 # Running Web-test on different servers - Testing Realms
