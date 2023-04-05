@@ -30,7 +30,6 @@ default is `https://` version; to test http - specify it explicitly `\STest::dom
 
 ### FOLLOWING links by link-text
 - `FOLLOW "link-text"`
-same as 
 
 ### Redirects
 result - response-code AND redirect location
