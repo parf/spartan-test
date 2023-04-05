@@ -68,7 +68,7 @@ result - response-code AND redirect location
 - `STest::$INFO`  - full array with INFO returned by Curl
 
 
-# XQuery on recently executed GET/POST
+### XQuery on recently executed GET/POST
 ```
 /html;
     ~;   # empty test, page is code200, no php errors
