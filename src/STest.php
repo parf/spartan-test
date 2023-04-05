@@ -232,11 +232,21 @@ class STest {
         } else {
             $r = array();
             foreach ($nodeList as $domElement)
-                $r[] = $dom->saveXML($domElement);
+                $r[] = trim($dom->saveXML($domElement));
         }
         return $r;
     }
 
+    // follow a-href on a recently spidered page by "text"
+    // \STest::follow("page 1");
+    static function follow(string $text) /* : array|string */ {
+        // first link only !!
+        $links = self::xq("//a[text()='$text']", "dom");
+        if (! ($links[0]??0))
+            return "link with text=\"$text\" not found";
+        $url = $links[0]->getAttribute("href");
+        return \stest\I('webtest')->get($url);
+    }
     /**
      * build realm url - method for overloading
      * default: scheme://$realm.$domain
@@ -862,7 +872,12 @@ class STest_File_Commands {
             return "\stest\I('webtest')->post('$path', $args);";
         }
 
-
+        # follow link by link's text
+        # follow "a-href text"
+        if (!strncasecmp($test, "follow ", 5)) {
+            $name = trim(substr($test, 7), ";");
+            $test = "\STest::follow($name);";
+        }
         return $test;
     }
 

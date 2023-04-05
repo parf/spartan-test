@@ -106,12 +106,12 @@ STest::$BODY;
     ~;
 
 
-# xquery on recent query:
+# XQUERY on recent query:
 
 /html;
     ~;
 preg_replace("!\s+!", " ", \STest::$INFO['body']);
-    '<html> <head><title>page title</title></head> <body> <h1>header #1 in body</h1> <h1>second h1</h1> </body> </html>';
+    '<html> <head><title>page title</title></head> <body> <h1>header #1 in body</h1> <h1>second h1</h1> <a href="http://google.com">external-link</a> <a href=/some-page>external-link2</a> </body> </html>';
 
 \STest::xq("/html/head/title");
     '<title>page title</title>';
@@ -126,4 +126,24 @@ preg_replace("!\s+!", " ", \STest::$INFO['body']);
 # get matches as array elements
 \STest::xq("//h1", 1);
     ['<h1>header #1 in body</h1>', '<h1>second h1</h1>'];
+
+
+\STest::xq("//a[text()='external-link']/@href");
+    'href="http://google.com"';
+
+# get attribute value
+\STest::xq("//a[text()='external-link2']", "dom")[0]->getAttribute("href");
+    '/some-page';
+
+# FOLLOW LINK ON PAGE by a-href TEXT
+
+#\STest::follow("external-link2");
+#    'this is some-page, ur welcome';
+
+FOLLOW "no such link";
+    'link with text="no such link" not found';
+
+
+FOLLOW "external-link2";
+    'this is some-page, ur welcome';
 

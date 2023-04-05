@@ -121,9 +121,15 @@ class Pages {
 		    <head><title>page title</title></head>
 		    <body>
                        <h1>header #1 in body</h1>
-                       <h1>second h1</h1>
+		       <h1>second h1</h1>
+                       <a href=\"http://google.com\">external-link</a>
+                       <a href=/some-page>external-link2</a>
                     </body>
                  </html>";
+    }
+
+    function some_page() {
+        echo "this is some-page, ur welcome";
     }
 
 }
