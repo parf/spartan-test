@@ -60,6 +60,10 @@ class InstanceConfig {
             if (self::_include_init($DIR, $init))
                 break;
         }
+        // optional alternative init
+        if ($init = self::$config['stest-init'] ?? "") {
+            self::_include_init($DIR, $init);
+        }
     }
 
     // include init file

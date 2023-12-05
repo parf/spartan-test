@@ -3,3 +3,7 @@
 2012-06-20 - v2.0 - githubbed, licensed as MIT. minor improvements
 2014-04-01 - v2.3 - support for foreach, array test syntax
 2017-01-?? - v3.0 - rewrite, available as composer package
+2023-12-04 - v3.1.8 - optional additinal init file for tests added: 'stest-config.json': 'stest-init'
+                      included AFTER default `init` file
+                      use it to setup testing environment
+                      default name: ".stest-init.php"

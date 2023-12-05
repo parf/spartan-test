@@ -1,6 +1,8 @@
 {
  "stest"   :"STest",
  "init"    : ["bootstrap/autoload.php", "vendor/autoload.php", "init.php"],
+ "stest-init-doc" : "optional alternative init, this way you can separate normal code execution from tests",
+ "stest-init"    : ".stest-init.php",
  "reporter" :"stest\\helper\\Reporter",
  "webtest" :"hb\\WebTest"
 }
