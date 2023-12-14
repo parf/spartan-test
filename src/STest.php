@@ -557,12 +557,13 @@ class STest_File_Commands {
      * -g | --generate - regenerate test, ignore errors
      */
     static function test(array /* parsed-test */ $__TEST) {
-        $__t = (object) // dummy object used to hide variables
-        ['T' => $__TEST,
-         'fail' => 0, 'new' => 0, 'tests' => 0,
-         'start' => microtime(1),
-         'filename_shown' => 0,
-         'filename' => realpath(i('stest')->file),
+        $__t = (object)[ // dummy object used to hide variables
+            'T' => $__TEST,
+            'fail' => 0, 'new' => 0, 'tests' => 0,
+            'start' => microtime(1),
+            'filename_shown' => 0,
+            'filename' => realpath(i('stest')->file),
+            'details' => [],
         ];
 
         $ARG = \STest::$ARG; // Visible inside TEST, can be modified inside test
@@ -587,6 +588,12 @@ class STest_File_Commands {
             $exp = trim($expected, ";");
             if (($exp[0] ?? 0) === '~') { // ~XXX special tests
                 if ($err = self::_custom_result_syntax($exp, $got)) {
+                    $__t->details[] = [
+                        'line'   => $line,
+                        'code'   => $code,
+                        'expect' => $exp,
+                        'error'  => $err,
+                    ];
                     $showError($err);
                 }
                 return;
@@ -600,6 +607,12 @@ class STest_File_Commands {
                 $expected = $got . ";"; // save corrected result
                 $__err("CODE: {bold}{red}L$line{/}: $code");
                 if ($exp) {
+                    $__t->details[] = [
+                        'line'   => $line,
+                        'code'   => $code,
+                        'expect' => $exp,
+                        'got'    => $got,
+                    ];
                     $__t->fail++;
                     $__err(" old: {red}$exp{/}");
                 } else {
@@ -618,6 +631,12 @@ class STest_File_Commands {
                 return;
             }
 
+            $__t->details[] = [
+                'line'   => $line,
+                'code'   => $code,
+                'expect' => $exp,
+                'got'    => $got,
+            ];
             $showError("expect: {cyan}" . $exp . "{/}\n  got:   {red}$got{/}");
         };
 
@@ -728,7 +747,7 @@ class STest_File_Commands {
         }
 
         $how = $fail ? "fail" : "success";
-        i('reporter')->$how($__t->filename, array_filter(['tests' => $__t->tests, 'new' => $__t->new, 'fail' => $__t->fail]));
+        i('reporter')->$how($__t->filename, array_filter(['tests' => $__t->tests, 'new' => $__t->new, 'fail' => $__t->fail, 'details' => $__t->details]));
     }
 
     // get useful part of exception's backtrace as string
