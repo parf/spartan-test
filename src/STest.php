@@ -527,7 +527,7 @@ class STest_Global_Commands {
     }
 
     /**
-     * Debug test - some methods will provide additional information
+     * Debug test - some methods will provide additional information. --debug=1 - show most important debug, --debug=9 - show all debug messages
      */
     static function debug() {
     }
@@ -651,7 +651,7 @@ class STest_File_Commands {
                 [$__line, [$__type, $__code]] = $__line__tp_v_r;
                 if ($__type == 'expr') {
                     try {
-                        @$ARG['verbose'] && i('out')->e("{grey}%s{/}\n", $__code);
+                        ($ARG['verbose']??0) && i('out')->e("{grey}%s{/}\n", $__code);
                         eval($__code);
                     } catch (StopException $__ex) {
                         throw $__ex;
@@ -678,7 +678,7 @@ class STest_File_Commands {
                         }  // this should NOT happend
                         // so far only web tests have custom syntax
                         $__code_ = self::_custom_test_syntax($__code);
-                        @$ARG['verbose'] && i('out')->e("{cyan}%s{/}\n", $__code);
+                        ($ARG['verbose']??0) && i('out')->e("{cyan}%s{/}\n", $__code);
                         ob_start();
                         $__rz = eval("return $__code_");
                         $__out = ob_get_clean();
@@ -704,7 +704,7 @@ class STest_File_Commands {
                     } catch (\Throwable $__ex) {
                         $__rz = ["Throwable:" . get_class($__ex), $__ex->getMessage()];
                     }
-                    @$ARG['verbose'] && i('out')->e("    {green}%s{/}\n", $__line__tp_v_r[1][2] /*x2s($__rz) */);
+                    ($ARG['verbose']??0) && i('out')->e("    {green}%s{/}\n", $__line__tp_v_r[1][2] /*x2s($__rz) */);
                     $__tester($__line__tp_v_r[1][2], $__rz, $__line, $__code);
                     if ('temp' === ($ARG['first_error'] ?? 0)) {
                         unset($ARG['first_error']);
@@ -908,7 +908,7 @@ class STest_File_Commands {
         foreach ($T as [$ln, $tv]) {
             [$tp, $v] = $tv;
             if ($tp == "test") {
-                $r = @$tv[2];
+                $r = $tv[2] ?? "";
                 $s .= "$v\n" . ($r ? "    $r\n" : "");
                 continue;
             }
