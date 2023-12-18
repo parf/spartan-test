@@ -48,6 +48,39 @@ class WebTest {
         return $this->rq($path, $args, "POST");
     }
 
+    /**
+     * perform JSONPOST, read JSON back, decode and return it
+     * 
+     * 
+     * curl test: 
+     *   start web server: spartan-test/examples/3-web-tests/start-web-server
+     *   curl -X POST "http://127.0.0.2:8080/jsonPost"   -H 'Content-Type: application/json'   -d '{"login":"my_username","password":"my_password"}'
+     */
+    function jsonPost(string $path, array $kv) /* : array|string  */ {
+        $d = STest::$DOMAIN;
+        if (! $d)
+            throw new \stest\ErrorException("Set STest::\$DOMAIN first");
+        if (substr(strtolower($d), 0, 4) != 'http')
+            $d = "http://".$d;        
+        $opts = [
+            CURLOPT_HTTPHEADER => ["Content-type: application/json"],
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($kv)
+        ];
+        $r = \hb\Curl::rq($d.$path, [], "POST", $opts);
+        STest::$HEADERS = $r['headers'] ?? [];
+        STest::$INFO = $r;
+        STest::$BODY = $r['body'];
+        STest::$URL = $d.$path;
+        STest::$PATH = $path;
+        $code = $r['http_code'] ?? 999;
+        if ($code != 200)
+            return ['code' => $code];
+        if (strpos($r['content_type'], '/json;'))
+            return json_decode($r['body'], 1);
+        return $r['body'];
+    }
+
     // method: GET/POST
     function rq(string $path, array $args, string $method) {
         $d = STest::$DOMAIN;

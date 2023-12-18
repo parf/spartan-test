@@ -58,7 +58,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.1.10";
+const VERSION = "3.2.0";
 
 //
 // INTERNAL
@@ -187,7 +187,7 @@ class STest {
         if (strpos($domain, "//") === false) {    # //domain | scheme://domain
             $domain = "https://" . $domain;
         }   // default scheme: https
-        if ($realm = static::_realm($domain)) {
+        if ($realm = static::_realm($domain) && ! (STest::$ARG['domain'] ?? 0)) {
             $domain = static::_realmUrl($domain, $realm);
         }
         \hb\Curl::test($domain, $fail_action); // check if web-server is up
@@ -580,20 +580,28 @@ class STest_File_Commands {
             $showError = function ($err) use ($line, $code, $__err, $ARG, $__t) {
                 // FAILED TEST
                 $__t->fail++;
+                if ($u = \STest::$URL)
+                    $err .= "\n  url:   $u";
                 $__err("{alert}L$line{/}: {red}$code{/}\n $err");
                 if ($ARG['first_error'] ?? 0) {
                     throw new StopException("Stopping on first error");
                 }
             };
             $exp = trim($expected, ";");
+            $addDetail = function ($got, $err = "") use ($line, $code, $exp, $__t) {
+                $d = [
+                    'got'    => $got,
+                    'line'   => $line,
+                    'code'   => $code,
+                    'expect' => $exp,
+                    'error'  => $err,
+                    'url'    => \STest::$URL,
+                ];
+                $__t->details[] = array_filter($d);
+            };
             if (($exp[0] ?? 0) === '~') { // ~XXX special tests
                 if ($err = self::_custom_result_syntax($exp, $got)) {
-                    $__t->details[] = [
-                        'line'   => $line,
-                        'code'   => $code,
-                        'expect' => $exp,
-                        'error'  => $err,
-                    ];
+                    $addDetail("error", $err);
                     $showError($err);
                 }
                 return;
@@ -607,12 +615,7 @@ class STest_File_Commands {
                 $expected = $got . ";"; // save corrected result
                 $__err("CODE: {bold}{red}L$line{/}: $code");
                 if ($exp) {
-                    $__t->details[] = [
-                        'line'   => $line,
-                        'code'   => $code,
-                        'expect' => $exp,
-                        'got'    => $got,
-                    ];
+                    $addDetail($got);
                     $__t->fail++;
                     $__err(" old: {red}$exp{/}");
                 } else {
@@ -630,13 +633,7 @@ class STest_File_Commands {
                 $__err(" got: {blue}$got{/}");
                 return;
             }
-
-            $__t->details[] = [
-                'line'   => $line,
-                'code'   => $code,
-                'expect' => $exp,
-                'got'    => $got,
-            ];
+            $addDetail($got);
             $showError("expect: {cyan}" . $exp . "{/}\n  got:   {red}$got{/}");
         };
 
@@ -859,6 +856,13 @@ class STest_File_Commands {
      * INTERNAL
      * custom (non php compatible) test syntax
      * @see so far only web tests uses custom test syntax examples/web-tests.stest
+     * 
+     * Webtest Custom Syntax:
+     *   /uri $args
+     *   post /uri $args
+     *   jsonpost /uri $args
+     *   follow "href-title"
+     * 
      */
     static private function _custom_test_syntax(string $test): string { # modified code
         if (!$test) {
@@ -890,7 +894,19 @@ class STest_File_Commands {
             }
             return "\stest\I('webtest')->post('$path', $args);";
         }
-
+        # JSONPOST /$path  == Webtest::GET
+        if (!strncasecmp($test, "jsonpost /", 9)) {
+            $test = trim(substr($test, 9), ";");
+            $r = explode(" ", $test, 2);
+            if (count($r) == 1) {
+                $r = [$r[0], ""];
+            }
+            [$path, $args] = $r;
+            if (!$args) {
+                $args = "[]";
+            }
+            return "\stest\I('webtest')->jsonPost('$path', $args);";
+        }
         # follow link by link's text
         # follow "a-href text"
         if (!strncasecmp($test, "follow ", 5)) {
