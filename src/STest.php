@@ -58,7 +58,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.1.9";
+const VERSION = "3.1.10";
 
 //
 // INTERNAL
@@ -367,7 +367,7 @@ class STest {
         $to_fix = array_filter(
             self::$ARG,
             function ($v, $k) {
-                if (@self::$optionExpand[$k]) {
+                if (self::$optionExpand[$k] ?? 0) {
                     return 1;
                 }
             },
