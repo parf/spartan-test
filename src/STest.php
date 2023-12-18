@@ -728,7 +728,7 @@ class STest_File_Commands {
 
         $dur = microtime(1) - $__t->start;
         $stat = "tests: " . $__t->tests;
-        if ($dur > 0.1 || @$ARG['verbose']) // require at least 0.1 sec
+        if ($dur > 0.1 || ($ARG['verbose']??0)) // require at least 0.1 sec
         {
             $stat .= " (" . sprintf("%0.2f", $dur) . "s)";
         }
