@@ -1,0 +1,38 @@
+#!/bin/env stest
+<?php
+
+/*
+   Important: alerts are ONLY useful when u have your OWN STest Reporter in `stest-config.json`
+
+   ex: 
+   class STestReporter {
+
+     ...    
+
+     * case 1: \STest::alert endpoint
+     * case 2: $ARG['alert'] used and test failed
+     * stats['message'] contains message
+    function alert(string $test, array $stats = []) {
+        $text = "stest alert: $test: ".\x2s($stats);
+        \HB::slackPost(['channel' => '#prod-alerts', 'text' => $text, "icon_emoji" =>  ":crossed_swords:"]);
+        i('log')->warning($text);
+        $this->fail($test, $stats);
+        #        echo  __METHOD__."(".x2s(func_get_args()).")\n";
+    }
+   }
+
+*/
+
+
+# HOW TO do alerts
+#
+# Treat fail as Alert:
+#    1. run stest with "--alert" option
+#    2. set it from script:
+#       $ARG['alert']= 1;
+# Forced Alert:
+#    1. \STest::alert("forced stest alert");
+
+1+1;
+    3;
+

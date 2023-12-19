@@ -9,3 +9,4 @@
                       default name: ".stest-init.php"
 2023-12-18 - V3.2.0 - JSONPOST support added (see web-tests)
                       broken web tests now have full url in error report
+2023-12-19 - V3.2.1 - alerting improved. "--alert" option added

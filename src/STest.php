@@ -58,7 +58,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.2.0";
+const VERSION = "3.2.1";
 
 //
 // INTERNAL
@@ -442,10 +442,18 @@ class STest_Global_Commands {
     }
 
     /**
-     * error handler
-     * \stest\Error::$error_reporting;  - bitmask to suppress errors
-     * \stest\Error::suppress_notices()  - ignore notices (suppress reporting)
-     * \stest\Error::suppress_warnings() - ignore warnings (suppress reporting)
+     * call Reporter::alert when test failed (instead of ::fail)
+     * use `$ARG['alert'] = 1;` to enable inside script
+     */
+    static function alert() {
+    }
+
+    /**
+     * force custom error handler.
+     * Provided ones:
+     *   \stest\Error::suppress_notices  - ignore notices (suppress reporting)
+     *   \stest\Error::suppress_warnings - ignore warnings (suppress reporting)
+     *   \stest\Error::$error_reporting; - bitmask to suppress errors
      */
     static function error_handler($v = '\\stest\\Error::handler') {
         #set_error_handler($v, E_ALL);
@@ -479,13 +487,17 @@ class STest_Global_Commands {
         $e = [i('out'), 'e'];
         $h = function ($h, $title) use ($e) {
             $e("{head}%s{/}\n", $title);
-            $e($h["@"] . "\n"); // class doc
+            #$e($h["@"] . "\n"); // class doc
             foreach ($h as $method => $doc) {
                 if (!$method || $method[0] == '_') {
                     continue;
                 }
-                $e("  {blue}{bold}%s{/}", str_pad($method, 16));
-                $e(" {grey}%s{/}\n", str_replace("\n", "\n                   ", $doc));
+                if ($method[0] == "@") {
+                    $e($doc."\n");
+                    continue;                    
+                }
+                $e("  {blue}--{bold}%s{/}", str_pad($method, 16));
+                $e(" {grey}%s{/}\n", str_replace("\n", "\n                     ", $doc));
             }
             $e("\n");
         };
@@ -742,8 +754,9 @@ class STest_File_Commands {
         if (($__t->new && !$__t->fail) || ($ARG['generate'] ?? 0)) {
             self::save($__t->T);
         }
-
         $how = $fail ? "fail" : "success";
+        if ($ARG['alert']??0)
+            $how = "alert";
         i('reporter')->$how($__t->filename, array_filter(['tests' => $__t->tests, 'new' => $__t->new, 'fail' => $__t->fail, 'details' => $__t->details]));
     }
 

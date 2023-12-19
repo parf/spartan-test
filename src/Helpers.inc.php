@@ -759,7 +759,7 @@ class Reporter {
 
     /**
      * case 1: STest::alert endpoint
-     * case 2: $ARG['alert-on-fail'] used and test failed
+     * case 2: --alert or $ARG['alert'] used and test failed
      * stats['message'] contains message
      */
     function alert(string $test, array $stats = []) {
