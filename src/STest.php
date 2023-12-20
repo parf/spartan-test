@@ -719,7 +719,7 @@ class STest_File_Commands {
             } else {
                 $__err("{alert}$reason{/} at line $__line: $m\n    {cyan}$__code{/}");
             }
-            i('reporter')->$reason($__t->filename, ['message' => $m]);
+            i('reporter')->$reason($__t->filename, ['message' => $m, 'tests' => $__t->tests, 'new' => $__t->new, 'fail' => $__t->fail, 'details' => $__t->details]);
             return;
         }
 
