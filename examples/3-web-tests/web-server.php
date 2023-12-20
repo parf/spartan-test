@@ -115,6 +115,26 @@ class Pages {
         echo $t;
     }
 
+    /**
+     * parse JSONPOST, echo it back as JSON
+     */
+    function jsonPost() {
+        $data = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
+        ksort($data);
+        $data += ['server-added-node' => [3,1,4]];
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($data, JSON_PRETTY_PRINT);
+    }
+    
+    /**
+     * return some text back
+     */
+    function jsonPost2() {
+        $data = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
+        $first_field = key($data);
+        echo "your JSONPOST has ".count($data)." fields in query; first field: $first_field";
+    }
+
     # for xquery tests
     function html() {
 	    echo "<html>

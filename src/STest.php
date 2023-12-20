@@ -58,7 +58,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.1.8";
+const VERSION = "3.2.0";
 
 //
 // INTERNAL
@@ -187,7 +187,7 @@ class STest {
         if (strpos($domain, "//") === false) {    # //domain | scheme://domain
             $domain = "https://" . $domain;
         }   // default scheme: https
-        if ($realm = static::_realm($domain)) {
+        if ($realm = static::_realm($domain) && ! (STest::$ARG['domain'] ?? 0)) {
             $domain = static::_realmUrl($domain, $realm);
         }
         \hb\Curl::test($domain, $fail_action); // check if web-server is up
@@ -367,7 +367,7 @@ class STest {
         $to_fix = array_filter(
             self::$ARG,
             function ($v, $k) {
-                if (@self::$optionExpand[$k]) {
+                if (self::$optionExpand[$k] ?? 0) {
                     return 1;
                 }
             },
@@ -527,7 +527,7 @@ class STest_Global_Commands {
     }
 
     /**
-     * Debug test - some methods will provide additional information
+     * Debug test - some methods will provide additional information. --debug=1 - show most important debug, --debug=9 - show all debug messages
      */
     static function debug() {
     }
@@ -580,20 +580,28 @@ class STest_File_Commands {
             $showError = function ($err) use ($line, $code, $__err, $ARG, $__t) {
                 // FAILED TEST
                 $__t->fail++;
+                if ($u = \STest::$URL)
+                    $err .= "\n  url:   $u";
                 $__err("{alert}L$line{/}: {red}$code{/}\n $err");
                 if ($ARG['first_error'] ?? 0) {
                     throw new StopException("Stopping on first error");
                 }
             };
             $exp = trim($expected, ";");
+            $addDetail = function ($got, $err = "") use ($line, $code, $exp, $__t) {
+                $d = [
+                    'got'    => $got,
+                    'line'   => $line,
+                    'code'   => $code,
+                    'expect' => $exp,
+                    'error'  => $err,
+                    'url'    => \STest::$URL,
+                ];
+                $__t->details[] = array_filter($d);
+            };
             if (($exp[0] ?? 0) === '~') { // ~XXX special tests
                 if ($err = self::_custom_result_syntax($exp, $got)) {
-                    $__t->details[] = [
-                        'line'   => $line,
-                        'code'   => $code,
-                        'expect' => $exp,
-                        'error'  => $err,
-                    ];
+                    $addDetail("error", $err);
                     $showError($err);
                 }
                 return;
@@ -607,12 +615,7 @@ class STest_File_Commands {
                 $expected = $got . ";"; // save corrected result
                 $__err("CODE: {bold}{red}L$line{/}: $code");
                 if ($exp) {
-                    $__t->details[] = [
-                        'line'   => $line,
-                        'code'   => $code,
-                        'expect' => $exp,
-                        'got'    => $got,
-                    ];
+                    $addDetail($got);
                     $__t->fail++;
                     $__err(" old: {red}$exp{/}");
                 } else {
@@ -630,13 +633,7 @@ class STest_File_Commands {
                 $__err(" got: {blue}$got{/}");
                 return;
             }
-
-            $__t->details[] = [
-                'line'   => $line,
-                'code'   => $code,
-                'expect' => $exp,
-                'got'    => $got,
-            ];
+            $addDetail($got);
             $showError("expect: {cyan}" . $exp . "{/}\n  got:   {red}$got{/}");
         };
 
@@ -651,7 +648,7 @@ class STest_File_Commands {
                 [$__line, [$__type, $__code]] = $__line__tp_v_r;
                 if ($__type == 'expr') {
                     try {
-                        @$ARG['verbose'] && i('out')->e("{grey}%s{/}\n", $__code);
+                        ($ARG['verbose']??0) && i('out')->e("{grey}%s{/}\n", $__code);
                         eval($__code);
                     } catch (StopException $__ex) {
                         throw $__ex;
@@ -678,7 +675,7 @@ class STest_File_Commands {
                         }  // this should NOT happend
                         // so far only web tests have custom syntax
                         $__code_ = self::_custom_test_syntax($__code);
-                        @$ARG['verbose'] && i('out')->e("{cyan}%s{/}\n", $__code);
+                        ($ARG['verbose']??0) && i('out')->e("{cyan}%s{/}\n", $__code);
                         ob_start();
                         $__rz = eval("return $__code_");
                         $__out = ob_get_clean();
@@ -704,7 +701,7 @@ class STest_File_Commands {
                     } catch (\Throwable $__ex) {
                         $__rz = ["Throwable:" . get_class($__ex), $__ex->getMessage()];
                     }
-                    @$ARG['verbose'] && i('out')->e("    {green}%s{/}\n", $__line__tp_v_r[1][2] /*x2s($__rz) */);
+                    ($ARG['verbose']??0) && i('out')->e("    {green}%s{/}\n", $__line__tp_v_r[1][2] /*x2s($__rz) */);
                     $__tester($__line__tp_v_r[1][2], $__rz, $__line, $__code);
                     if ('temp' === ($ARG['first_error'] ?? 0)) {
                         unset($ARG['first_error']);
@@ -728,7 +725,7 @@ class STest_File_Commands {
 
         $dur = microtime(1) - $__t->start;
         $stat = "tests: " . $__t->tests;
-        if ($dur > 0.1 || @$ARG['verbose']) // require at least 0.1 sec
+        if ($dur > 0.1 || ($ARG['verbose']??0)) // require at least 0.1 sec
         {
             $stat .= " (" . sprintf("%0.2f", $dur) . "s)";
         }
@@ -859,6 +856,13 @@ class STest_File_Commands {
      * INTERNAL
      * custom (non php compatible) test syntax
      * @see so far only web tests uses custom test syntax examples/web-tests.stest
+     *
+     * Webtest Custom Syntax:
+     *   /uri $args
+     *   post /uri $args
+     *   jsonpost /uri $args
+     *   follow "href-title"
+     *
      */
     static private function _custom_test_syntax(string $test): string { # modified code
         if (!$test) {
@@ -890,7 +894,19 @@ class STest_File_Commands {
             }
             return "\stest\I('webtest')->post('$path', $args);";
         }
-
+        # JSONPOST /$path  == Webtest::GET
+        if (!strncasecmp($test, "jsonpost /", 9)) {
+            $test = trim(substr($test, 9), ";");
+            $r = explode(" ", $test, 2);
+            if (count($r) == 1) {
+                $r = [$r[0], ""];
+            }
+            [$path, $args] = $r;
+            if (!$args) {
+                $args = "[]";
+            }
+            return "\stest\I('webtest')->jsonPost('$path', $args);";
+        }
         # follow link by link's text
         # follow "a-href text"
         if (!strncasecmp($test, "follow ", 5)) {
@@ -908,7 +924,7 @@ class STest_File_Commands {
         foreach ($T as [$ln, $tv]) {
             [$tp, $v] = $tv;
             if ($tp == "test") {
-                $r = @$tv[2];
+                $r = $tv[2] ?? "";
                 $s .= "$v\n" . ($r ? "    $r\n" : "");
                 continue;
             }

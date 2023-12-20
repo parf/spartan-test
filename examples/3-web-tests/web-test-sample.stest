@@ -147,3 +147,17 @@ FOLLOW "no such link";
 FOLLOW "external-link2";
     'this is some-page, ur welcome';
 
+
+# JSONPOST
+
+; $a = ["b" => ['a' => "value of b.a"], "a" => 3, "c" => 3.14];
+# when server responded with json (checked via content-type header) - we decode it
+JSONPOST /jsonPost $a;
+    ["a"=>3, "b"=>["a"=>'value of b.a'], "c"=>3.14, "server-added-node"=>[3, 1, 4]];
+# othervise we return data as string
+JSONPOST /jsonPost2 $a;
+    'your JSONPOST has 3 fields in query; first field: b';
+
+#JSONPOST /jsonPost2 $a;
+#    'xxx';
+

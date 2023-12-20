@@ -7,3 +7,5 @@
                       included AFTER default `init` file
                       use it to setup testing environment
                       default name: ".stest-init.php"
+2023-12-18 - V3.2.0 - JSONPOST support added (see web-tests)
+                      broken web tests now have full url in error report

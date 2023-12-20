@@ -14,6 +14,9 @@ Every web test must start with: `\STest::domain("your-domain.com")` line
 
 default is `https://` version; to test http - specify it explicitly `\STest::domain("http://your-domain.com")`
 
+hint: use `--debug=9 -v` to debug your web test
+
+
 ### GET queries
 
 - `/path/script`
@@ -22,11 +25,16 @@ default is `https://` version; to test http - specify it explicitly `\STest::dom
 - `/path/script $arguments`
 
 ### POST queries
-
 - `POST /path/script`
 - `POST /path/script?arg=value`
 - `POST /path/script ["arg" => $value, ...]`
 - `POST /path/script $arguments`
+
+### JSONPOST queries (api testing)
+when jsonpost url have content-type of `*/json;` it will be json-decoded
+- `JSONPOST /path/script ["arg" => $value, ...]`
+- `JSONPOST /path/script $arguments`
+
 
 ### FOLLOWING links by link-text
 - `FOLLOW "link-text"`
