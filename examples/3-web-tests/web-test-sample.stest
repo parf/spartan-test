@@ -157,7 +157,17 @@ JSONPOST /jsonPost $a;
 # othervise we return data as string
 JSONPOST /jsonPost2 $a;
     'your JSONPOST has 3 fields in query; first field: b';
+JSONPOST /jsonPostZstd ['content-encoding is: zsTd'];
+    ['content-encoding is: zsTd', "server-added-node"=>[3, 1, 4]];
 
 #JSONPOST /jsonPost2 $a;
 #    'xxx';
 
+# Content-Encodings:
+# gzip, zstd, ...
+
+/dataGzip;
+    'sample gzip text';
+
+/dataZstd;
+    'sample zstd text';

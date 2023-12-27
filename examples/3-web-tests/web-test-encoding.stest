@@ -1,0 +1,44 @@
+#!/usr/bin/env stest
+<?php
+
+# honor --domain; --realm; $ENV[STEST_REALM]
+# ; STest::domain("http://127.0.0.2:8080"); # default behavior - fail if no service on port
+; STest::domain("http://127.0.0.2:8080", "stop"); # "stop" makes it silently fail w/o error;
+
+#
+# Web Tests supports:
+#
+#  Content-Encoding: gzip, zstd,brotli
+#  Content-Type: application/json,msgpack,igbinary
+#
+
+
+/dataGzip;
+    'sample gzip text';
+
+/dataGzipTest;
+    '1f8b08000000000000032b4ecc2dc8495548afca2c502849ad2801007d7b15e810000000';
+
+/dataZstd;
+    'sample zstd text';
+
+/jsonData;
+    ["a"=>["b"=>'some data'], "c"=>[1, 2, 3], "d"=>3.141];
+
+/jsonDataGzip;
+    ["a"=>["b"=>'some data'], "c"=>[1, 2, 3], "d"=>3.141];
+
+/jsonDataZstd;
+    ["a"=>["b"=>'some data'], "c"=>[1, 2, 3], "d"=>3.141];
+
+/msgpackData;
+    ["a"=>["b"=>'some data'], "c"=>[1, 2, 3], "d"=>3.141];
+
+/igbinaryData;
+    ["a"=>["b"=>'some data'], "c"=>[1, 2, 3], "d"=>3.141];
+
+/igbinaryDataZstd;
+    ["a"=>["b"=>'some data'], "c"=>[1, 2, 3], "d"=>3.141];
+
+/msgpackDataZstd;
+    ["a"=>["b"=>'some data'], "c"=>[1, 2, 3], "d"=>3.141];

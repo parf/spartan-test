@@ -67,8 +67,11 @@ class WebTest {
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => json_encode($kv)
         ];
-        $r = \hb\Curl::rq($d.$path, [], "POST", $opts);
-        STest::$HEADERS = $r['headers'] ?? [];
+        $r = \hb\Curl::rq($d.$path, [], "POST", $opts, ['headers' => 1]);
+        STest::$HEADERS = [];
+        foreach ($r['headers'] ?? [] as $h => $v) {
+            STest::$HEADERS[ucwords($h, "-")] = $v;  // "Set-Cookie" - use correct capitalization
+        }        
         STest::$INFO = $r;
         STest::$BODY = $r['body'];
         STest::$URL = $d.$path;
@@ -76,10 +79,10 @@ class WebTest {
         $code = $r['http_code'] ?? 999;
         if ($code != 200)
             return ['code' => $code];
-        if (strpos($r['content_type'], '/json;'))
-            return json_decode($r['body'], 1);
-        return $r['body'];
+        return is_string($r['body']) ? self::_decodeBody($r['body']) : $r['body'];
     }
+
+
 
     // method: GET/POST
     function rq(string $path, array $args, string $method) {
@@ -100,11 +103,18 @@ class WebTest {
         }
         $r = \hb\Curl::rq($d.$path, $args, $method, $curl_opts, ['headers' => 1]);
         // HEADERS
-        STest::$HEADERS = $r['headers'] ?? [];
+        STest::$HEADERS = [];
+        foreach ($r['headers'] ?? [] as $h => $v) {
+            STest::$HEADERS[ucwords($h, "-")] = $v;  // "Set-Cookie" - use correct capitalization
+        }
         unset($r['headers']);
         // BODY
         STest::$INFO = $r;
-        STest::$BODY = trim($r['body'] ?? "");
+        STest::$BODY = $r['body'] ?? "";
+        $ct = STest::$HEADERS['Content-Type'] ?? "";
+        if (str_contains($ct, 'text/html') || str_contains($ct, 'text/plain')) {
+            STest::$BODY = trim(STest::$BODY, "\n\r ");
+        }
         STest::$URL = $d.$path;
         STest::$PATH = $path;
         // HTTP CODE
@@ -129,8 +139,43 @@ class WebTest {
                 STest::$COOKIE[$k] = $v;
             }
         }
-        return STest::$BODY;
+        return is_string(STest::$BODY) ? self::_decodeBody(STest::$BODY) : STest::$BODY;
     }
+
+
+    /**
+     * @internal - decode
+     *   Can ONLY be called AFTER self::rq / self::jsonPost
+     *   Content-Type: json,msgpack,igbinary
+     *   Content-Encoding: gzip,zstd,brotli
+     */
+    function _decodeBody(string $body) {
+        $ce = STest::$HEADERS['Content-Encoding'] ?? "";
+        if ($ce) {
+            \STest::debug(" - Content-Encoding: $ce", 7);
+            $body = match ($ce) {
+                'gzip' => \gzdecode($body),
+                'gzip-test' => \bin2hex($body),                
+                'brotli' => \brotli_uncompress($body), # https://github.com/kjdev/php-ext-brotli
+                'zstd' => \zstd_uncompress($body), # https://caniuse.com/zstd
+                default => $body,
+            };
+        }
+
+        $ct = STest::$HEADERS['Content-Type'] ?? "";
+        if ($ct && \str_starts_with($ct, 'application/')) {
+            preg_match("!application/(\w+)!", $ct, $r);
+            \STest::debug(" - Content-Type: $ct => $r[1]", 7);            
+            $body = match ($r[1]) {
+                'json' => \json_decode($body, true),
+                'igbinary' => \igbinary_unserialize($body),
+                'msgpack' => \msgpack_unpack($body),
+                default => $body,
+            };
+        }
+        return $body;
+    }
+
 
     /**
      * Apply additional tests to http_code=200 pages

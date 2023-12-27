@@ -115,6 +115,96 @@ class Pages {
         echo $t;
     }
 
+
+    static $sample_array = ["a" => ["b" => "some data"], "c" => [1,2,3], 'd' => 3.141];
+
+    /**
+     * data + GZip
+     */
+    function dataGzip() {
+        header('Content-Encoding: gzip');
+        header('Content-Type: application/octet-stream');
+        $data = \gzencode("sample gzip text");
+        header('Content-Length: ' . strlen($data));
+        echo $data;
+    }
+
+    function dataGzipTest() {
+        header('Content-Type: application/octet-stream');
+        header('Content-Encoding: gzip-test');
+        echo \gzencode("sample gzip text");
+    }
+
+    /**
+     * JSON Data + ZSTD
+     */
+    function dataZstd() {
+        header('Content-Type: application/octet-stream');        
+        header('Content-Encoding: zstd');
+        echo \zstd_compress("sample zstd text");
+    }
+
+    /**
+     * JSON Data
+     */
+    function jsonData() {
+        header('Content-Type: application/json; charset=utf-8');
+        echo \json_encode(self::$sample_array);
+    }
+
+    /**
+     * msgpack
+     */
+    function msgpackData() {
+        header('Content-Type: application/msgpack');
+        echo \msgpack_pack(self::$sample_array);
+    }
+
+    /**
+     * msgpack + zstd
+     */
+    function msgpackDataZstd() {
+        header('Content-Type: application/msgpack');
+        header('Content-Encoding: zstd');
+        echo \zstd_compress(msgpack_pack(self::$sample_array));
+    }
+
+    /**
+     * igbinary
+     */
+    function igbinaryData() {
+        header('Content-Type: application/igbinary');
+        echo igbinary_serialize(self::$sample_array);
+    }
+
+    /**
+     * igbinary
+     */
+    function igbinaryDataZstd() {
+        header('Content-Type: application/igbinary');
+        header('Content-Encoding: zstd');
+        echo zstd_compress(igbinary_serialize(self::$sample_array));
+    }
+
+    /**
+     * JSON Data + GZip
+     */
+    function jsonDataGzip() {
+        header('Content-Type: application/json; charset=utf-8');
+        header('Content-Encoding: gzip');
+        echo gzencode(json_encode(self::$sample_array));
+    }
+
+    /**
+     * JSON Data + ZSTD
+     */
+    function jsonDataZstd() {
+        header('Content-Type: application/json; charset=utf-8');
+        header('Content-Encoding: zstd');
+        echo zstd_compress(json_encode(self::$sample_array));
+    }
+
+
     /**
      * parse JSONPOST, echo it back as JSON
      */
@@ -134,6 +224,19 @@ class Pages {
         $first_field = key($data);
         echo "your JSONPOST has ".count($data)." fields in query; first field: $first_field";
     }
+
+    /**
+     * parse JSONPOST, echo it back as JSON
+     */
+    function jsonPostZstd() {
+        $data = json_decode(file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
+        ksort($data);
+        $data += ['server-added-node' => [3,1,4]];
+        header('Content-Type: application/json; charset=utf-8');
+        header('Content-Encoding: zstd');
+        echo zstd_compress(json_encode($data));
+    }
+
 
     # for xquery tests
     function html() {
