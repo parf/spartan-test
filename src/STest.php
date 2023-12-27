@@ -731,7 +731,7 @@ class STest_File_Commands {
             } else {
                 $__err("{alert}$reason{/} at line $__line: $m\n    {cyan}$__code{/}");
             }
-            i('reporter')->$reason($__t->filename, ['message' => $m]);
+            i('reporter')->$reason($__t->filename, ['message' => $m, 'tests' => $__t->tests, 'new' => $__t->new, 'fail' => $__t->fail, 'details' => $__t->details]);
             return;
         }
 
@@ -869,13 +869,13 @@ class STest_File_Commands {
      * INTERNAL
      * custom (non php compatible) test syntax
      * @see so far only web tests uses custom test syntax examples/web-tests.stest
-     * 
+     *
      * Webtest Custom Syntax:
      *   /uri $args
      *   post /uri $args
      *   jsonpost /uri $args
      *   follow "href-title"
-     * 
+     *
      */
     static private function _custom_test_syntax(string $test): string { # modified code
         if (!$test) {
