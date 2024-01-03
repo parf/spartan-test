@@ -51,10 +51,9 @@ class WebTest {
     /**
      * perform JSONPOST, read JSON back, decode and return it
      * 
-     * 
      * curl test: 
      *   start web server: spartan-test/examples/3-web-tests/start-web-server
-     *   curl -X POST "http://127.0.0.2:8080/jsonPost"   -H 'Content-Type: application/json'   -d '{"login":"my_username","password":"my_password"}'
+     *   curl -X POST "http://127.0.0.2:8080/jsonPost" -H 'Content-Type: application/json' -d '{"login":"my_username","password":"my_password"}'
      */
     function jsonPost(string $path, array $kv) /* : array|string  */ {
         $d = STest::$DOMAIN;
@@ -77,9 +76,10 @@ class WebTest {
         STest::$URL = $d.$path;
         STest::$PATH = $path;
         $code = $r['http_code'] ?? 999;
+        is_string(STest::$BODY) && STest::$BODY = self::_decodeBody(STest::$BODY);
         if ($code != 200)
-            return ['code' => $code];
-        return is_string($r['body']) ? self::_decodeBody($r['body']) : $r['body'];
+            STest::$BODY = ['code' => $code, 'body' => $r['body']];
+        return STest::$BODY;
     }
 
 
@@ -139,7 +139,8 @@ class WebTest {
                 STest::$COOKIE[$k] = $v;
             }
         }
-        return is_string(STest::$BODY) ? self::_decodeBody(STest::$BODY) : STest::$BODY;
+        is_string(STest::$BODY) && STest::$BODY = self::_decodeBody(STest::$BODY);
+        return STest::$BODY;
     }
 
 
