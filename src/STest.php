@@ -58,7 +58,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.2.3";
+const VERSION = "3.2.4";
 
 //
 // INTERNAL
