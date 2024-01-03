@@ -13,7 +13,7 @@ use function stest\helper\x2s;
 // var_export alike
 
 /**
- * Spartan Test 3.1.x - php 8.x testing framework done right
+ * Spartan Test 3.2.x - php 8.x testing framework done right
  * RTFM: README.md
  */
 
@@ -58,7 +58,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.2.2";
+const VERSION = "3.2.3";
 
 //
 // INTERNAL
@@ -187,7 +187,8 @@ class STest {
         if (strpos($domain, "//") === false) {    # //domain | scheme://domain
             $domain = "https://" . $domain;
         }   // default scheme: https
-        if ($realm = static::_realm($domain) && ! (STest::$ARG['domain'] ?? 0)) {
+        $realm = static::_realm($domain);
+        if ($realm && ! (STest::$ARG['domain'] ?? 0)) {
             $domain = static::_realmUrl($domain, $realm);
         }
         \hb\Curl::test($domain, $fail_action); // check if web-server is up
@@ -252,13 +253,14 @@ class STest {
      * default: scheme://$realm.$domain
      */
     static function _realmUrl(string $domain, string $realm): string {
-        self::debug(" - realm: $realm", 3);
+        self::debug(" - realm: $realm($domain)", 3);
         $r = parse_url($domain);
         if ($m = InstanceConfig::$config['realmUriMethod'] ?? 0) {
-            self::debug(" - using realmUriMethod: $m", 4);
-            $domain = $m($r + ['realm' => $realm]); // parsed URI see @parse_url
+            $args = $r + ['realm' => $realm];
+            $domain = $m($args); // parsed URI see @parse_url
+            self::debug(" - using realmUriMethod: $m(".x2s($args).") => $domain", 4);
         } else {
-            $domain = $r['scheme'] . "://" . $realm . "." . $r['host']; // default realm is: scheme://$realms.domain
+            $domain = $r['scheme'] . "://" . $realm . "." . $r['host']; // default realm is: scheme://$realm.$domain
         }
         return $domain;
     }
@@ -266,23 +268,26 @@ class STest {
     /**
      * get current realm - method for overloading
      * default search order:
+     *   cli option: --domain=...
+     *   cli option: --realm        << turn off realm detection (aka test production)
      *   cli option: --realm=...
-     *   realmDetectMethod callback from config files
      *   shell variable: `STEST_REALM`
+     *   realmDetectMethod callback from config files
      *   stest-config.json[.local] files
      */
     static function _realm(string $domain = ""): string {
         $realm = null;
+        // --realm - disable realms
+        if ($r = STest::$ARG['realm'] ?? 0)
+            return $r === true ? "" : $r;
+        if ($r = getenv("STEST_REALM"))
+            return $r;
         if ($m = InstanceConfig::$config['realmDetectMethod'] ?? 0) {
-            self::debug(" - using realmDetectMethod: $m", 2);
             $realm = $m($domain);
+            self::debug(" - using realmDetectMethod: $m($domain) realm=$realm", 2);
+            return $realm;
         }
-        if ((STest::$ARG['realm'] ?? 0) === true)  // --realm - disable realms
-        {
-            return "";
-        }
-        return (STest::$ARG['realm'] ?? $realm ?? getenv("STEST_REALM")) ?:
-            (InstanceConfig::$config['realm'] ?? "");
+        return InstanceConfig::$config['realm'] ?? "";
     }
 
     /**
@@ -806,6 +811,9 @@ class STest_File_Commands {
                 return $got ? null : "non empty result expected";
             }
             if (!is_string($got)) {
+                if (is_array($got)) {
+                    return "string expected got:array=" . substr(json_encode($got, JSON_UNESCAPED_SLASHES), 0, 60);
+                }
                 return "string expected got:" . gettype($got);
             }
             if (!$got) {
@@ -816,6 +824,9 @@ class STest_File_Commands {
         switch ($x[0]) {
             case '"': // "substring"
                 if (!is_string($got)) {
+                    if (is_array($got)) {
+                        return "string expected got:array=" . substr(json_encode($got, JSON_UNESCAPED_SLASHES), 0, 60);
+                    }
                     return "string expected got:" . gettype($got);
                 }
                 $x = eval("return $x;");

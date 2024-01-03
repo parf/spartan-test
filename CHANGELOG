@@ -11,3 +11,4 @@
                       broken web tests now have full url in error report
 2023-12-19 - V3.2.1 - alerting improved. "--alert" option added
 2023-12-27 - V3.2.2 - web-tests: support for content-encdoding: zstd,gzip,brotli; content-type (autodecoding): json,msgpack,igbinary - see web-tests/examples
+2024-01-03 - V3.2.3 - realm detect fix, better error reporting for "~ 'xxx'" operators
