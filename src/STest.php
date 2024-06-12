@@ -59,7 +59,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.2.6";
+const VERSION = "3.2.7";
 
 //
 // INTERNAL
@@ -286,7 +286,7 @@ class STest {
         if ($m = InstanceConfig::$config['realmDetectMethod'] ?? 0) {
             $realm = $m($domain);
             self::debug(" - using realmDetectMethod: $m($domain) realm=$realm", 2);
-            return $realm;
+            return $realm ?? "";
         }
         return InstanceConfig::$config['realm'] ?? "";
     }
