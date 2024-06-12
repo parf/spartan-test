@@ -189,6 +189,20 @@ function x2s(/* mixed */ $x, $sort_keys = 0, int $deep=0) : string {
 }
 
 
+/**
+ * if str > $len - delete middle part
+ */
+function cut(string $s, $len=360) {
+    if (strlen($s) < $len)
+        return $s;
+    # 60%..($x characters)..30%
+    $l = strlen($s);
+    $head = (int) ($len * 0.6); 
+    $end = (int) ($len * 0.3);
+    $skip = $l - $head - $end;
+    return substr($s, 0, $head)."\n..(".number_format($skip)." bytes)..\n".substr($s, -$end);
+}
+
 
 // --------------- --------------- --------------- --------------- --------------- --------------- --------------- --------------- ---------------
 

@@ -9,6 +9,7 @@ use stest\helper\Console;
 
 // colored output
 use function stest\helper\x2s;
+use function stest\helper\cut;
 
 // var_export alike
 
@@ -58,7 +59,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.2.4";
+const VERSION = "3.2.5";
 
 //
 // INTERNAL
@@ -650,6 +651,7 @@ class STest_File_Commands {
                 $__err(" got: {blue}$got{/}");
                 return;
             }
+            $got = cut($got); # get rid of super long error results
             $addDetail($got);
             $showError("expect: {cyan}" . $exp . "{/}\n  got:   {red}$got{/}");
         };
