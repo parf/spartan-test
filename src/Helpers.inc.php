@@ -176,8 +176,9 @@ function x2s(/* mixed */ $x, $sort_keys = 0, int $deep=0) : string {
         return "\"$x\""; // to_string
     if (($cnt = count($x)) > 30)
         return "\"... $cnt items\"";
-    if ($sort_keys)
-        ksort($x);
+    if ($sort_keys) {
+        ($x['$']??0) || ksort($x); # do not sort when '$' present - ugly php8.0 sorting method compatibility
+    }
     $t = [];
     $i = 0;
     foreach ($x as $k => $v) {
@@ -528,24 +529,24 @@ class Iterator_Put implements \Iterator  {
         return $this->G;
     }
 
-    public function rewind() {
+    public function rewind(): void {
         if ($this->init)
             $this->G->next();  // foreach after we call get
     }
 
-    public function current() {
+    public function current(): mixed {
         return $this->G->current();
     }
 
-    public function key() {
+    public function key(): mixed {
         return $this->G->key();
     }
 
-    public function next() {
-        return $this->G->next();
+    public function next(): void {
+        $this->G->next();
     }
 
-    public function valid() {
+    public function valid():bool {
         return $this->G->valid();
     }
 

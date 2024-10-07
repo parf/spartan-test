@@ -23,3 +23,6 @@ $r;
 ; $ARG['sort'] = 1; // restore default mode (result sorting);
 $r;
     ["a"=>1, "b"=>2, "c"=>3, "d"=>["a"=>1, "b"=>2, "c"=>3]];
+
+print("stdout");
+    [1, "$"=>'stdout'];

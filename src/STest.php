@@ -14,7 +14,7 @@ use function stest\helper\cut;
 // var_export alike
 
 /**
- * Spartan Test 3.2.x - php 8.x testing framework done right
+ * Spartan Test 3.3.0 - php 8.3 testing framework done right
  * RTFM: README.md
  */
 
@@ -59,7 +59,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.2.7";
+const VERSION = "3.3.0";
 
 //
 // INTERNAL
@@ -327,7 +327,7 @@ class STest {
         set_error_handler('\\stest\\Error::handler', E_ALL);
     }
 
-    // spartan-test -abc --d --c="VALUE" test1 test2
+    // stest -abc --d --c="VALUE" test1 test2
     public function run(array $argv) {
         $this->init($argv);
         foreach (self::$ARG as $a => $v) {
@@ -487,7 +487,7 @@ class STest_Global_Commands {
      * this help
      */
     static function help() {
-        if (STest::$ARG['silent']) {
+        if (STest::$ARG['silent']??0) {
             return;
         }
         $e = [i('out'), 'e'];
@@ -507,9 +507,9 @@ class STest_Global_Commands {
             }
             $e("\n");
         };
-        $e("{bold}Spartan Test v" . VERSION . " minimalistic php 8.[01] testing framework done right{/}\n");
-        $h (helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), "Global Options --\$option");
-        $h (helper\Documentor::classDoc("\\stest\\STest_File_Commands"), "File Options");
+        $e("{bold}{blue}STEST{/} {bold}(Spartan Test v" . VERSION . ") minimalistic PHP8.3 testing framework done right{/}\n");
+        $h(helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), "Global Options --\$option");
+        $h(helper\Documentor::classDoc("\\stest\\STest_File_Commands"), "File Options");
         #echo json_encode(helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), JSON_PRETTY_PRINT), "\n";
         #echo json_encode(helper\Documentor::classDoc("\\stest\\STest_File_Commands"), JSON_PRETTY_PRINT), "\n";
     }
