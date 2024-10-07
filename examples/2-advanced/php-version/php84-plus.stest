@@ -1,0 +1,5 @@
+#!/usr/bin/env stest
+
+\STest::phpVersionPlus("8.4.0", "this script intentionally support PHP8.4+ versions");
+
+1+1;

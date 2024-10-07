@@ -1,0 +1,8 @@
+#!/usr/bin/env stest
+
+#\STest::php80();
+\STest::php80("this script intentionally support PHP8.0 version only");
+    NULL;
+
+1+1;
+    2;

@@ -59,7 +59,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.3.0";
+const VERSION = "3.3.2";
 
 //
 // INTERNAL
@@ -121,6 +121,38 @@ class STest {
         }
         throw new StopException($message);
     }
+
+
+    static function phpVersionPlus(string $version="8.3.0", string $message=""): void {
+        if (version_compare(PHP_VERSION, $version, '<'))
+            throw new StopException("php{$version}+ only: $message");
+    }
+
+    // specific MAJOR.MINOR version ONLY. e.g "8.0"
+    static function phpVersion(string $version="8.3", string $message=""): void {
+        [$major, $minor] = explode(".", $version);
+        if (PHP_MAJOR_VERSION != $major || PHP_MINOR_VERSION != $minor)
+            throw new StopException("php{$version} only: $message");
+    }
+
+    /**
+     * if php 8.3 or better
+     */
+    static function php83plus(string $message=""): void {
+        self::phpVersionPlus("8.3.0", $message);
+    }
+
+
+    // ONLY specific version
+    static function php80(string $message=""): void {
+        self::phpVersion("8.0", $message);
+    }
+
+    // ONLY specific version
+    static function php83(string $message=""): void {
+        self::phpVersion("8.3", $message);
+    }
+
 
     /**
      * stop test execution, Emit Error: same level of severity as failed test

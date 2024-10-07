@@ -1,0 +1,8 @@
+#!/usr/bin/env stest
+
+# \STest::php83();
+\STest::php83("this script intentionally support PHP8.3 version only");
+    NULL;
+
+1+1;
+    2;
