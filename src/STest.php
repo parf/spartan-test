@@ -14,7 +14,7 @@ use function stest\helper\cut;
 // var_export alike
 
 /**
- * Spartan Test 3.3.0 - php 8.3 testing framework done right
+ * Spartan Test 3.3.x - php 8.4 testing framework done right
  * RTFM: README.md
  */
 
@@ -59,7 +59,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.3.2";
+const VERSION = "3.3.3"; // 2025-06-03
 
 //
 // INTERNAL
@@ -630,8 +630,12 @@ class STest_File_Commands {
             $showError = function ($err) use ($line, $code, $__err, $ARG, $__t) {
                 // FAILED TEST
                 $__t->fail++;
-                if ($u = \STest::$URL)
-                    $err .= "\n  url:   $u";
+                ($u = \STest::$URL) && $err .= "\n  url:   $u";
+                if ($errorCallback = InstanceConfig::$config['errorCallback'] ?? 0) {
+                    if ($extra_info = $errorCallback($err, $line, $code, $ARG)) {
+                        $err .= "\n  extra: " . x2s($extra_info);
+                    }
+                }
                 $__err("{alert}L$line{/}: {red}$code{/}\n $err");
                 if ($ARG['first_error'] ?? 0) {
                     throw new StopException("Stopping on first error");
@@ -928,7 +932,7 @@ class STest_File_Commands {
         }
         # /$path  == Webtest::GET
         if ($test[0] == '/') {
-            $test = trim($test, ";");
+            $test = trim($test, "; ");
             $r = explode(" ", $test, 2);
             if (count($r) == 1) {
                 $r = [$r[0], ""];
@@ -941,7 +945,7 @@ class STest_File_Commands {
         }
         # POST /$path  == Webtest::GET
         if (!strncasecmp($test, "post /", 5)) {
-            $test = trim(substr($test, 5), ";");
+            $test = trim(substr($test, 5), "; ");
             $r = explode(" ", $test, 2);
             if (count($r) == 1) {
                 $r = [$r[0], ""];
@@ -954,7 +958,7 @@ class STest_File_Commands {
         }
         # JSONPOST /$path  == Webtest::GET
         if (!strncasecmp($test, "jsonpost /", 9)) {
-            $test = trim(substr($test, 9), ";");
+            $test = trim(substr($test, 9), "; ");
             $r = explode(" ", $test, 2);
             if (count($r) == 1) {
                 $r = [$r[0], ""];
@@ -968,7 +972,7 @@ class STest_File_Commands {
         # follow link by link's text
         # follow "a-href text"
         if (!strncasecmp($test, "follow ", 5)) {
-            $name = trim(substr($test, 7), ";");
+            $name = trim(substr($test, 7), "; ");
             $test = "\STest::follow($name);";
         }
         return $test;

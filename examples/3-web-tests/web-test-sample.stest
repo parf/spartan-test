@@ -30,6 +30,13 @@
 \STest::$INFO['body'];
     'Page "/some-path/xxx" Not Found';
 
+# comma at the end of url is optional
+/info
+    'GET /info HTTP/1.1';
+
+/info;
+    'GET /info HTTP/1.1';
+
 # /info - show GET/POST/COOKIES info
 /info?p2=v2;
     'GET /info?p2=v2 HTTP/1.1

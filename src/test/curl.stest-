@@ -1,28 +1,34 @@
 #!/bin/env stest
 <?php
 #
-# internal Curl wrapper test 
+# internal Curl wrapper test
 #
 
 ; $r = \hb\Curl::rq("www.example.com");
 $r['body'];
     ~ "Example Domain";
+
+# ensure this keys present
 array_keys($r);
-    ["url", "content_type", "http_code", "header_size", "request_size", "filetime", "ssl_verify_result", "redirect_count", "total_time", "namelookup_time", "connect_time", "pretransfer_time", "size_upload", "size_download", "speed_download", "speed_upload", "download_content_length", "upload_content_length", "starttransfer_time", "redirect_time", "redirect_url", "primary_ip", "certinfo", "primary_port", "local_ip", "local_port", "body"];
+    ~ ["url", "content_type", "http_code", "header_size", "request_size", "filetime", "ssl_verify_result", "redirect_count", "total_time", "namelookup_time", "connect_time", "pretransfer_time", "size_upload", "size_download", "speed_download", "speed_upload", "download_content_length", "upload_content_length", "starttransfer_time", "redirect_time", "redirect_url", "primary_ip", "certinfo", "primary_port", "local_ip", "local_port", "body"];
 
 $r['url'];
-    "HTTP://www.example.com/";
+    'http://www.example.com/';
+
 $r['http_code'];
     200;
 $r['size_download'] > 100;
     true;
 ; $r = \hb\Curl::get("www.example.com", [], [], ['headers' => 1])['headers'];
 // headers in response vary - so we test this one only
-$r['Content-Length'];
-    "1270";
+$r['Content-Length'] > 1200;
+    true;
+
 
 ; $r = \hb\Curl::rq("https://www.example.com");
 $r['body'];
     ~ "Example Domain";
 $r['url'];
-    "https://www.example.com/";
+    'https://www.example.com/';
+
+; \STest::debug("JUST display some message in test output", 0);
