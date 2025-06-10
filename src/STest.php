@@ -14,7 +14,7 @@ use function stest\helper\cut;
 // var_export alike
 
 /**
- * Spartan Test 3.3.x - php 8.4 testing framework done right
+ * Spartan Test 3.x.x - php 8.4 testing framework done right
  * RTFM: README.md
  */
 
@@ -32,7 +32,8 @@ include __DIR__ . "/Helpers.inc.php";
 // I($name)                     - get / create new named instance
 // I($name, [arg1, arg2, ...])  - get / create new named-with-params instance
 // I([$name, $instance], [arg1, arg2, ...])  - assign instance
-function I(/*string | array */ $name, array $args = []) { # Instance
+function I(/*string | array */$name, array $args = [])
+{ # Instance
     if (is_array($name)) {
         [$name, $i] = $name;
         $k = $name . ":" . json_encode($args);
@@ -59,13 +60,14 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.3.3"; // 2025-06-03
+const VERSION = "3.3.5"; // 2025-06-03
 
 //
 // INTERNAL
 //
 
-class STest {
+class STest
+{
 
     static $ARG;
     static $TESTS;
@@ -112,7 +114,8 @@ class STest {
      * if (date("l") != "Monday") \STest::stop("Monday-only test");
      *
      */
-    static function stop(string $message, int $until_yyyymmdd = 0): void {
+    static function stop(string $message, int $until_yyyymmdd = 0): void
+    {
         if (self::$ARG['force'] ?? 0) {
             return;
         }
@@ -123,13 +126,15 @@ class STest {
     }
 
 
-    static function phpVersionPlus(string $version="8.3.0", string $message=""): void {
+    static function phpVersionPlus(string $version = "8.3.0", string $message = ""): void
+    {
         if (version_compare(PHP_VERSION, $version, '<'))
             throw new StopException("php{$version}+ only: $message");
     }
 
     // specific MAJOR.MINOR version ONLY. e.g "8.0"
-    static function phpVersion(string $version="8.3", string $message=""): void {
+    static function phpVersion(string $version = "8.3", string $message = ""): void
+    {
         [$major, $minor] = explode(".", $version);
         if (PHP_MAJOR_VERSION != $major || PHP_MINOR_VERSION != $minor)
             throw new StopException("php{$version} only: $message");
@@ -138,18 +143,26 @@ class STest {
     /**
      * if php 8.3 or better
      */
-    static function php83plus(string $message=""): void {
+    static function php83plus(string $message = ""): void
+    {
         self::phpVersionPlus("8.3.0", $message);
+    }
+
+    static function php84plus(string $message = ""): void
+    {
+        self::phpVersionPlus("8.4.0", $message);
     }
 
 
     // ONLY specific version
-    static function php80(string $message=""): void {
+    static function php80(string $message = ""): void
+    {
         self::phpVersion("8.0", $message);
     }
 
     // ONLY specific version
-    static function php83(string $message=""): void {
+    static function php83(string $message = ""): void
+    {
         self::phpVersion("8.3", $message);
     }
 
@@ -159,7 +172,8 @@ class STest {
      * Usage:
      *   \STest::error("message");
      */
-    static function error(/*string*/ $message) {
+    static function error(/*string*/$message)
+    {
         if (!is_string($message)) {
             $message = var_export($message, 1);
         }
@@ -171,14 +185,16 @@ class STest {
      * Usage:
      *   \STest::alert("message");
      */
-    static function alert(string $message) {
+    static function alert(string $message)
+    {
         throw new AlertException($message);
     }
 
     /**
      * show debug messages to STDERR when --debug=$level and level<=asked-level
      */
-    static function debug($message, $level = 1) {
+    static function debug($message, $level = 1)
+    {
         (self::$ARG['debug'] ?? 0) >= $level && fwrite(STDERR, $message . "\n");
     }
 
@@ -187,7 +203,8 @@ class STest {
      * inspect $object
      * show ClassName, ParentClass class_filename (non-common path wirh current test)
      */
-    static function inspect(/* "object | string className" */ $object, $show_line = 0) {
+    static function inspect(/* "object | string className" */$object, $show_line = 0)
+    {
         $class = is_object($object) ? get_class($object) : $object;
         $rc = new \ReflectionClass($class);
         $filename = $rc->getFileName();
@@ -212,7 +229,8 @@ class STest {
      * test domain for availability:
      *     fail_action =  "stop" | "error" | "alert"
      */
-    static function domain(string $domain, string $fail_action = "error") {
+    static function domain(string $domain, string $fail_action = "error")
+    {
         self::debug(" - domain-in: $domain", 4);
         if ($t = STest::$ARG['domain'] ?? 0) { # --domain="..." - overrides all
             $domain = $t;
@@ -238,7 +256,8 @@ class STest {
      * \STest::xq("/book/[@author='Dockins']");
      * @param bool $as_array - see _xq method
      */
-    static function xq(string $xpath, $as_array = false) {
+    static function xq(string $xpath, $as_array = false)
+    {
         return static::_xq(static::$INFO['body'], $xpath, $as_array);
     }
 
@@ -248,7 +267,8 @@ class STest {
      * as_array == true  - return array of HTML
      * as_array == "dom" - return https://www.php.net/manual/en/domxpath.query.php result
      */
-    static function _xq($html, $query, $as_array = false) {
+    static function _xq($html, $query, $as_array = false)
+    {
         $dom = new \DomDocument();
         $dom->strictErrorChecking = false;
         $dom->substituteEntities = false;
@@ -273,10 +293,11 @@ class STest {
 
     // follow a-href on a recently spidered page by "text"
     // \STest::follow("page 1");
-    static function follow(string $text) /* : array|string */ {
+    static function follow(string $text) /* : array|string */
+    {
         // first link only !!
         $links = self::xq("//a[text()='$text']", "dom");
-        if (! ($links[0]??0))
+        if (! ($links[0] ?? 0))
             return "link with text=\"$text\" not found";
         $url = $links[0]->getAttribute("href");
         return \stest\I('webtest')->get($url);
@@ -285,13 +306,14 @@ class STest {
      * build realm url - method for overloading
      * default: scheme://$realm.$domain
      */
-    static function _realmUrl(string $domain, string $realm): string {
+    static function _realmUrl(string $domain, string $realm): string
+    {
         self::debug(" - realm: $realm($domain)", 3);
         $r = parse_url($domain);
         if ($m = InstanceConfig::$config['realmUriMethod'] ?? 0) {
             $args = $r + ['realm' => $realm];
             $domain = $m($args); // parsed URI see @parse_url
-            self::debug(" - using realmUriMethod: $m(".x2s($args).") => $domain", 4);
+            self::debug(" - using realmUriMethod: $m(" . x2s($args) . ") => $domain", 4);
         } else {
             $domain = $r['scheme'] . "://" . $realm . "." . $r['host']; // default realm is: scheme://$realm.$domain
         }
@@ -308,13 +330,19 @@ class STest {
      *   realmDetectMethod callback from config files
      *   stest-config.json[.local] files
      */
-    static function _realm(string $domain = ""): string {
+    static function _realm(string $domain = ""): string
+    {
         $realm = null;
         // --realm - disable realms
-        if ($r = STest::$ARG['realm'] ?? 0)
+        if ($r = STest::$ARG['realm'] ?? 0) {
             return $r === true ? "" : $r;
-        if ($r = getenv("STEST_REALM"))
+        }
+        if ($r = getenv("STEST_REALM")) {
             return $r;
+        }
+        if ($r = InstanceConfig::$config['realm'] ?? 0) {
+            return $r;
+        }
         if ($m = InstanceConfig::$config['realmDetectMethod'] ?? 0) {
             $realm = $m($domain);
             self::debug(" - using realmDetectMethod: $m($domain) realm=$realm", 2);
@@ -346,7 +374,8 @@ class STest {
 
     public $file;           // current filename
 
-    function init($argv) {
+    function init($argv)
+    {
         self::parseArgs($argv);
         // setup console
         I(['out', Console::i(@self::$ARG)]); // color, silent, syslog
@@ -360,7 +389,8 @@ class STest {
     }
 
     // stest -abc --d --c="VALUE" test1 test2
-    public function run(array $argv) {
+    public function run(array $argv)
+    {
         $this->init($argv);
         foreach (self::$ARG as $a => $v) {
             $a = str_replace("-", "_", $a); // "-" to "_"
@@ -374,7 +404,8 @@ class STest {
             $this->runTest($test);
     }
 
-    function runTest($file) {
+    function runTest($file)
+    {
         $this->file = $file;
         self::$DIR = \realpath(dirname($file));
         try {
@@ -398,7 +429,8 @@ class STest {
         }
     }
 
-    protected static function parseArgs($argv) {
+    protected static function parseArgs($argv)
+    {
         [self::$ARG, self::$TESTS] = helper\parseArgs($argv);
         self::$ARG += ['color' => 1, 'sort' => 1]; // Defaults
         // convert short options to long options using self::$optionExpand
@@ -409,7 +441,8 @@ class STest {
                     return 1;
                 }
             },
-            ARRAY_FILTER_USE_BOTH);
+            ARRAY_FILTER_USE_BOTH
+        );
         foreach ($to_fix as $k => $v) {
             unset(self::$ARG[$k]);
             $nk = self::$optionExpand[$k];
@@ -420,7 +453,6 @@ class STest {
             }
         }
     }
-
 }
 
 /**
@@ -428,7 +460,8 @@ class STest {
  * @see  Readme.md file for details: how to write/execute tests
  * @see  See github for lastest/most complete docs: https://github.com/parf/spartan-test
  */
-class STest_Global_Commands {
+class STest_Global_Commands
+{
 
     /**
      * Any non-null return value treated as STOP signal, @see STest->run
@@ -438,53 +471,45 @@ class STest_Global_Commands {
      * (-v) show every line being tested
      * stest -v filename.stest
      */
-    static function verbose() {
-    }
+    static function verbose() {}
 
     /**
      * (-g) re-generate test. replace all results
      */
-    static function generate() {
-    }
+    static function generate() {}
 
     /**
      * turn output coloring on/off - default on
      * --color=0 or -C - turn off
      */
-    static function color() {
-    }
+    static function color() {}
 
     /**
      * (-s) show errors on STDERR only, suppress any STDOUT
      */
-    static function silent() {
-    }
+    static function silent() {}
 
     /**
      * output to syslog (to send errors-only to syslog: --syslog -s)
      */
-    static function syslog() {
-    }
+    static function syslog() {}
 
     /**
      * (-1) stop on first error encountered in test
      * inside test: "; $ARG['first_error'] = 1;"
      */
-    static function first_error() {
-    }
+    static function first_error() {}
 
     /**
      * (-f) ignore \STest::stop, stop on \STest::Error/Alert however
      */
-    static function force() {
-    }
+    static function force() {}
 
     /**
      * call Reporter::alert when test failed (instead of ::fail)
      * use `$ARG['alert'] = 1;` to enable inside script
      */
-    static function alert() {
-    }
+    static function alert() {}
 
     /**
      * force custom error handler.
@@ -493,7 +518,8 @@ class STest_Global_Commands {
      *   \stest\Error::suppress_warnings - ignore warnings (suppress reporting)
      *   \stest\Error::$error_reporting; - bitmask to suppress errors
      */
-    static function error_handler($v = '\\stest\\Error::handler') {
+    static function error_handler($v = '\\stest\\Error::handler')
+    {
         #set_error_handler($v, E_ALL);
         throw new Exception("Unsupported");
     }
@@ -503,14 +529,16 @@ class STest_Global_Commands {
      * $ARG['sort'] = 0; // disable
      * $ARG['sort'] = 1; // enable (default)
      */
-    static function sort($v) {
+    static function sort($v)
+    {
         # throw new Exception("see docs");
     }
 
     /**
      * Print current version
      */
-    static function version() {
+    static function version()
+    {
         echo VERSION, "\n";
         exit(0);
     }
@@ -518,8 +546,9 @@ class STest_Global_Commands {
     /**
      * this help
      */
-    static function help() {
-        if (STest::$ARG['silent']??0) {
+    static function help()
+    {
+        if (STest::$ARG['silent'] ?? 0) {
             return;
         }
         $e = [i('out'), 'e'];
@@ -531,8 +560,8 @@ class STest_Global_Commands {
                     continue;
                 }
                 if ($method[0] == "@") {
-                    $e($doc."\n");
-                    continue;                    
+                    $e($doc . "\n");
+                    continue;
                 }
                 $e("  {blue}--{bold}%s{/}", str_pad($method, 16));
                 $e(" {grey}%s{/}\n", str_replace("\n", "\n                     ", $doc));
@@ -550,13 +579,13 @@ class STest_Global_Commands {
      * 'init' php file to include, must provide autoload
      * suggested use - specify 'init' in `stest.config` file @ root of your project
      */
-    static function init($v) {
-    }
+    static function init($v) {}
 
     /**
      * execute text based on tag value and "# @tag space-demimited-tag-list" tag comment, @see --tag for more details
      */
-    static function tag($v) {
+    static function tag($v)
+    {
         if ($v === true) {
             $e = [i('out'), 'e'];
             $e("{head}STest --tag=\"...\" option{/}\n");
@@ -572,23 +601,21 @@ class STest_Global_Commands {
     /**
      * debug: show parsed arguments as json
      */
-    static function debug_args() {
+    static function debug_args()
+    {
         echo json_encode(['args' => STest::$ARG, 'tests' => STest::$TESTS], JSON_PRETTY_PRINT) . "\n";
     }
 
     /**
      * Debug test - some methods will provide additional information. --debug=1 - show most important debug, --debug=9 - show all debug messages
      */
-    static function debug() {
-    }
+    static function debug() {}
 
 
     /**
      * for use in "crontab": no-colors, show errors only
      */
-    static function cron() {
-    }
-
+    static function cron() {}
 } // class STest_Global_Commands
 
 /**
@@ -596,7 +623,8 @@ class STest_Global_Commands {
  * STest --$option File.stest
  *
  */
-class STest_File_Commands {
+class STest_File_Commands
+{
 
     // static function $Option(ParsedTest $T, $option_value)
 
@@ -606,10 +634,13 @@ class STest_File_Commands {
      * -v | --verbose  - show statements being executed
      * -g | --generate - regenerate test, ignore errors
      */
-    static function test(array /* parsed-test */ $__TEST) {
+    static function test(array /* parsed-test */ $__TEST)
+    {
         $__t = (object)[ // dummy object used to hide variables
             'T' => $__TEST,
-            'fail' => 0, 'new' => 0, 'tests' => 0,
+            'fail' => 0,
+            'new' => 0,
+            'tests' => 0,
             'start' => microtime(1),
             'filename_shown' => 0,
             'filename' => realpath(i('stest')->file),
@@ -703,7 +734,7 @@ class STest_File_Commands {
                 [$__line, [$__type, $__code]] = $__line__tp_v_r;
                 if ($__type == 'expr') {
                     try {
-                        ($ARG['verbose']??0) && i('out')->e("{grey}%s{/}\n", $__code);
+                        ($ARG['verbose'] ?? 0) && i('out')->e("{grey}%s{/}\n", $__code);
                         eval($__code);
                     } catch (StopException $__ex) {
                         throw $__ex;
@@ -730,7 +761,7 @@ class STest_File_Commands {
                         }  // this should NOT happend
                         // so far only web tests have custom syntax
                         $__code_ = self::_custom_test_syntax($__code);
-                        ($ARG['verbose']??0) && i('out')->e("{cyan}%s{/}\n", $__code);
+                        ($ARG['verbose'] ?? 0) && i('out')->e("{cyan}%s{/}\n", $__code);
                         ob_start();
                         $__rz = eval("return $__code_");
                         $__out = ob_get_clean();
@@ -756,7 +787,7 @@ class STest_File_Commands {
                     } catch (\Throwable $__ex) {
                         $__rz = ["Throwable:" . get_class($__ex), $__ex->getMessage()];
                     }
-                    ($ARG['verbose']??0) && i('out')->e("    {green}%s{/}\n", $__line__tp_v_r[1][2] /*x2s($__rz) */);
+                    ($ARG['verbose'] ?? 0) && i('out')->e("    {green}%s{/}\n", $__line__tp_v_r[1][2] /*x2s($__rz) */);
                     $__tester($__line__tp_v_r[1][2], $__rz, $__line, $__code);
                     if ('temp' === ($ARG['first_error'] ?? 0)) {
                         unset($ARG['first_error']);
@@ -780,7 +811,7 @@ class STest_File_Commands {
 
         $dur = microtime(1) - $__t->start;
         $stat = "tests: " . $__t->tests;
-        if ($dur > 0.1 || ($ARG['verbose']??0)) // require at least 0.1 sec
+        if ($dur > 0.1 || ($ARG['verbose'] ?? 0)) // require at least 0.1 sec
         {
             $stat .= " (" . sprintf("%0.2f", $dur) . "s)";
         }
@@ -798,14 +829,15 @@ class STest_File_Commands {
             self::save($__t->T);
         }
         $how = $fail ? "fail" : "success";
-        if ($ARG['alert']??0)
+        if ($ARG['alert'] ?? 0)
             $how = "alert";
         i('reporter')->$how($__t->filename, array_filter(['tests' => $__t->tests, 'new' => $__t->new, 'fail' => $__t->fail, 'details' => $__t->details]));
     }
 
     // get useful part of exception's backtrace as string
     // TODO - provide better backtrace - use getTrace
-    static private function _backtrace(\Throwable $ex): string {
+    static private function _backtrace(\Throwable $ex): string
+    {
         $trace = $ex->getTraceAsString();
         $pos = strpos($trace, '/STest.php'); // find and cut part with STest backtrace
         $trace = substr($trace, 0, $pos);
@@ -832,7 +864,8 @@ class STest_File_Commands {
      *
      * @see examples/special-tests.stest
      */
-    static private function _custom_result_syntax(string $exp, $got) /*: ?string*/ { # error | null
+    static private function _custom_result_syntax(string $exp, $got) /*: ?string*/
+    { # error | null
         if (strpos($exp, "\n")) { // several tests
             foreach (explode("\n", $exp) as $exp) {
                 if ($r = self::_custom_result_syntax($exp, $got)) {
@@ -926,7 +959,8 @@ class STest_File_Commands {
      *   follow "href-title"
      *
      */
-    static private function _custom_test_syntax(string $test): string { # modified code
+    static private function _custom_test_syntax(string $test): string
+    { # modified code
         if (!$test) {
             throw new ErrorException("Empty Test");
         }
@@ -981,7 +1015,8 @@ class STest_File_Commands {
     /**
      * `cat` processed test to stdout (add missing semicolons, correct identation)
      */
-    static function cat($T, $echo = 1): string { # test
+    static function cat($T, $echo = 1): string
+    { # test
         $s = "";
         foreach ($T as [$ln, $tv]) {
             [$tp, $v] = $tv;
@@ -1001,7 +1036,8 @@ class STest_File_Commands {
     /**
      * save corrected test (missing ";" added, identation fixed)
      */
-    static function save($T) {
+    static function save($T)
+    {
         # echo json_encode($T);
         $filename = i('stest')->file;
         i('out')->e("*** {head}%s{/} saved\n", $filename);
@@ -1012,7 +1048,8 @@ class STest_File_Commands {
     /**
      * remove all generated results from test
      */
-    static function clean($T) {
+    static function clean($T)
+    {
         foreach ($T as &$v) {
             if ($v[1][0] == 'test') {
                 unset($v[1][2]);
@@ -1031,7 +1068,8 @@ class STest_File_Commands {
     /**
      * show parsed unprocessed test text
      */
-    static function debug_test($T) { # echo internal test presentation
+    static function debug_test($T)
+    { # echo internal test presentation
         foreach ($T as [$ln, $tv]) {
             echo "$ln: ", json_encode($tv, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), "\n";
         }
@@ -1057,30 +1095,35 @@ class STest_File_Commands {
 /**
  * Error Handler
  */
-class Error {  // error handler
+class Error
+{  // error handler
 
     public static $error_reporting = 0;      // bit-mask to suppress errors
 
     private static $err = []; // php-errors from error handler - use get() to read
 
     // return error (if any), clean up error info
-    static function get() { # string or array with errors
+    static function get()
+    { # string or array with errors
         $e = self::$err;
         self::$err = [];
         return sizeof($e) == 1 ? $e[0] : $e;
     }
 
-    public static function suppress_notices() {
+    public static function suppress_notices()
+    {
         self::$error_reporting |= E_NOTICE;
     }
 
-    public static function suppress_warnings() {
+    public static function suppress_warnings()
+    {
         self::$error_reporting |= E_WARNING;
     }
     // if you want to suppress something else - change Error::$error_reporting
 
     // Error::handler
-    static function handler($level, $message, $file, $line) {
+    static function handler($level, $message, $file, $line)
+    {
         // you can hide notices and warnings with @
         // you can't hide errors
         if (!error_reporting() && ($level == E_WARNING || $level == E_NOTICE)) {
@@ -1110,19 +1153,13 @@ class Error {  // error handler
         }
         array_push(self::$err, $e);
     }
-
 } // class Error
 
 
-class Exception extends \Exception {
-}
+class Exception extends \Exception {}
 
-class SyntaxErrorException extends Exception {
-}
+class SyntaxErrorException extends Exception {}
 
-class StopException extends Exception {
-}   // \STest::stop("message")   -- Successfully Stop Test, ignore rest of the test
-class ErrorException extends StopException {
-}   // \STest::error("message")  -- UNSuccessfully Stop Test, ignore rest of the test
-class AlertException extends StopException {
-}   // \STest::alert("message")  -- UNSuccessfully Stop Test, send an alert, ignore rest of the test
+class StopException extends Exception {}   // \STest::stop("message")   -- Successfully Stop Test, ignore rest of the test
+class ErrorException extends StopException {}   // \STest::error("message")  -- UNSuccessfully Stop Test, ignore rest of the test
+class AlertException extends StopException {}   // \STest::alert("message")  -- UNSuccessfully Stop Test, send an alert, ignore rest of the test

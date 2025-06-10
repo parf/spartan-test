@@ -1,3 +1,4 @@
+2025-06-10 - V3.3.4 - Support for config['realm'] added - see Config.md
 2025-06-03 - V3.3.3 - Config: `errorCallback` added - see Config.md 
 2024-06-11 - V3.2.5 - trim error case results to 360 characters. useful for web tests where results can be huge
 2024-01-03 - V3.2.3 - realm detect fix, better error reporting for "~ 'xxx'" operators

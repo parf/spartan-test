@@ -1,6 +1,6 @@
 # SPARTAN-TEST - Config File Options
 
-Upon start web test search for `stest-config.json` or `stest-config.json.local` in current or parent directories\
+Upon start web test search for `stest-config.json` or `stest-config.local.json` in current or parent directories\
 Finally it loads [bundled config](https://github.com/parf/spartan-test/blob/main/src/config.json) from its own directory
 
 Typical Config Looks like:
