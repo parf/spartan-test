@@ -59,7 +59,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.3.3"; // 2025-06-03
+const VERSION = "3.3.6"; // 2025-09-22
 
 //
 // INTERNAL
@@ -709,6 +709,8 @@ class STest_File_Commands {
                         throw $__ex;
                     } catch (\Exception $__ex) {
                         throw new ErrorException("Unexpected exception " . get_class($__ex) . " " . $__ex->getMessage());
+                    } catch (\Error $__ex) {
+                        throw new ErrorException("Unexpected error " . get_class($__ex) . " " . $__ex->getMessage());
                     }
                 } // if-expr
                 if ($__type == "test") {
@@ -1100,9 +1102,10 @@ class Error {  // error handler
             E_USER_ERROR => 'USER ERROR',
             E_USER_WARNING => 'USER WARNING',
             E_USER_NOTICE => 'USER NOTICE',
-            E_STRICT => 'E_STRICT',
+            #E_STRICT => 'E_STRICT',
             E_DEPRECATED => 'E_DEPRECATED',
         );
+
         $type = $map[$level] ?? "ERROR#$level";
         $e = "$type: $message";
         if (substr($file, 0, strlen(__FILE__)) != __FILE__) {
