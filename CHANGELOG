@@ -1,3 +1,4 @@
+2025-11-14 - V3.3.8 - Added support for HTTP 307 and 308 redirect codes
 2025-09-22 - V3.3.5 - Improved error handling for unexpected errors
 2025-06-03 - V3.3.3 - Config: `errorCallback` added - see Config.md
 2024-06-11 - V3.2.5 - trim error case results to 360 characters. useful for web tests where results can be huge

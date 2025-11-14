@@ -123,7 +123,7 @@ class WebTest {
             $this->_applyTests($r['body'], $r); // throw exception or place error inside STest::$BODY
         } else {
             // real BODY is in $INFO['BODY']
-            if ($code == 301 || $code == 302 || $code == 303) {
+            if ($code == 301 || $code == 302 || $code == 303 || $code == 307 || $code == 308) {
                 $redirect = str_replace($d, '$DOMAIN', $r['redirect_url']);
                 STest::$BODY = ['code' => $code, 'redirect' => $redirect];
             } else {
