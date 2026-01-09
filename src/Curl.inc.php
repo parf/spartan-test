@@ -55,7 +55,7 @@ class Curl {
      *
      */
     static function rq($url, array $params = [], $method = "GET", array $curl_opts = [], array $opts = []) { #
-        $timeout = ($opts['timeout']??0) ?: 5; // 5 sec
+        $timeout = ($opts['timeout']??0) ?: 15; // 15 sec
         $default = [
             CURLOPT_RETURNTRANSFER => 1,
             CURLOPT_USERAGENT => 'HB::Curl',
