@@ -9,7 +9,7 @@
             "email": "sergey.porfiriev@gmail.com"
         }
     ],
-    "type": "project",
+    "type": "library",
     "bin": ["bin/stest", "bin/stest-all"],
     "require": {
 		"php": ">=8.0"
