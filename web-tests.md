@@ -23,6 +23,11 @@ The examples in `examples/3-web-tests/` expect a local test server to be
 running on `http://127.0.0.2:8080`. Without that server, the example files
 will fail with empty responses or 404s.
 
+Start the server via:
+```
+./bin/start-web-tests
+```
+
 ### GET queries
 
 - `/path/script`

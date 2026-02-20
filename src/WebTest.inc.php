@@ -167,10 +167,10 @@ class WebTest {
         }
 
         $ct = STest::$HEADERS['Content-Type'] ?? "";
-        if ($ct && \str_starts_with($ct, 'application/')) {
+        if ($ct && (\str_starts_with($ct, 'application/') || \str_starts_with($ct, 'text/'))) {
             $type = '';
-            if (preg_match("!application/([^;]+)!", $ct, $r)) {
-                $type = strtolower($r[1]);
+            if (preg_match("!(application|text)/([^;]+)!", $ct, $r)) {
+                $type = strtolower($r[2]);
             }
             \STest::debug(" - Content-Type: $ct => $type", 7);
             if ($type) {

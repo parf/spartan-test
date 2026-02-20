@@ -44,6 +44,9 @@ stest -1 test.stest
 # Show debug info (1-9 levels)
 stest --debug=9 test.stest
 
+# Show merged config (base + project configs)
+stest --debug-config test.stest
+
 # For cron: no colors, errors only
 stest --cron test.stest
 

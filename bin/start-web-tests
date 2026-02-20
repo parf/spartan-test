@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+WEB_DIR="$ROOT_DIR/examples/3-web-tests"
+HOST="127.0.0.2"
+PORT="8080"
+
+URL="http://$HOST:$PORT/"
+if command -v curl >/dev/null 2>&1; then
+    if curl -s --max-time 1 "$URL" >/dev/null 2>&1; then
+        echo "Web test server already running at $URL"
+        exit 0
+    fi
+fi
+
+cd "$WEB_DIR"
+exec ./start-web-server

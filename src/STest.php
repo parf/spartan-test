@@ -59,7 +59,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.3.10"; // 2026-01-09
+const VERSION = "3.3.11"; // 2026-02-20
 
 //
 // INTERNAL
@@ -574,6 +574,13 @@ class STest_Global_Commands {
      */
     static function debug_args() {
         echo json_encode(['args' => STest::$ARG, 'tests' => STest::$TESTS], JSON_PRETTY_PRINT) . "\n";
+    }
+
+    /**
+     * debug: show merged config (base + project configs)
+     */
+    static function debug_config() {
+        echo json_encode(\stest\helper\InstanceConfig::$config, JSON_PRETTY_PRINT) . "\n";
     }
 
     /**
