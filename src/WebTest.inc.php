@@ -132,7 +132,10 @@ class WebTest {
         }
         if ($c = STest::$HEADERS['Set-Cookie'] ?? STest::$HEADERS['set-cookie'] ?? 0) {
             foreach ((array)$c as $kv) {
-                [$k, $v] = explode('=', $kv);
+                if (!str_contains($kv, '=')) {
+                    continue;
+                }
+                [$k, $v] = explode('=', $kv, 2);
                 if ($p = strrpos($v, ";")) {
                     $v = substr($v, 0, $p);
                 }
@@ -165,14 +168,21 @@ class WebTest {
 
         $ct = STest::$HEADERS['Content-Type'] ?? "";
         if ($ct && \str_starts_with($ct, 'application/')) {
-            preg_match("!application/(\w+)!", $ct, $r);
-            \STest::debug(" - Content-Type: $ct => $r[1]", 7);            
-            $body = match ($r[1]) {
-                'json' => \json_decode($body, true),
-                'igbinary' => \igbinary_unserialize($body),
-                'msgpack' => \msgpack_unpack($body),
-                default => $body,
-            };
+            $type = '';
+            if (preg_match("!application/([^;]+)!", $ct, $r)) {
+                $type = strtolower($r[1]);
+            }
+            \STest::debug(" - Content-Type: $ct => $type", 7);
+            if ($type) {
+                if (str_contains($type, 'json')) {
+                    return \json_decode($body, true);
+                }
+                $body = match ($type) {
+                    'igbinary' => \igbinary_unserialize($body),
+                    'msgpack' => \msgpack_unpack($body),
+                    default => $body,
+                };
+            }
         }
         return $body;
     }
