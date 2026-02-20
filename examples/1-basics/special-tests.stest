@@ -6,7 +6,7 @@
 # using advanced syntax will make your test php-incompatible (script is no longer a valid php program)
 #
 # this test will FAIL, and this is intentional !!!
-# run this test with "-v" option to see whats tested and what is failing and why
+# run this test with "-v" option to see what's tested and what is failing and why
 #
 
 # instance-of
@@ -54,7 +54,7 @@ $a = ['a' => 1, 'b' => 2];
     ~ ['a' => 1];
 $a;
     ~ ['a' => 1, 'b' => 2];
-    ~ ['a' => true, 'c' => false];   # true = key exists, false = key does not exists
+    ~ ['a' => true, 'c' => false];   # true = key exists, false = key does not exist
 $a;
     ~ ['a' => 2];
 $a;
@@ -63,7 +63,7 @@ $a;
 ['a' => 1];
     ~ [];  # is-array test
 "not-an-array"
-    ~ [];  # shoud fail
+    ~ [];  # should fail
 
 
 # ~ [key => true/false] have special meaning - key exists/not-exists test
@@ -74,7 +74,7 @@ $a;
 $a;
     ~ ['a' => false];  # should fail, key exists
 $a;
-    ~ ['c' => true];  # should fail, key does not exists
+    ~ ['c' => true];  # should fail, key does not exist
 $a;
     ~ ['c' => false];  # ok, no such key
 

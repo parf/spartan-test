@@ -1,9 +1,9 @@
 # Web Tests
 
-Let you simulate request-response activity on sites\
-You can anazyze results: search for substrings, check http codes, redirects and more\
-All cookies preserved - so you can emulate logins, and test registered users areas\
-Every time we got results from remote web-server we check them for php-errors blocks (see WebTest::test_PHPError() method)\
+Lets you simulate request-response activity on sites\
+You can analyze results: search for substrings, check HTTP codes, redirects and more\
+All cookies are preserved - so you can emulate logins and test registered user areas\
+Every time we get results from a remote web-server we check them for php-errors blocks (see WebTest::test_PHPError() method)\
 and then we apply all user checks specified in your test (stest)
 
 see more in [examples/web-test](https://github.com/parf/spartan-test/blob/main/examples/3-web-tests/)
@@ -16,6 +16,12 @@ default is `https://` version; to test http - specify it explicitly `\STest::dom
 
 hint: use `--debug=9 -v` to debug your web test
 
+
+## Running The Web Test Examples
+
+The examples in `examples/3-web-tests/` expect a local test server to be
+running on `http://127.0.0.2:8080`. Without that server, the example files
+will fail with empty responses or 404s.
 
 ### GET queries
 
@@ -31,7 +37,7 @@ hint: use `--debug=9 -v` to debug your web test
 - `POST /path/script $arguments`
 
 ### JSONPOST queries (api testing)
-when jsonpost url have content-type of `*/json;` it will be json-decoded
+when jsonpost url has content-type of `*/json;` it will be json-decoded
 - `JSONPOST /path/script ["arg" => $value, ...]`
 - `JSONPOST /path/script $arguments`
 
@@ -52,7 +58,7 @@ result - response-code AND redirect location
 
 ### SPECIAL-HARD-CODED value of '$DOMAIN' in redirect FIELD
 ```
-# You current STest::$DOMAIN is replaced by $DOMAIN in redirect-urls
+# Your current STest::$DOMAIN is replaced by $DOMAIN in redirect-urls
 # this way you may have many site aliases and use same TEST
 /redirect ['url' => 'a/b/c'];
     ["code"=>302, "redirect"=>'$DOMAIN/a/b/c'];
@@ -113,13 +119,13 @@ You can specify `realm` in (sorted by priority):
 2. SHELL environment variable `$STEST_REALM`
     *  run test as:   `STEST_REALM=my-realm ./filename.stest`
     *  or set realm somewhere in ~/.profile and just run stest
-5. provide `"realm"="value"` in stest config files: `stest-config.json` or `stest-config.json.local` 
-6. provide `"realmDetectMethod"="Class::method"` in stest config files: `stest-config.json` or `stest-config.json.local` 
+5. provide `"realm"="value"` in stest config files: `stest-config.json` or `stest-config.local.json` 
+6. provide `"realmDetectMethod"="Class::method"` in stest config files: `stest-config.json` or `stest-config.local.json` 
 
 // to disable realms in configs or environment - use `stest --realm` or `stest --realm=""`
 
 ### Custom Realm-URLs - provide your own callback
-specify `"realmUriMethod"="Class::method"` in stest config files: `stest-config.json` or `stest-config.json.local` 
+specify `"realmUriMethod"="Class::method"` in stest config files: `stest-config.json` or `stest-config.local.json` 
 
 
 ## Under the hood

@@ -95,7 +95,7 @@ Configuration is loaded hierarchically (later sources override earlier):
 
 1. **`src/config.json`** - Bundled base config (always loaded)
 2. **`stest-config.json`** - Project-specific config (searched in current/parent dirs)
-3. **`stest-config.json.local`** - Local overrides (git-ignored, searched in current/parent dirs)
+3. **`stest-config.local.json`** - Local overrides (git-ignored, searched in current/parent dirs)
 4. **Command-line options** - Override everything
 
 Config specifies which classes to use for core components:

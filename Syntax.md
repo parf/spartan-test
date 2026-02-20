@@ -9,8 +9,8 @@ Line read can be a:
  - Test-result
  - Comment
 
-* For test-expressions it calculate result, then compares it to stored result
-    - if result exists and differ, error is generated
+* For test-expressions it calculates the result, then compares it to stored result
+    - if result exists and differs, error is generated
     - if no result stored in test-file, generated result is added to test-file
 
 * STest catches
@@ -40,8 +40,8 @@ Sample spartan test:
   first line makes test an executable script
 */
 # math test
-2*2;    # tests have 0 identation
-    4;  # result must be idented by 4 spaces, if no result present - it will be auto-generated
+2*2;    # tests have 0 indentation
+    4;  # result must be indented by 4 spaces; if no result present it will be auto-generated
 
 /* lines starting with ";" are just php-expressions */
 ; $x = M_PI / 6;  # php-expression prefixed by ";";
@@ -55,7 +55,7 @@ range(3,4);
 
 ### Array Result Sorting
 By default all results arrays are sorted by keys (unlimited DEPTH)\
-To turn off this behaviour add `$ARG['sort']=0;`; to re-enable it back `$ARG['sort']=0;`
+To turn off this behaviour add `$ARG['sort']=0;`; to re-enable it back `$ARG['sort']=1;`
 
 @see (https://github.com/parf/spartan-test/blob/main/examples/2-advanced/result-sorting.stest)
 
@@ -96,7 +96,7 @@ Instead of result you can use one(or more) advanced tests
 
 ```
 
-# Build-in STest Methods
+# Built-in STest Methods
 
 - `STest::domain()` - @see web-tests
 - `STest::stop($message)` - stop test execution w/o error  (`--force` option ignores all ::stop)\
@@ -110,7 +110,7 @@ Instead of result you can use one(or more) advanced tests
 
 # Web Tests
 
-Web tests emulates web site queries, they kept all cookies and http_refferers, so it is easy to emulate user's behaviour on sites
+Web tests emulate web site queries; they keep all cookies and http_referrers, so it is easy to emulate user behaviour on sites
 
 At bare minimum, web tests require all pages to be non-empty `code 200` (http success) pages\
 When standard `php-error output` found on a page, error will be raised

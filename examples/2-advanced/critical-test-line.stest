@@ -4,9 +4,8 @@
 //
 
 # stop test if error on following line
-! 1+1;  # Critical test intentinally failed, script execution stopped with error condition
-    3
+! 1+1;  # Critical test intentionally failed, script execution stopped with error condition
+    3;
 
 1+1
-    2
-
+    2;
