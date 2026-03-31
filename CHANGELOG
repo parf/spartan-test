@@ -1,3 +1,4 @@
+2026-03-31 - V3.3.12 - Allow trailing semicolons in "~ ..." custom result syntax
 2026-02-20 - V3.3.11 - Harden WebTest cookie parsing and content-type handling; doc/example fixes
 2025-11-14 - V3.3.8 - Added support for HTTP 307 and 308 redirect codes
 2025-09-22 - V3.3.5 - Improved error handling for unexpected errors

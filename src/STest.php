@@ -59,7 +59,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.3.11"; // 2026-02-20
+const VERSION = "3.3.12"; // 2026-03-31
 
 //
 // INTERNAL
@@ -851,7 +851,7 @@ class STest_File_Commands {
             return;
         }
         # echo "<< $exp >>\n";
-        $x = trim($exp, "~ ");
+        $x = trim($exp, "~ ;");
         $err = ""; // test-error found
         if (!$x) { // "~" case = IS NOT EMPTY STRING CASE
             if (trim($exp) == '~~') {
