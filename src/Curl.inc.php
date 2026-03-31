@@ -135,10 +135,8 @@ class Curl {
         } else {
             $info['body'] = $data;
         }
-        curl_close($ch);
         return $info;
     }
 
 
 } // Class Curl
-

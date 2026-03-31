@@ -800,7 +800,6 @@ class Alerter {
         $status = curl_getinfo($c, CURLINFO_HTTP_CODE);
         if ( $status != 201 && $status != 200 ) // 200 & 201 = OK
             throw new \RuntimeException("Error: call to URL $url failed with status $status, response $r, curl_error " . curl_error($c) . ", curl_errno " . curl_errno($c));
-        curl_close($c);
         return json_decode($r, 1);
     }
 
@@ -812,7 +811,6 @@ class Alerter {
         $status = curl_getinfo($c, CURLINFO_HTTP_CODE);
         if ( $status != 201 && $status != 200 ) // 200 & 201 = OK
             throw new \RuntimeException("Error: call to URL $url failed with status $status, response $r, curl_error " . curl_error($c) . ", curl_errno " . curl_errno($c));
-        curl_close($c);
         return $r;
     }
 
@@ -823,5 +821,4 @@ class Alerter {
     }
 
 }
-
 
