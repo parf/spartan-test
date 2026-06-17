@@ -6,6 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Spartan-test is a minimalistic PHP 8+ unit and web testing framework that emphasizes simplicity and minimal learning curve. Tests are written in PHP with a special syntax where test expressions and their expected results are stored in `.stest` files. The framework automatically generates expected results when missing and compares them on subsequent runs.
 
+Authoritative reference docs live at the repo root — consult them before changing behavior they describe:
+- `Syntax.md` — full `.stest` line syntax
+- `web-tests.md` — web testing (requests, realms, `STest::xq()`, response variables)
+- `Config.md` — config file options and `errorCallback` signature
+- `CHANGELOG` — version history; add an entry here when changing behavior
+
 ## Commands
 
 ### Running Tests
@@ -106,8 +112,9 @@ Config specifies which classes to use for core components:
 - `"reporter"`: Reporter class (default: `stest\helper\Reporter`)
 - `"webtest"`: Web test class (default: `hb\WebTest`)
 - `"init"`: Autoload file paths to search (default: `["bootstrap/autoload.php", "vendor/autoload.php", "init.php"]`)
+- `"stest-init"`: Optional extra init file (default `.stest-init.php`) included AFTER the autoload `init` file — use it to set up the testing environment separately from normal app bootstrap
 - `"realm"`, `"realmUriMethod"`, `"realmDetectMethod"`: Web test realm configuration
-- `"errorCallback"`: Optional callback to enrich error results
+- `"errorCallback"`: Optional callback to enrich error results (signature in `Config.md`)
 
 ### Test File Format (.stest)
 
@@ -148,6 +155,10 @@ Instance names are defined in config files (`"stest"`, `"reporter"`, `"webtest"`
 
 ### Web Testing Architecture
 
+Every web test must begin with `\STest::domain("your-domain.com")` (defaults to `https://`; prefix `http://` explicitly to test plain HTTP). `\STest::xq($xpath, $as_array=false)` runs an XPath query against the last fetched page.
+
+The `examples/3-web-tests/` files expect a local server at `http://127.0.0.2:8080`. Start it with `bin/start-web-tests` before running them, or they fail with empty responses / 404s.
+
 Web tests maintain state across requests:
 - `STest::$DOMAIN` - Current domain
 - `STest::$URL` - Last URL requested
@@ -182,7 +193,8 @@ When adding features:
 3. Run existing tests to ensure no regressions: `composer test`
 4. Make test files executable: `chmod +x test.stest`
 
-When modifying test parsing or execution:
-- Main parsing logic is in `STest::run()` method
-- Test execution happens in `STest::_process_test()` method
-- Result comparison in `STest::_compare()` method
+When modifying test parsing or execution (all in `src/STest.php`):
+- `STest::run()` — option parsing / top-level entry; `STest::runTest($file)` runs one `.stest` file
+- `STest::test(array $__TEST)` — executes a single parsed test and compares its result
+- `STest::_custom_result_syntax()` — implements the `~ ` comparison operators
+- `STest::_custom_test_syntax()` — rewrites custom test-line syntax into PHP before eval
