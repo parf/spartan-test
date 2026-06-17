@@ -10,8 +10,14 @@ Line read can be a:
  - Comment
 
 * For test-expressions it calculates the result, then compares it to stored result
-    - if result exists and differs, error is generated
+    - comparison is textual against the canonical (auto-generated) form
     - if no result stored in test-file, generated result is added to test-file
+    - if the stored result differs only in formatting / key order (same value), the test
+      is re-run in soft-regen mode that rewrites just those lines to canonical form and
+      saves the file (reported as `reformat: N`) — so you may write expected results in
+      any formatting you like
+    - if the stored result differs in VALUE, an error is generated (the result is not changed;
+      use `stest -g` to force-overwrite all results)
 
 * STest catches
     - Return values

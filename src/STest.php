@@ -59,7 +59,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.3.13"; // 2026-06-17
+const VERSION = "3.3.14"; // 2026-06-17
 
 //
 // INTERNAL
@@ -394,7 +394,13 @@ class STest {
             }
         }
         if (!$cmd) {
-            STest_File_Commands::test($T);
+            // normal run returns 1 when a formatting-only ("sort-fail") mismatch was found;
+            // re-run in soft-regen mode to fix formatting and save (real value diffs stay failures)
+            if (STest_File_Commands::test($T) && !(self::$ARG['soft'] ?? 0) && !(self::$ARG['generate'] ?? 0)) {
+                self::$ARG['soft'] = 1;
+                STest_File_Commands::test($T);
+                unset(self::$ARG['soft']);
+            }
         }
     }
 
@@ -616,7 +622,7 @@ class STest_File_Commands {
     static function test(array /* parsed-test */ $__TEST) {
         $__t = (object)[ // dummy object used to hide variables
             'T' => $__TEST,
-            'fail' => 0, 'new' => 0, 'tests' => 0,
+            'fail' => 0, 'new' => 0, 'reformat' => 0, 'softNeeded' => 0, 'tests' => 0,
             'start' => microtime(1),
             'filename_shown' => 0,
             'filename' => realpath(i('stest')->file),
@@ -637,13 +643,15 @@ class STest_File_Commands {
             $showError = function ($err) use ($line, $code, $__err, $ARG, $__t) {
                 // FAILED TEST
                 $__t->fail++;
-                ($u = \STest::$URL) && $err .= "\n  url:   $u";
-                if ($errorCallback = InstanceConfig::$config['errorCallback'] ?? 0) {
-                    if ($extra_info = $errorCallback($err, $line, $code, $ARG)) {
-                        $err .= "\n  extra: " . x2s($extra_info);
+                if (!($ARG['soft'] ?? 0)) { // soft-regen pass already reported by normal pass
+                    ($u = \STest::$URL) && $err .= "\n  url:   $u";
+                    if ($errorCallback = InstanceConfig::$config['errorCallback'] ?? 0) {
+                        if ($extra_info = $errorCallback($err, $line, $code, $ARG)) {
+                            $err .= "\n  extra: " . x2s($extra_info);
+                        }
                     }
+                    $__err("{alert}L$line{/}: {red}$code{/}\n $err");
                 }
-                $__err("{alert}L$line{/}: {red}$code{/}\n $err");
                 if ($ARG['first_error'] ?? 0) {
                     throw new StopException("Stopping on first error");
                 }
@@ -692,6 +700,23 @@ class STest_File_Commands {
                 $expected = $got . ";"; // save generated result
                 $__err("{bold}{blue}L$line{/}: $code");
                 $__err(" got: {blue}$got{/}");
+                return;
+            }
+            // formatting-only difference (same value, different spacing / key order)?
+            $sameValue = false;
+            try {
+                $expCanon = str_replace("\n", "\n    ", x2s(eval("return $exp;"), $ARG['sort'] ?? ""));
+                $sameValue = ($expCanon === $got);
+            } catch (\Throwable $__ignore) { // expected not valid php => treat as real change
+            }
+            if ($sameValue) {
+                if ($ARG['soft'] ?? 0) { // soft-regen pass: rewrite to canonical form
+                    $expected = $got . ";";
+                    $__t->reformat++;
+                    i('out')->e(" {blue}reformat L$line{/}: $code\n");
+                } else { // normal run: schedule a soft-regen pass to fix formatting
+                    $__t->softNeeded = 1;
+                }
                 return;
             }
             $got = cut($got); # get rid of super long error results
@@ -784,7 +809,12 @@ class STest_File_Commands {
                 $__err("{alert}$reason{/} at line $__line: $m\n    {cyan}$__code{/}");
             }
             i('reporter')->$reason($__t->filename, ['message' => $m, 'tests' => $__t->tests, 'new' => $__t->new, 'fail' => $__t->fail, 'details' => $__t->details]);
-            return;
+            return 0;
+        }
+
+        // formatting-only mismatch found: defer reporting/saving to the soft-regen pass
+        if ($__t->softNeeded && !($ARG['soft'] ?? 0)) {
+            return 1;
         }
 
         $dur = microtime(1) - $__t->start;
@@ -796,20 +826,24 @@ class STest_File_Commands {
         if ($new = $__t->new) {
             $stat .= ", {blue}{bold}new: $new{/}";
         }
+        if ($reformat = $__t->reformat) {
+            $stat .= ", {blue}reformat: $reformat{/}";
+        }
         if ($fail = $__t->fail) {
             $__err("{alert}>{/} $stat, {warn}failed: $fail{/}");
         } else {
             i('out')->e("*** {head}%s{/} $stat\n", $__t->filename);
         }
 
-        // save test when '--generate' option, or new items were added and no tests failed
-        if (($__t->new && !$__t->fail) || ($ARG['generate'] ?? 0)) {
+        // save test when '--generate' option, soft-regen reformatted lines, or new items added and no failures
+        if (($__t->new && !$__t->fail) || ($ARG['generate'] ?? 0) || (($ARG['soft'] ?? 0) && $__t->reformat)) {
             self::save($__t->T);
         }
         $how = $fail ? "fail" : "success";
         if ($ARG['alert']??0)
             $how = "alert";
-        i('reporter')->$how($__t->filename, array_filter(['tests' => $__t->tests, 'new' => $__t->new, 'fail' => $__t->fail, 'details' => $__t->details]));
+        i('reporter')->$how($__t->filename, array_filter(['tests' => $__t->tests, 'new' => $__t->new, 'reformat' => $__t->reformat, 'fail' => $__t->fail, 'details' => $__t->details]));
+        return 0;
     }
 
     // get useful part of exception's backtrace as string

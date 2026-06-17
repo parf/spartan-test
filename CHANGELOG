@@ -1,3 +1,4 @@
+2026-06-17 - V3.3.14 - Normal runs now auto-heal formatting-only result mismatches: when a stored result differs from the generated one only in spacing/key-order (same value), the test is re-run in "soft-regen" mode that canonicalizes just those lines and saves (reported as "reformat: N"). Real value changes stay failures. "-g" (full regen) is unchanged. NOTE: the soft-regen re-run re-executes the test (incl. web requests).
 2026-06-17 - V3.3.13 - Update CLAUDE.md guidance (doc references, web-test server, stest-init, corrected internals)
 2026-03-31 - V3.3.12 - Allow trailing semicolons in "~ ..." custom result syntax
 2026-02-20 - V3.3.11 - Harden WebTest cookie parsing and content-type handling; doc/example fixes
