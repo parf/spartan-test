@@ -125,3 +125,16 @@ $run("$path $all --all -q " . escapeshellarg($allDir)) !== 0;
 
 $run("$path $all --list --all --new " . escapeshellarg($allDir) . " | grep -q './nonexec-fail.stest'");
     0;
+
+; $reflectionDeprecated = "$tmp/reflection-deprecated.stest";
+; $reflectionDeprecatedText = "#!/usr/bin/env stest\n"
+    . "; set_error_handler(function (\$level, \$message, \$file, \$line) {\n"
+    . "    throw new ErrorException(\$message, 0, \$level, \$file, \$line);\n"
+    . "  });\n"
+    . "(function () { \$m = new ReflectionMethod(DateTime::class, \"format\"); \$m->setAccessible(true); return 1; })();\n"
+    . "    1;\n";
+; file_put_contents($reflectionDeprecated, $reflectionDeprecatedText);
+; chmod($reflectionDeprecated, 0755);
+
+$run("$bin " . escapeshellarg($reflectionDeprecated));
+    0;

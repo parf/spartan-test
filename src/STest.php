@@ -14,7 +14,7 @@ use function stest\helper\cut;
 // var_export alike
 
 /**
- * Spartan Test 3.3.x - php 8.4 testing framework done right
+ * Spartan Test 3.3.x - PHP 8.5 testing framework done right
  * RTFM: README.md
  */
 
@@ -59,7 +59,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.3.16"; // 2026-06-22
+const VERSION = "3.3.17"; // 2026-06-22
 
 //
 // INTERNAL
@@ -561,7 +561,7 @@ class STest_Global_Commands {
             }
             $e("\n");
         };
-        $e("{bold}{blue}STEST{/} {bold}(Spartan Test v" . VERSION . ") minimalistic PHP8.3 testing framework done right{/}\n");
+        $e("{bold}{blue}STEST{/} {bold}(Spartan Test v" . VERSION . ") minimalistic PHP8.5 testing framework done right{/}\n");
         $h(helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), "Global Options --\$option");
         $h(helper\Documentor::classDoc("\\stest\\STest_File_Commands"), "File Options");
         #echo json_encode(helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), JSON_PRETTY_PRINT), "\n";
@@ -758,7 +758,12 @@ class STest_File_Commands {
                 if ($__type == 'expr') {
                     try {
                         ($ARG['verbose']??0) && i('out')->e("{grey}%s{/}\n", $__code);
-                        eval($__code);
+                        self::_push_php_compat_error_handler();
+                        try {
+                            eval($__code);
+                        } finally {
+                            restore_error_handler();
+                        }
                     } catch (StopException $__ex) {
                         throw $__ex;
                     } catch (\Exception $__ex) {
@@ -788,7 +793,12 @@ class STest_File_Commands {
                         $__code_ = self::_custom_test_syntax($__code);
                         ($ARG['verbose']??0) && i('out')->e("{cyan}%s{/}\n", $__code);
                         ob_start();
-                        $__rz = eval("return $__code_");
+                        self::_push_php_compat_error_handler();
+                        try {
+                            $__rz = eval("return $__code_");
+                        } finally {
+                            restore_error_handler();
+                        }
                         $__out = ob_get_clean();
                         if ($__out) {
                             $__rz = [$__rz, '$' => $__out];
@@ -877,6 +887,22 @@ class STest_File_Commands {
         $trace = substr($trace, 0, $pos);
         $pos = strrpos($trace, "\n");
         return substr($trace, 0, $pos);
+    }
+
+    static private function _push_php_compat_error_handler(): void {
+        $previous = set_error_handler(function ($level, $message, $file, $line) use (&$previous) {
+            if (
+                $level === E_DEPRECATED
+                && str_contains($message, "ReflectionMethod::setAccessible()")
+                && str_contains($message, "has no effect since PHP 8.1")
+            ) {
+                return true;
+            }
+            if ($previous) {
+                return $previous($level, $message, $file, $line);
+            }
+            return false;
+        });
     }
 
 
