@@ -1,3 +1,4 @@
+2026-06-22 - V3.3.16 - Clarify stest-all executable-only default and add --all to include non-executable .stest files for listing and execution.
 2026-06-22 - V3.3.15 - Fix stest/stest-all exit status handling so failed tests return non-zero for CI/cron/parallel while --generate remains successful; add stest-all --recent and --new filters.
 2026-06-17 - V3.3.14 - Normal runs now auto-heal formatting-only result mismatches: when a stored result differs from the generated one only in spacing/key-order (same value), the test is re-run in "soft-regen" mode that canonicalizes just those lines and saves (reported as "reformat: N"). Real value changes stay failures. "-g" (full regen) is unchanged. NOTE: the soft-regen re-run re-executes the test (incl. web requests).
 2026-06-17 - V3.3.13 - Update CLAUDE.md guidance (doc references, web-test server, stest-init, corrected internals)

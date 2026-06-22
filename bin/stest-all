@@ -5,17 +5,18 @@
 
 usage() {
   echo "Usage: stest-all [OPTION...] [TOP-DIRECTORY]"
-  echo "execute all tests in current or given directory (and subdirectories) in parallel"
+  echo "execute executable tests in current or given directory (and subdirectories) in parallel"
   echo
   echo Options
 #  echo "  --tag=\"tag1 tag2 -tag3\" : execute tests matching tags" - not implemented yet
-  echo "  --list       : list tests"
+  echo "  --list       : list executable tests"
+  echo "  --all        : include non-executable .stest files"
   echo "  --recent     : execute tests changed in the last 1 day"
   echo "  --recent=2day: execute tests changed in the last 2 days"
   echo "  --new        : execute the newest test"
   echo "  --new=4      : execute the 4 newest tests"
 #  echo " -v  : verbose - show test names"   << DEFAULT
-  echo "  -q           : quiet - show only errors"
+  echo "  -q           : quiet - show only errors; test selection is unchanged"
 }
 
 recent_minutes() {
@@ -28,7 +29,10 @@ recent_minutes() {
 }
 
 list_tests() {
-  local find_args=(-name "*.stest" -executable)
+  local find_args=(-name "*.stest")
+  if [[ $all != 1 ]]; then
+    find_args+=(-executable)
+  fi
   if [[ -n "$recent" ]]; then
     find_args+=(-mmin "-$(recent_minutes "$recent")")
   fi
@@ -42,9 +46,11 @@ list_tests() {
 
 quiet=0
 list=0
+all=0
 recent=
 new=
 dir=
+stest_bin="$(cd "$(dirname "$0")" && pwd)/stest"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -54,6 +60,9 @@ while [[ $# -gt 0 ]]; do
       ;;
     --list)
       list=1
+      ;;
+    --all)
+      all=1
       ;;
     -q)
       quiet=1
@@ -111,9 +120,9 @@ fi
 
 # show errors only (in STDERR)
 if [[ $quiet == 1 ]]; then
-  list_tests | parallel -j0 '{} -s'
+  list_tests | parallel -j0 "$stest_bin {} -s"
   exit $?
 fi
 
-list_tests | parallel -j0 'echo {}; {}  --color'
+list_tests | parallel -j0 "echo {}; $stest_bin {} --color"
 exit $?

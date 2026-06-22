@@ -95,3 +95,33 @@ $run("$path $all --new " . escapeshellarg($newDir));
 
 $run("$path $all --new=2 " . escapeshellarg($newDir)) !== 0;
     true;
+
+; $allDir = "$tmp/all-dir";
+; mkdir($allDir);
+; copy($pass, "$allDir/exec-pass.stest");
+; copy($fail, "$allDir/nonexec-fail.stest");
+; chmod("$allDir/exec-pass.stest", 0755);
+; chmod("$allDir/nonexec-fail.stest", 0644);
+; touch("$allDir/exec-pass.stest", time() - 60);
+; touch("$allDir/nonexec-fail.stest", time());
+
+$run("$path $all --list " . escapeshellarg($allDir) . " | grep -q './nonexec-fail.stest'") !== 0;
+    true;
+
+$run("$path $all --list --all " . escapeshellarg($allDir) . " | grep -q './nonexec-fail.stest'");
+    0;
+
+$run("$path $all " . escapeshellarg($allDir));
+    0;
+
+$run("$path $all --all " . escapeshellarg($allDir)) !== 0;
+    true;
+
+$run("$path $all -q " . escapeshellarg($allDir));
+    0;
+
+$run("$path $all --all -q " . escapeshellarg($allDir)) !== 0;
+    true;
+
+$run("$path $all --list --all --new " . escapeshellarg($allDir) . " | grep -q './nonexec-fail.stest'");
+    0;
