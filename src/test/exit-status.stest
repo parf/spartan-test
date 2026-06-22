@@ -1,0 +1,97 @@
+#!/usr/bin/env stest
+# stest and stest-all must expose failures through process exit status.
+
+; $self = realpath(\stest\i('stest')->file);
+; $root = realpath(dirname($self, 3));
+; $tmp = sys_get_temp_dir() . "/stest-exit-status-" . getmypid();
+; exec("rm -rf " . escapeshellarg($tmp));
+; mkdir($tmp, 0777, true);
+; register_shutdown_function(function () use ($tmp) {
+    exec("rm -rf " . escapeshellarg($tmp));
+  });
+; $pass = "$tmp/pass.stest";
+; $fail = "$tmp/fail.stest";
+; $generateFail = "$tmp/generate-fail.stest";
+; $passText = "#!/usr/bin/env stest\n1+1;\n    2;\n";
+; $failText = "#!/usr/bin/env stest\n1+1;\n    3;\n";
+; file_put_contents($pass, $passText);
+; file_put_contents($fail, $failText);
+; file_put_contents($generateFail, $failText);
+; chmod($pass, 0755);
+; chmod($fail, 0755);
+; chmod($generateFail, 0755);
+; $bin = escapeshellarg($root . "/bin/stest");
+; $all = escapeshellarg($root . "/bin/stest-all");
+; $path = "PATH=" . escapeshellarg($root . "/bin:" . getenv("PATH"));
+; $run = function (string $cmd): int {
+    $out = [];
+    exec($cmd . " >/dev/null 2>&1", $out, $code);
+    return $code;
+  };
+
+$run("$bin " . escapeshellarg($pass));
+    0;
+
+$run("$bin " . escapeshellarg($fail)) !== 0;
+    true;
+
+$run("$bin " . escapeshellarg($fail) . " -s") !== 0;
+    true;
+
+$run("$bin " . escapeshellarg($fail) . " --cron") !== 0;
+    true;
+
+$run("$bin " . escapeshellarg($generateFail) . " --generate");
+    0;
+
+$run("cd " . escapeshellarg($tmp) . " && $path ./pass.stest");
+    0;
+
+$run("cd " . escapeshellarg($tmp) . " && $path ./fail.stest") !== 0;
+    true;
+
+; $passDir = "$tmp/pass-dir";
+; $mixedDir = "$tmp/mixed-dir";
+; mkdir($passDir);
+; mkdir($mixedDir);
+; copy($pass, "$passDir/pass.stest");
+; copy($pass, "$mixedDir/pass.stest");
+; copy($fail, "$mixedDir/fail.stest");
+; chmod("$passDir/pass.stest", 0755);
+; chmod("$mixedDir/pass.stest", 0755);
+; chmod("$mixedDir/fail.stest", 0755);
+
+$run("$path $all " . escapeshellarg($passDir));
+    0;
+
+$run("$path $all " . escapeshellarg($mixedDir)) !== 0;
+    true;
+
+; $recentDir = "$tmp/recent-dir";
+; mkdir($recentDir);
+; copy($pass, "$recentDir/current-pass.stest");
+; copy($fail, "$recentDir/thirty-hours-fail.stest");
+; chmod("$recentDir/current-pass.stest", 0755);
+; chmod("$recentDir/thirty-hours-fail.stest", 0755);
+; touch("$recentDir/thirty-hours-fail.stest", time() - 30 * 60 * 60);
+
+$run("$path $all --recent " . escapeshellarg($recentDir));
+    0;
+
+$run("$path $all --recent=2day " . escapeshellarg($recentDir)) !== 0;
+    true;
+
+; $newDir = "$tmp/new-dir";
+; mkdir($newDir);
+; copy($fail, "$newDir/older-fail.stest");
+; copy($pass, "$newDir/newer-pass.stest");
+; chmod("$newDir/older-fail.stest", 0755);
+; chmod("$newDir/newer-pass.stest", 0755);
+; touch("$newDir/older-fail.stest", time() - 60);
+; touch("$newDir/newer-pass.stest", time());
+
+$run("$path $all --new " . escapeshellarg($newDir));
+    0;
+
+$run("$path $all --new=2 " . escapeshellarg($newDir)) !== 0;
+    true;

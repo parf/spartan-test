@@ -1,42 +1,119 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # HELP
 
-if [ "$1" == "--help" ]; then
-  echo "Usage: stest-all [OPTION] [TOP-DIRECTORY]"
+usage() {
+  echo "Usage: stest-all [OPTION...] [TOP-DIRECTORY]"
   echo "execute all tests in current or given directory (and subdirectories) in parallel"
   echo
   echo Options
 #  echo "  --tag=\"tag1 tag2 -tag3\" : execute tests matching tags" - not implemented yet
-  echo "  --list : list tests"
+  echo "  --list       : list tests"
+  echo "  --recent     : execute tests changed in the last 1 day"
+  echo "  --recent=2day: execute tests changed in the last 2 days"
+  echo "  --new        : execute the newest test"
+  echo "  --new=4      : execute the 4 newest tests"
 #  echo " -v  : verbose - show test names"   << DEFAULT
-  echo "  -q     : quiet - show only errors"
+  echo "  -q           : quiet - show only errors"
+}
+
+recent_minutes() {
+  local v="${1:-1day}"
+  case "$v" in
+    *day) echo $(( ${v%day} * 1440 )) ;;
+    *days) echo $(( ${v%days} * 1440 )) ;;
+    *) echo $(( v * 1440 )) ;;
+  esac
+}
+
+list_tests() {
+  local find_args=(-name "*.stest" -executable)
+  if [[ -n "$recent" ]]; then
+    find_args+=(-mmin "-$(recent_minutes "$recent")")
+  fi
+
+  if [[ -n "$new" ]]; then
+    find . "${find_args[@]}" -printf "%T@ %p\n" | sort -rn | head -n "$new" | cut -d " " -f 2-
+  else
+    find . "${find_args[@]}"
+  fi
+}
+
+quiet=0
+list=0
+recent=
+new=
+dir=
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --help)
+      usage
+      exit 1
+      ;;
+    --list)
+      list=1
+      ;;
+    -q)
+      quiet=1
+      ;;
+    --recent)
+      recent=1day
+      ;;
+    --recent=*)
+      recent="${1#--recent=}"
+      ;;
+    --new)
+      new=1
+      ;;
+    --new=*)
+      new="${1#--new=}"
+      ;;
+    -*)
+      echo "Unknown option: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+    *)
+      if [[ -n "$dir" ]]; then
+        echo "Unexpected argument: $1" >&2
+        usage >&2
+        exit 1
+      fi
+      dir="$1"
+      ;;
+  esac
+  shift
+done
+
+if [[ -n "$new" && ! "$new" =~ ^[1-9][0-9]*$ ]]; then
+  echo "--new expects a positive integer" >&2
   exit 1
 fi
 
-if [ "$1" == "--list" ]; then
-    find . -name "*.stest" -executable
-    exit
+if [[ -n "$recent" && ! "$recent" =~ ^[1-9][0-9]*(day|days)?$ ]]; then
+  echo "--recent expects a positive number of days, e.g. --recent=2day" >&2
+  exit 1
+fi
+
+if [[ -n "$dir" ]]; then
+  cd "$dir" || exit 1
+fi
+
+if [[ $list == 1 ]]; then
+  list_tests
+  exit $?
 fi
 
 # check for GNU parallel
 [[ $(type -P parallel) ]] || { echo "GNU parallel required"; exit 1; }
 
-quiet=0
-if [ "$1" == "-q" ]; then
-  quiet=1
-  shift
-fi
-
-if [ ! -z "$1" ]; then
-  cd $1
-fi
-
 # show errors only (in STDERR)
-if [ $quiet == 1 ]; then
-  find . -name "*.stest" -executable | parallel -j0 '{} -s'
-  exit
+if [[ $quiet == 1 ]]; then
+  list_tests | parallel -j0 '{} -s'
+  exit $?
 fi
 
-find . -name "*.stest" -executable | parallel -j0 'echo {}; {}  --color'
+list_tests | parallel -j0 'echo {}; {}  --color'
+exit $?

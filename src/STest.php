@@ -59,7 +59,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.3.14"; // 2026-06-17
+const VERSION = "3.3.15"; // 2026-06-22
 
 //
 // INTERNAL
@@ -69,6 +69,7 @@ class STest {
 
     static $ARG;
     static $TESTS;
+    static $FAILED = 0;
 
     // WEB TEST RELATED DATA
     static $DOMAIN = "";
@@ -362,6 +363,7 @@ class STest {
     // stest -abc --d --c="VALUE" test1 test2
     public function run(array $argv) {
         $this->init($argv);
+        self::$FAILED = 0;
         foreach (self::$ARG as $a => $v) {
             $a = str_replace("-", "_", $a); // "-" to "_"
             if (is_callable(["stest\\STest_Global_Commands", $a])) {
@@ -372,6 +374,10 @@ class STest {
         }
         foreach (self::$TESTS as $test)
             $this->runTest($test);
+        if (self::$ARG['generate'] ?? 0) {
+            exit(0);
+        }
+        exit(self::$FAILED ? min(255, self::$FAILED) : 0);
     }
 
     function runTest($file) {
@@ -382,26 +388,36 @@ class STest {
             $T = helper\Parser::Reader($file);
         } catch (\Exception $ex) {
             i('out')->e("*** {alert}$file{/}. Error: " . $ex->getMessage());
-            return;
+            self::$FAILED += 1;
+            return 1;
         }
         $cmd = 0;
         foreach (self::$ARG as $a => $v) {
             $a = str_replace("-", "_", $a); // "-" to "_"
             if (is_callable(["stest\\STest_File_Commands", $a])) {
                 $cmd++;
+                if ($a === "test") {
+                    $failed = (int) STest_File_Commands::$a($T, $v);
+                    self::$FAILED += $failed;
+                    return $failed;
+                }
                 STest_File_Commands::$a($T, $v);
                 break; // execute only only command
             }
         }
         if (!$cmd) {
-            // normal run returns 1 when a formatting-only ("sort-fail") mismatch was found;
+            $failed = STest_File_Commands::test($T);
+            // normal run records when a formatting-only ("sort-fail") mismatch was found;
             // re-run in soft-regen mode to fix formatting and save (real value diffs stay failures)
-            if (STest_File_Commands::test($T) && !(self::$ARG['soft'] ?? 0) && !(self::$ARG['generate'] ?? 0)) {
+            if (STest_File_Commands::softNeeded() && !(self::$ARG['soft'] ?? 0) && !(self::$ARG['generate'] ?? 0)) {
                 self::$ARG['soft'] = 1;
-                STest_File_Commands::test($T);
+                $failed = STest_File_Commands::test($T);
                 unset(self::$ARG['soft']);
             }
+            self::$FAILED += (int) $failed;
+            return (int) $failed;
         }
+        return 0;
     }
 
     protected static function parseArgs($argv) {
@@ -612,6 +628,11 @@ class STest_Global_Commands {
 class STest_File_Commands {
 
     // static function $Option(ParsedTest $T, $option_value)
+    private static $softNeeded = false;
+
+    static function softNeeded(): bool {
+        return self::$softNeeded;
+    }
 
 
     /** default action:
@@ -620,6 +641,7 @@ class STest_File_Commands {
      * -g | --generate - regenerate test, ignore errors
      */
     static function test(array /* parsed-test */ $__TEST) {
+        self::$softNeeded = false;
         $__t = (object)[ // dummy object used to hide variables
             'T' => $__TEST,
             'fail' => 0, 'new' => 0, 'reformat' => 0, 'softNeeded' => 0, 'tests' => 0,
@@ -809,12 +831,13 @@ class STest_File_Commands {
                 $__err("{alert}$reason{/} at line $__line: $m\n    {cyan}$__code{/}");
             }
             i('reporter')->$reason($__t->filename, ['message' => $m, 'tests' => $__t->tests, 'new' => $__t->new, 'fail' => $__t->fail, 'details' => $__t->details]);
-            return 0;
+            return $reason === "Stop" ? 0 : max(1, $__t->fail);
         }
 
         // formatting-only mismatch found: defer reporting/saving to the soft-regen pass
         if ($__t->softNeeded && !($ARG['soft'] ?? 0)) {
-            return 1;
+            self::$softNeeded = true;
+            return 0;
         }
 
         $dur = microtime(1) - $__t->start;
@@ -843,7 +866,7 @@ class STest_File_Commands {
         if ($ARG['alert']??0)
             $how = "alert";
         i('reporter')->$how($__t->filename, array_filter(['tests' => $__t->tests, 'new' => $__t->new, 'reformat' => $__t->reformat, 'fail' => $__t->fail, 'details' => $__t->details]));
-        return 0;
+        return $__t->fail;
     }
 
     // get useful part of exception's backtrace as string
