@@ -59,7 +59,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.3.17"; // 2026-06-22
+const VERSION = "3.3.18"; // 2026-06-25
 
 //
 // INTERNAL
@@ -79,6 +79,7 @@ class STest {
     static $URL = "";     // last URL used, if set used as REFERRER
     static $PATH = "";    // last PATH used
     static $COOKIE = [];  // array cookie => value
+    static $WebTest_TIMEOUT = 15;  // curl connect/transfer timeout (sec) for web tests; tests may override
 
     static $DIR;           // current directory
 

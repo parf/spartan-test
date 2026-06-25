@@ -17,6 +17,15 @@ default is `https://` version; to test http - specify it explicitly `\STest::dom
 hint: use `--debug=9 -v` to debug your web test
 
 
+## Request Timeout
+
+Web requests use a curl connect/transfer timeout of `15` seconds by default.
+Override it (per test, before the requests) via the `STest::$WebTest_TIMEOUT` property:
+```
+; STest::$WebTest_TIMEOUT = 5;   # seconds; applies to all following GET / POST / JSONPOST
+```
+
+
 ## Running The Web Test Examples
 
 The examples in `examples/3-web-tests/` expect a local test server to be

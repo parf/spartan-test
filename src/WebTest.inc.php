@@ -66,7 +66,7 @@ class WebTest {
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => json_encode($kv)
         ];
-        $r = \hb\Curl::rq($d.$path, [], "POST", $opts, ['headers' => 1]);
+        $r = \hb\Curl::rq($d.$path, [], "POST", $opts, ['headers' => 1, 'timeout' => STest::$WebTest_TIMEOUT]);
         STest::$HEADERS = [];
         foreach ($r['headers'] ?? [] as $h => $v) {
             STest::$HEADERS[ucwords($h, "-")] = $v;  // "Set-Cookie" - use correct capitalization
@@ -101,7 +101,7 @@ class WebTest {
             $curl_opts += [CURLOPT_COOKIE => join("; ", $s)];
             #var_dump($curl_opts);
         }
-        $r = \hb\Curl::rq($d.$path, $args, $method, $curl_opts, ['headers' => 1]);
+        $r = \hb\Curl::rq($d.$path, $args, $method, $curl_opts, ['headers' => 1, 'timeout' => STest::$WebTest_TIMEOUT]);
         // HEADERS
         STest::$HEADERS = [];
         foreach ($r['headers'] ?? [] as $h => $v) {

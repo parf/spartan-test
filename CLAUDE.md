@@ -168,6 +168,8 @@ Web tests maintain state across requests:
 - `STest::$HEADERS` - Response headers
 - `STest::$INFO` - Full curl response info
 
+Configurable input: `STest::$WebTest_TIMEOUT` (default `15`) — curl connect/transfer timeout in seconds for web requests; a test may set it before issuing requests (`; STest::$WebTest_TIMEOUT = 5;`). Passed through `WebTest::rq()`/`jsonPost()` into `Curl::rq()`'s `timeout` opt.
+
 Realms allow testing against different environments (dev/staging/prod) by modifying domain dynamically via `--realm` option or environment variables.
 
 ### Result Comparison
