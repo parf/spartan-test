@@ -120,7 +120,7 @@ fi
 
 # show errors only (in STDERR)
 if [[ $quiet == 1 ]]; then
-  list_tests | parallel -j0 "$stest_bin {} -s"
+  list_tests | parallel -j0 "$stest_bin {} -q"
   exit $?
 fi
 

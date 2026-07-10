@@ -38,6 +38,12 @@ $run("$bin " . escapeshellarg($fail)) !== 0;
 $run("$bin " . escapeshellarg($fail) . " -s") !== 0;
     true;
 
+$run("$bin " . escapeshellarg($fail) . " -q") !== 0;
+    true;
+
+$run("$bin --help 2>&1 | grep -q -- '-s, -q'");
+    0;
+
 $run("$bin " . escapeshellarg($fail) . " --cron") !== 0;
     true;
 

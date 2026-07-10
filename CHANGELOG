@@ -1,3 +1,4 @@
+2026-07-10 - V3.3.19 - Add `stest -q` as an alias for `-s`, matching stest-all quiet mode; document and regression-test the alias.
 2026-06-25 - V3.3.18 - Web tests: configurable curl timeout via STest::$WebTest_TIMEOUT (default 15s). Set it in a test (e.g. "; STest::$WebTest_TIMEOUT = 5;") to override the connect/transfer timeout for all following GET/POST/JSONPOST requests.
 2026-06-22 - V3.3.17 - Suppress PHP 8.5's no-op ReflectionMethod::setAccessible() deprecation during test eval, preserving project error handlers; update framework wording to PHP 8.5.
 2026-06-22 - V3.3.16 - Clarify stest-all executable-only default and add --all to include non-executable .stest files for listing and execution.

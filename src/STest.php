@@ -59,7 +59,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.3.18"; // 2026-06-25
+const VERSION = "3.3.19"; // 2026-07-10
 
 //
 // INTERNAL
@@ -87,6 +87,7 @@ class STest {
     static $optionExpand = [
         // shortOption to longOption
         's' => 'silent',            // show only errors
+        'q' => 'silent',            // quiet alias, matching stest-all
         'g' => 'generate',          // force test file overwriting, ignore test errors
         'S' => ['silent' => 0],     // no-silent
         'c' => 'color',             // force color
@@ -478,7 +479,7 @@ class STest_Global_Commands {
     }
 
     /**
-     * (-s) show errors on STDERR only, suppress any STDOUT
+     * (-s, -q) show errors on STDERR only, suppress any STDOUT
      */
     static function silent() {
     }
