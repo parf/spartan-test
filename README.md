@@ -21,6 +21,11 @@ Write your tests in style:
 
 * To see more help just run `stest --help` or `stest-all --help`
 
+`STest::stop($message)` intentionally skips the rest of the current test file. A stopped
+test is successful: it calls `Reporter::stop()` and contributes exit status `0` to
+`stest`, `stest-all`, CI, and cron runs. `STest::error()` and `STest::alert()` are the
+failure paths: they terminate the current file and contribute nonzero status.
+
 
 # Composer / Laravel Autoload Integration
 Upon start spartan test includes `bootstrap/autoload.php` or `vendor/autoload` or `init.php` file from current or parent directories

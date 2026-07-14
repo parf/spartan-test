@@ -105,7 +105,8 @@ class STest {
     //
 
     /**
-     * stop test execution successfully
+     * intentionally skip the rest of this test file successfully
+     * calls Reporter::stop(), does not increment failures, and contributes exit status 0
      * can be overridden by "--force"
      *
      * Usage:
@@ -502,7 +503,7 @@ class STest_Global_Commands {
     }
 
     /**
-     * (-f) ignore \STest::stop, stop on \STest::Error/Alert however
+     * (-f) ignore \STest::stop (successful skip, exit 0); \STest::error/alert remain failures
      */
     static function force() {
     }

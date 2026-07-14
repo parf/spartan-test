@@ -105,11 +105,13 @@ Instead of result you can use one(or more) advanced tests
 # Built-in STest Methods
 
 - `STest::domain()` - @see web-tests
-- `STest::stop($message)` - stop test execution w/o error  (`--force` option ignores all ::stop)\
+- `STest::stop($message)` - intentionally skip the rest of the current test file successfully. It calls
+  `Reporter::stop()`, does not increment the failure count, and contributes process exit status `0` to
+  direct `stest`, `stest-all`, CI, and cron runs. The `--force` option ignores all `::stop` calls.\
    example: `if (date("l") != "Monday") \STest::stop("Monday-only test");`
-- `STest::stop($message, int $until_yyyymmdd)` - disable test until date
-- `STest::error($message)` - stop test execution with Error
-- `STest::alert($message)` - stop test execution with Alert
+- `STest::stop($message, int $until_yyyymmdd)` - successfully disable the test until the date; execution resumes on that date
+- `STest::error($message)` - terminate the current test file as a failure, call `Reporter::error()`, and contribute nonzero status
+- `STest::alert($message)` - terminate the current test file as a failure, call `Reporter::alert()`, and contribute nonzero status
 - `STest::debug($message, $level)` - show text to STDERR when `--debug=$level >= $level`
 - `STest::inspect(/* "object | string className" */ $object, $show_line = 0)` - backend for `? object`
 - `STest::runTest($file)`  -  execute OTHER stest in current context
