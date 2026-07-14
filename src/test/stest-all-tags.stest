@@ -1,0 +1,132 @@
+#!/usr/bin/env stest
+# stest-all file tags select complete test files before parallel execution.
+
+; $self = realpath(\stest\i('stest')->file);
+; $root = realpath(dirname($self, 3));
+; $tmp = sys_get_temp_dir() . "/stest-all-tags-" . getmypid();
+; exec("rm -rf " . escapeshellarg($tmp));
+; mkdir($tmp, 0777, true);
+; register_shutdown_function(function () use ($tmp) {
+    exec("rm -rf " . escapeshellarg($tmp));
+  });
+; $tagDir = "$tmp/tags";
+; $runDir = "$tmp/run";
+; $invalidDir = "$tmp/invalid";
+; mkdir($tagDir);
+; mkdir($runDir);
+; mkdir($invalidDir);
+; $stest = escapeshellarg($root . "/bin/stest");
+; $all = escapeshellarg($root . "/bin/stest-all");
+; $write = function (string $dir, string $name, array $headers, bool $pass = true, int $mode = 0755): string {
+    $file = "$dir/$name.stest";
+    $lines = array_merge(
+      ["#!/usr/bin/env stest"],
+      $headers,
+      ["1+1;", $pass ? "    2;" : "    3;"]
+    );
+    file_put_contents($file, implode("\n", $lines) . "\n");
+    chmod($file, $mode);
+    return $file;
+  };
+; $write($tagDir, "untagged", []);
+; $prod = $write($tagDir, "prod", ["# @tag prod"]);
+; $prodLong = $write($tagDir, "prod-long", ["# @tag prod long"]);
+; $write($tagDir, "smoke", ["# @tag smoke"]);
+; $requiredProd = $write($tagDir, "required-prod", ["# @require-tag prod stage"]);
+; $write($tagDir, "required-prod-long", ["# @tag long", "# @require-tag prod"]);
+; $write($tagDir, "late-required", ["# line 2", "# line 3", "# line 4", "# @require-tag hidden"]);
+; $write($tagDir, "nonexec-prod", ["# @tag prod"], true, 0644);
+; touch($prod, time() - 3 * 24 * 60 * 60);
+; touch($requiredProd, time() - 60);
+; touch($prodLong, time());
+; $list = function (string $args = "", ?string $dir = null) use ($all, $tagDir): array {
+    $dir ??= $tagDir;
+    $out = [];
+    exec("$all --list $args " . escapeshellarg($dir) . " 2>/dev/null", $out, $code);
+    sort($out);
+    return [$code, $out];
+  };
+; $run = function (string $args = "", ?string $dir = null) use ($all, $tagDir): int {
+    $dir ??= $tagDir;
+    exec("$all $args " . escapeshellarg($dir) . " >/dev/null 2>&1", $out, $code);
+    return $code;
+  };
+
+$list();
+    [0, ['./late-required.stest', './prod-long.stest', './prod.stest', './smoke.stest', './untagged.stest']];
+
+$list("--tag=prod");
+    [0, ['./prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest']];
+
+$list("--tag=" . escapeshellarg("prod -long"));
+    [0, ['./prod.stest', './required-prod.stest']];
+
+$list("--tag=-long");
+    [0, ['./late-required.stest', './prod.stest', './smoke.stest', './untagged.stest']];
+
+$list("--tag=long");
+    [0, ['./prod-long.stest']];
+
+$list("--tag=stage");
+    [0, ['./required-prod.stest']];
+
+$list("--tag=prod --tag=smoke");
+    [0, ['./prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest', './smoke.stest']];
+
+$list("--tag=prod,smoke");
+    [0, ['./prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest', './smoke.stest']];
+
+$list("--all --tag=prod");
+    [0, ['./nonexec-prod.stest', './prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest']];
+
+$list("--tag=" . escapeshellarg("prod -long") . " --new");
+    [0, ['./required-prod.stest']];
+
+$list("--tag=" . escapeshellarg("prod -long") . " --recent");
+    [0, ['./required-prod.stest']];
+
+$list("--tag=missing");
+    [0, []];
+
+; $write($runDir, "required-fail", ["# @require-tag dangerous", "# @tag blocked"], false);
+; $write($runDir, "normal-pass", ["# @tag safe"], true);
+; $write($runDir, "nonexec-required-fail", ["# @require-tag dangerous"], false, 0644);
+
+$run("", $runDir);
+    0;
+
+$run("--tag=dangerous", $runDir) !== 0;
+    true;
+
+$run("--tag=" . escapeshellarg("dangerous -blocked"), $runDir);
+    0;
+
+$run("--all --tag=dangerous", $runDir) !== 0;
+    true;
+
+; $directOutput = [];
+; exec("$stest --tag=dangerous " . escapeshellarg("$runDir/required-fail.stest") . " >/dev/null 2>&1", $directOutput, $directCode);
+
+$directCode !== 0;
+    true;
+
+; $write($invalidDir, "invalid-definition", ["# @tag prod ???"]);
+
+$list("", $invalidDir)[0] !== 0;
+    true;
+
+$list("--tag=-")[0] !== 0;
+    true;
+
+$list("--tag=")[0] !== 0;
+    true;
+
+; $helpOutput = [];
+; exec("$all --help 2>&1", $helpOutput, $helpCode);
+; $help = implode("\n", $helpOutput);
+
+str_contains($help, "--tag='prod -long'");
+    true;
+
+str_contains($help, "@require-tag");
+    true;

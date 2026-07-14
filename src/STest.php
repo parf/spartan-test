@@ -22,7 +22,6 @@ use function stest\helper\cut;
  * todo:
  *  - use color schemes instead of actual colors - implement at least two lightBG, darkBG (three - phpStorm terminal changes some colors)
  *  - web services testing
- *  - finish tags
  */
 
 include __DIR__ . "/Helpers.inc.php";
@@ -59,7 +58,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.3.20"; // 2026-07-13
+const VERSION = "3.3.21"; // 2026-07-13
 
 //
 // INTERNAL
@@ -580,22 +579,6 @@ class STest_Global_Commands {
      * suggested use - specify 'init' in `stest.config` file @ root of your project
      */
     static function init($v) {
-    }
-
-    /**
-     * execute text based on tag value and "# @tag space-demimited-tag-list" tag comment, @see --tag for more details
-     */
-    static function tag($v) {
-        if ($v === true) {
-            $e = [i('out'), 'e'];
-            $e("{head}STest --tag=\"...\" option{/}\n");
-            $e("comma separated list of tag groups, test will be executed if it matches any group\n");
-            $e("{blue}tag1,tag2,tag3{/} - execute test if it have tag1 or tag2 or tag3\n");
-            $e("{blue}tag1 tag2,tag3{/} - execute test if it have (tag1 and tag2) or tag3\n");
-            $e("{blue}-tag1{/} - execute test if it does NOT have tag1\n");
-            $e("{blue}tag1 -tag2{/} - execute test if it have tag1 and does not have tag2\n");
-        }
-        return "";
     }
 
     /**
@@ -1158,13 +1141,6 @@ class STest_File_Commands {
         }
         return self::save($T);
     }
-
-    /**
-     * Execute test that matches given tags description, @see --tag for details
-     */
-    #static function tag($v) {
-    #
-    #}
 
     /**
      * show parsed unprocessed test text

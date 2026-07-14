@@ -91,6 +91,43 @@ Instead of result you can use one(or more) advanced tests
 
 @see [special tests](https://github.com/parf/spartan-test/blob/main/examples/1-basics/special-tests.stest)
 
+## stest-all file tags
+
+Tags select complete files during `stest-all` discovery. They do not select individual
+expressions, and direct `stest file.stest` execution does not filter by them.
+
+Declare tags in the first four physical lines of the file. The executable shebang is
+line one. Declarations after line four are ordinary comments and are ignored by
+`stest-all`.
+
+```text
+#!/usr/bin/env stest
+# @tag web smoke long
+# @require-tag prod staging
+```
+
+- `@tag web smoke long` declares normal tags. The file runs normally when `--tag` is omitted.
+- `@require-tag prod staging` makes the file opt-in. `prod` or `staging` must be explicitly
+  requested as a positive tag.
+- Positive selector tags are alternatives: `--tag="prod smoke"` means `prod` OR `smoke`.
+- A selector prefixed with `-` excludes matching files: `--tag="prod -long"` selects
+  `prod` files except those also tagged `long`.
+- Negative selectors never satisfy `@require-tag`. With `--tag=-long`, required-tag
+  files remain skipped because no required tag was positively requested.
+- Repeated `--tag` options and comma-separated values are merged using the same rules.
+- `--all` includes non-executable `.stest` files but does not override `@require-tag`.
+
+Selection order is executable/`--all`, then `--recent`, tags, `--new`, and finally
+execution or `--list`. Examples:
+
+```bash
+stest-all --tag=smoke
+stest-all --tag="prod -long" --recent=2day
+stest-all --list --all --tag=staging --new=4
+```
+
+See [tagged-test.stest](examples/1-basics/tagged-test.stest) for file metadata syntax.
+
 ### You can have several Advanced tests for one expression
 
 ```

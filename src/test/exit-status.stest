@@ -161,12 +161,22 @@ $run("$path $all " . escapeshellarg($mixedDir)) !== 0;
 
 ; $fakeBin = "$tmp/fake-bin";
 ; mkdir($fakeBin);
-; file_put_contents("$fakeBin/find", "#!/bin/sh\necho forced-find-error >&2\nexit 42\n");
+; $discoveryMarker = "$tmp/discovery-test-ran";
+; $discoveryTest = "$passDir/discovery-marker.stest";
+; $discoveryTestText = "#!/usr/bin/env stest\n"
+    . "; file_put_contents(" . var_export($discoveryMarker, true) . ", \"ran\");\n"
+    . "1;\n    1;\n";
+; file_put_contents($discoveryTest, $discoveryTestText);
+; chmod($discoveryTest, 0755);
+; file_put_contents("$fakeBin/find", "#!/bin/sh\necho ./discovery-marker.stest\necho forced-find-error >&2\nexit 42\n");
 ; chmod("$fakeBin/find", 0755);
 ; $findFailurePath = "PATH=" . escapeshellarg($fakeBin . ":" . $root . "/bin:" . getenv("PATH"));
 
 $run("$findFailurePath $all -q " . escapeshellarg($passDir)) !== 0;
     true;
+
+file_exists($discoveryMarker);
+    false;
 
 ; $recentDir = "$tmp/recent-dir";
 ; mkdir($recentDir);
