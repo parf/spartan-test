@@ -18,8 +18,8 @@ Line read can be a:
       any formatting you like
     - if the stored result differs in VALUE, an error is generated (the result is not changed;
       use `stest -g` to force-overwrite all results)
-    - `stest -g` exits successfully for regenerated differences, but exits nonzero if the
-      updated test file cannot be saved
+    - `stest -g` exits successfully for regenerated differences, but exits nonzero if an
+      input file cannot be read or an updated test file cannot be saved
 
 * STest catches
     - Return values

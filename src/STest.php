@@ -58,7 +58,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.3.24"; // 2026-07-14
+const VERSION = "3.3.25"; // 2026-07-14
 
 //
 // INTERNAL
@@ -388,9 +388,6 @@ class STest {
             $T = helper\Parser::Reader($file);
         } catch (\Exception $ex) {
             i('out')->err("*** {alert}$file{/}. Error: " . $ex->getMessage() . "\n");
-            if (self::$ARG['generate'] ?? 0) {
-                return 0;
-            }
             self::$FAILED += 1;
             return 1;
         }

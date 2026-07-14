@@ -12,12 +12,14 @@
 ; $tagDir = "$tmp/tags";
 ; $runDir = "$tmp/run";
 ; $invalidDir = "$tmp/invalid";
+; $emptyTagDir = "$tmp/empty-tag";
 ; $symlinkDir = "$tmp/symlink";
 ; $headerDir = "$tmp/headers";
 ; $formsDir = "$tmp/forms";
 ; mkdir($tagDir);
 ; mkdir($runDir);
 ; mkdir($invalidDir);
+; mkdir($emptyTagDir);
 ; mkdir($symlinkDir);
 ; mkdir($headerDir);
 ; mkdir($formsDir);
@@ -139,6 +141,9 @@ $list("--tag=prod --tag=smoke");
 $list("--tag=prod,smoke");
     [0, ['./prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest', './smoke.stest']];
 
+$list("--tag=" . escapeshellarg("prod smoke"));
+    [0, ['./prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest', './smoke.stest']];
+
 $list("--all --tag=prod");
     [0, ['./nonexec-prod.stest', './prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest']];
 
@@ -187,15 +192,26 @@ $run("--all --tag=dangerous", $runDir);
     2;
 
 ; $directOutput = [];
-; exec("$stest --tag=dangerous " . escapeshellarg("$runDir/required-fail.stest") . " >/dev/null 2>&1", $directOutput, $directCode);
+; exec("$stest --tag=dangerous " . escapeshellarg("$runDir/required-fail.stest") . " 2>&1", $directOutput, $directCode);
+; $directText = implode("\n", $directOutput);
 
 $directCode;
     1;
 
+str_contains($directText, "expect:") && str_contains($directText, "got:");
+    true;
+
 ; $write($invalidDir, "invalid-definition", ["# @tag prod ???"]);
+; $write($emptyTagDir, "empty-definition", ["# @tag"]);
 
 $list("", $invalidDir)[0];
     2;
+
+$list("", $emptyTagDir)[0];
+    2;
+
+$list("--tag")[0];
+    1;
 
 $list("--tag=-")[0];
     2;

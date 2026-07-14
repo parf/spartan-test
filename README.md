@@ -29,7 +29,8 @@ called and the process exits nonzero. `STest::error()` and `STest::alert()` are 
 explicit failure paths and also contribute nonzero status.
 
 `stest --generate` intentionally suppresses test failures while regenerating results.
-It still exits nonzero when the regenerated file cannot be saved.
+It still exits nonzero when an input file cannot be read or a regenerated file cannot
+be saved.
 
 ## Selecting tagged tests with stest-all
 

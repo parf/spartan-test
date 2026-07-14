@@ -3,7 +3,7 @@
 // You can successfully or unsuccessfully stop test
 //
 
-# this test will FAIL, this is intentional !!!
+# This test passes as-is; --test-error, --test-alert, or --no-db exercise terminal paths.
 
 # --test-stop
 # STest::stop - successful skip: call Reporter->stop and contribute process exit status 0
@@ -25,7 +25,7 @@
 // try to run this test
 // 1. as-is (try to use -v aka --verbose)
 // 2. with --no-db option  (emulate OK-database failure) - STest::stop case
-// 3. with --no-db --force options - STest::erorr case
+// 3. with --no-db --force options - STest::error case
 // 4. with --test-alert option
 //
 

@@ -53,9 +53,8 @@ $run("$bin " . escapeshellarg($generateFail) . " --generate");
 $run("$bin " . escapeshellarg("$tmp/missing.stest"));
     1;
 
-# --generate intentionally remains successful even when an input cannot be read.
 $run("$bin " . escapeshellarg("$tmp/missing.stest") . " --generate");
-    0;
+    1;
 
 ; $setupWarning = "$tmp/setup-warning.stest";
 ; file_put_contents($setupWarning, "#!/usr/bin/env stest\n; trigger_error(\"setup broken\", E_USER_WARNING);\n");
@@ -106,6 +105,10 @@ $run("$bin " . escapeshellarg($fail) . " --first_error -q");
     . var_export($reporterMarker, true) . ", 'stop'); }\n"
     . "  function fail(string \$test, array \$stats = []) { file_put_contents("
     . var_export($reporterMarker, true) . ", 'fail'); }\n"
+    . "  function error(string \$test, array \$stats = []) { file_put_contents("
+    . var_export($reporterMarker, true) . ", 'error'); }\n"
+    . "  function alert(string \$test, array \$stats = []) { file_put_contents("
+    . var_export($reporterMarker, true) . ", 'alert'); }\n"
     . "}\n";
 ; file_put_contents("$reporterDir/reporter-init.php", $reporterInit);
 ; file_put_contents(
@@ -176,6 +179,23 @@ $run("$bin " . escapeshellarg($terminalAlert) . " -q");
 
 $run("$bin " . escapeshellarg($terminalAlert) . " --force -q");
     1;
+
+; file_put_contents("$reporterDir/error.stest", "#!/usr/bin/env stest\n; STest::error('broken');\n");
+; file_put_contents("$reporterDir/alert.stest", "#!/usr/bin/env stest\n; STest::alert('broken');\n");
+; chmod("$reporterDir/error.stest", 0755);
+; chmod("$reporterDir/alert.stest", 0755);
+
+$run("$bin " . escapeshellarg("$reporterDir/error.stest") . " -q");
+    1;
+
+file_get_contents($reporterMarker);
+    'error';
+
+$run("$bin " . escapeshellarg("$reporterDir/alert.stest") . " -q");
+    1;
+
+file_get_contents($reporterMarker);
+    'alert';
 
 ; $expiredMarker = "$tmp/expired-stop-ran";
 ; $expiredStop = "$tmp/expired-stop.stest";
