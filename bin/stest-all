@@ -12,6 +12,7 @@ usage() {
   echo Options
   echo "  --list          : list selected tests instead of executing them"
   echo "  --all           : include non-executable .stest files"
+  echo "  -u, --unrestricted: include hidden, ignored, vendor, and node_modules files"
   echo "  --tag=prod      : select any requested tag; repeat or separate with comma/space"
   echo "  --tag='prod -long': select prod tests, excluding tests tagged long"
   echo "                     tests with @require-tag need an explicit positive match"
@@ -32,7 +33,7 @@ recent_minutes() {
   esac
 }
 
-discover_tests() {
+discover_with_find() {
   local find_args=(-name "*.stest")
   if [[ $all != 1 ]]; then
     find_args+=(-executable)
@@ -41,7 +42,48 @@ discover_tests() {
     find_args+=(-mmin "-$(recent_minutes "$recent")")
   fi
 
-  find . "${find_args[@]}"
+  if [[ $unrestricted == 1 ]]; then
+    find . "${find_args[@]}"
+  else
+    find . \( -type d \( -name vendor -o -name node_modules \) -prune \) -o \( "${find_args[@]}" -print \)
+  fi
+}
+
+discover_with_fd() {
+  local error_file status file
+  local fd_args=(--show-errors --strip-cwd-prefix=never -t f -t l -e stest)
+
+  if [[ $unrestricted == 1 ]]; then
+    fd_args+=(-u)
+  else
+    fd_args+=(--exclude vendor --exclude node_modules)
+  fi
+  if [[ -n "$recent" ]]; then
+    fd_args+=(--changed-within "$recent")
+  fi
+
+  error_file=$(mktemp "${TMPDIR:-/tmp}/stest-all-fd.XXXXXX") || return 1
+  fd "${fd_args[@]}" . 2> "$error_file" | while IFS= read -r file; do
+    if [[ $all == 1 || -x $file ]]; then
+      printf '%s\n' "$file"
+    fi
+  done
+  status=$?
+
+  if [[ -s $error_file ]]; then
+    cat "$error_file" >&2
+    status=1
+  fi
+  rm -f "$error_file"
+  return "$status"
+}
+
+discover_tests() {
+  if command -v fd >/dev/null 2>&1; then
+    discover_with_fd
+  else
+    discover_with_find
+  fi
 }
 
 valid_tag() {
@@ -196,6 +238,7 @@ list_tests() {
 quiet=0
 list=0
 all=0
+unrestricted=0
 recent=
 new=
 dir=
@@ -215,6 +258,9 @@ while [[ $# -gt 0 ]]; do
       ;;
     --all)
       all=1
+      ;;
+    -u|--unrestricted)
+      unrestricted=1
       ;;
     --tag=*)
       tag_filters+=("${1#--tag=}")

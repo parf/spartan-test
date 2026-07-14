@@ -116,6 +116,11 @@ line one. Declarations after line four are ordinary comments and are ignored by
   files remain skipped because no required tag was positively requested.
 - Repeated `--tag` options and comma-separated values are merged using the same rules.
 - `--all` includes non-executable `.stest` files but does not override `@require-tag`.
+- When `fd` is installed, hidden and ignored files are skipped by default. Use `-u` or
+  `--unrestricted` to include paths excluded by hidden-name rules, `.gitignore`,
+  `.ignore`, or `.fdignore`. `vendor` and `node_modules` directories are also skipped
+  by default with either discovery backend and included by `--unrestricted`. Systems
+  without `fd` use the `find` fallback.
 
 Selection order is executable/`--all`, then `--recent`, tags, `--new`, and finally
 execution or `--list`. Examples:
@@ -124,6 +129,7 @@ execution or `--list`. Examples:
 stest-all --tag=smoke
 stest-all --tag="prod -long" --recent=2day
 stest-all --list --all --tag=staging --new=4
+stest-all --list --all --unrestricted
 ```
 
 See [tagged-test.stest](examples/1-basics/tagged-test.stest) for file metadata syntax.

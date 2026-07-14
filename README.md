@@ -56,6 +56,14 @@ those tagged `long`; required-tag tests remain skipped. Tag selection composes w
 `--all`, `--recent`, `--new`, and `--list`. `--all` includes non-executable files but
 does not bypass `@require-tag`.
 
+When `fd` is installed, `stest-all` uses it for substantially faster discovery and
+follows its default hidden/ignore behavior. Hidden files and paths excluded by
+`.gitignore`, `.ignore`, or `.fdignore` are skipped. `vendor` and `node_modules`
+directories are also excluded by default with either discovery backend. Use `-u` or
+`--unrestricted` to include them. This is separate from `--all`: use both options to
+include ignored, hidden, dependency-directory, and non-executable `.stest` files.
+Systems without `fd` fall back to `find`.
+
 
 # Composer / Laravel Autoload Integration
 Upon start spartan test includes `bootstrap/autoload.php` or `vendor/autoload` or `init.php` file from current or parent directories

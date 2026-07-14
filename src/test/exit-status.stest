@@ -168,11 +168,11 @@ $run("$path $all " . escapeshellarg($mixedDir)) !== 0;
     . "1;\n    1;\n";
 ; file_put_contents($discoveryTest, $discoveryTestText);
 ; chmod($discoveryTest, 0755);
-; file_put_contents("$fakeBin/find", "#!/bin/sh\necho ./discovery-marker.stest\necho forced-find-error >&2\nexit 42\n");
-; chmod("$fakeBin/find", 0755);
-; $findFailurePath = "PATH=" . escapeshellarg($fakeBin . ":" . $root . "/bin:" . getenv("PATH"));
+; file_put_contents("$fakeBin/fd", "#!/bin/sh\necho ./discovery-marker.stest\necho '[fd error]: forced-fd-error' >&2\nexit 0\n");
+; chmod("$fakeBin/fd", 0755);
+; $discoveryFailurePath = "PATH=" . escapeshellarg($fakeBin . ":" . $root . "/bin:" . getenv("PATH"));
 
-$run("$findFailurePath $all -q " . escapeshellarg($passDir)) !== 0;
+$run("$discoveryFailurePath $all -q " . escapeshellarg($passDir)) !== 0;
     true;
 
 file_exists($discoveryMarker);

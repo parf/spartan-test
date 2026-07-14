@@ -12,9 +12,11 @@
 ; $tagDir = "$tmp/tags";
 ; $runDir = "$tmp/run";
 ; $invalidDir = "$tmp/invalid";
+; $symlinkDir = "$tmp/symlink";
 ; mkdir($tagDir);
 ; mkdir($runDir);
 ; mkdir($invalidDir);
+; mkdir($symlinkDir);
 ; $stest = escapeshellarg($root . "/bin/stest");
 ; $all = escapeshellarg($root . "/bin/stest-all");
 ; $write = function (string $dir, string $name, array $headers, bool $pass = true, int $mode = 0755): string {
@@ -36,6 +38,22 @@
 ; $write($tagDir, "required-prod-long", ["# @tag long", "# @require-tag prod"]);
 ; $write($tagDir, "late-required", ["# line 2", "# line 3", "# line 4", "# @require-tag hidden"]);
 ; $write($tagDir, "nonexec-prod", ["# @tag prod"], true, 0644);
+; mkdir("$tagDir/vendor");
+; $write("$tagDir/vendor", "vendor-prod", ["# @tag prod"]);
+; mkdir("$tagDir/node_modules");
+; $write("$tagDir/node_modules", "node-prod", ["# @tag prod"]);
+; exec("command -v fd >/dev/null 2>&1", $fdOutput, $fdCode);
+; $hasFd = $fdCode === 0;
+; if ($hasFd) {
+    $write($tagDir, ".hidden-prod", ["# @tag prod"]);
+    mkdir("$tagDir/ignored");
+    $write("$tagDir/ignored", "ignored-prod", ["# @tag prod"]);
+    file_put_contents("$tagDir/.gitignore", "ignored/\n");
+  }
+; $symlinkTarget = "$symlinkDir/target";
+; file_put_contents($symlinkTarget, "#!/usr/bin/env stest\n# @tag prod\n1;\n    1;\n");
+; chmod($symlinkTarget, 0755);
+; symlink("target", "$symlinkDir/link.stest");
 ; touch($prod, time() - 3 * 24 * 60 * 60);
 ; touch($requiredProd, time() - 60);
 ; touch($prodLong, time());
@@ -78,6 +96,19 @@ $list("--tag=prod,smoke");
 
 $list("--all --tag=prod");
     [0, ['./nonexec-prod.stest', './prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest']];
+
+; $unrestrictedExpected = ['./node_modules/node-prod.stest', './nonexec-prod.stest', './prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest', './vendor/vendor-prod.stest'];
+; if ($hasFd) {
+    $unrestrictedExpected[] = './.hidden-prod.stest';
+    $unrestrictedExpected[] = './ignored/ignored-prod.stest';
+    sort($unrestrictedExpected);
+  }
+
+$list("--unrestricted --all --tag=prod") === [0, $unrestrictedExpected];
+    true;
+
+$list("--tag=prod", $symlinkDir);
+    [0, ['./link.stest']];
 
 $list("--tag=" . escapeshellarg("prod -long") . " --new");
     [0, ['./required-prod.stest']];
