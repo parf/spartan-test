@@ -58,7 +58,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.3.22"; // 2026-07-13
+const VERSION = "3.3.23"; // 2026-07-14
 
 //
 // INTERNAL
@@ -834,8 +834,9 @@ class STest_File_Commands {
             } else {
                 $__err("{alert}$reason{/} at line $__line: $m\n    {cyan}$__code{/}");
             }
-            i('reporter')->$reason($__t->filename, ['message' => $m, 'tests' => $__t->tests, 'new' => $__t->new, 'fail' => $__t->fail, 'details' => $__t->details]);
-            return $reason === "Stop" ? 0 : max(1, $__t->fail);
+            $reportReason = $reason === "Stop" && $__t->fail ? "fail" : $reason;
+            i('reporter')->$reportReason($__t->filename, ['message' => $m, 'tests' => $__t->tests, 'new' => $__t->new, 'fail' => $__t->fail, 'details' => $__t->details]);
+            return $reason === "Stop" ? (int) $__t->fail : max(1, $__t->fail);
         }
 
         // formatting-only mismatch found: defer reporting/saving to the soft-regen pass

@@ -148,9 +148,11 @@ See [tagged-test.stest](examples/1-basics/tagged-test.stest) for file metadata s
 # Built-in STest Methods
 
 - `STest::domain()` - @see web-tests
-- `STest::stop($message)` - intentionally skip the rest of the current test file successfully. It calls
-  `Reporter::stop()`, does not increment the failure count, and contributes process exit status `0` to
-  direct `stest`, `stest-all`, CI, and cron runs. The `--force` option ignores all `::stop` calls.\
+- `STest::stop($message)` - intentionally skip the rest of the current test file successfully when no
+  test has already failed. It calls `Reporter::stop()`, does not increment the failure count, and
+  contributes process exit status `0` to direct `stest`, `stest-all`, CI, and cron runs. After a real
+  failure, including `--first_error`, the failure takes precedence: `Reporter::fail()` is called and the
+  process exits nonzero. The `--force` option ignores all `::stop` calls.\
    example: `if (date("l") != "Monday") \STest::stop("Monday-only test");`
 - `STest::stop($message, int $until_yyyymmdd)` - successfully disable the test until the date; execution resumes on that date
 - `STest::error($message)` - terminate the current test file as a failure, call `Reporter::error()`, and contribute nonzero status

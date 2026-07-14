@@ -83,6 +83,53 @@ $warningStopCode;
 file_get_contents($warningStopLog);
     '';
 
+; $failThenStop = "$tmp/fail-then-stop.stest";
+; $failThenStopText = "#!/usr/bin/env stest\n"
+    . "1+1;\n"
+    . "    3;\n"
+    . "; STest::stop(\"after failure\");\n";
+; file_put_contents($failThenStop, $failThenStopText);
+; chmod($failThenStop, 0755);
+
+$run("$bin " . escapeshellarg($failThenStop) . " -q") !== 0;
+    true;
+
+$run("$bin " . escapeshellarg($fail) . " --first_error -q") !== 0;
+    true;
+
+; $reporterDir = "$tmp/reporter";
+; $reporterMarker = "$reporterDir/result";
+; mkdir($reporterDir);
+; $reporterInit = "<?php\n"
+    . "class ExitStatusReporter extends \\stest\\helper\\Reporter {\n"
+    . "  function stop(string \$test, array \$stats = []) { file_put_contents("
+    . var_export($reporterMarker, true) . ", 'stop'); }\n"
+    . "  function fail(string \$test, array \$stats = []) { file_put_contents("
+    . var_export($reporterMarker, true) . ", 'fail'); }\n"
+    . "}\n";
+; file_put_contents("$reporterDir/reporter-init.php", $reporterInit);
+; file_put_contents(
+    "$reporterDir/stest-config.json",
+    json_encode(['init' => 'reporter-init.php', 'reporter' => 'ExitStatusReporter'])
+  );
+; file_put_contents("$reporterDir/fail-stop.stest", $failThenStopText);
+; chmod("$reporterDir/fail-stop.stest", 0755);
+
+$run("$bin " . escapeshellarg("$reporterDir/fail-stop.stest") . " -q") !== 0;
+    true;
+
+file_get_contents($reporterMarker);
+    'fail';
+
+; file_put_contents("$reporterDir/stop.stest", "#!/usr/bin/env stest\n; STest::stop('skip');\n");
+; chmod("$reporterDir/stop.stest", 0755);
+
+$run("$bin " . escapeshellarg("$reporterDir/stop.stest") . " -q");
+    0;
+
+file_get_contents($reporterMarker);
+    'stop';
+
 ; $futureMarker = "$tmp/future-stop-ran";
 ; $futureStop = "$tmp/future-stop.stest";
 ; $futureStopText = "#!/usr/bin/env stest\n"

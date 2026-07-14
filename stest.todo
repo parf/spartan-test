@@ -1,401 +1,72 @@
-# Spartan Test 3.x todo (PlainTask format)
-
-2022-??-??:
- ☐ STest
-   [x] STest::domain("radaris.com")   -- default https:// ;  honors realm
-   [x] stest --realm  -- support custom-provided realm function
-     default: STest::realm($realm, $schema, $host)
-     
-   ☐ STest::once("1day")  - run *unmodified* script once a day only
-      use filemtime(script); keep in /tmp/stest/...
-   ☐ STest::once($to, "Class1 Class2")  - use max( filemtime( test, ... ClassDefFile($class) ))
-   ☐ STest::failOnce("1day")  - FAIL *unmodified* script once a day only
-   ☐ STest::suspend("yyyy-mm-dd", "period") -- disable REST of the test
-   ☐ STest::suspendError("yyyy-mm-dd", "period") .. ex: 1day 1week -
-      disable Errors as Errors reporting; test will be still executed
-   ☐ Stest --once - auto add once for a test ; --once=reset; --once=ignore
-   ☐ Stest --failOnce - FAIL *unmodified* script once a day only
-   ☐ stest-all -o "--extra args" (support passing args to all tests)
-   ☐ stest-all --realm    same-as   stest-all -o "--realm=..."
-   ☐ Stest --tag=tag,tag,-tag,+tag
-   ☐ stest-all --tag support
-   ☐ stest-all --parallel="args"
-   ☐ stest-all --find="args"
-   ☐ stest-all --once=""  == stest-all -o "--once=..."
-
-
-
-Ideas:
-
-- Php 8.1 code testing framework
-- Simple ez-to maintain tests implemented as PHP code
-- Integrated web testing framework
-- Pluggable alert & statistic modules
-- CI (continuous integration) systems integration
-- instant inotify-based tester - auto-activates when source file is saved
-- parallel test execution (using gnu-parallel)
-- git-push-test script. install script on "test" server, then do "git push test" to test
-
-
-
-TODO
- ☐ Web Test - post json for APIs - add syntax "POST-JS $uri $data"
-
- ☐ review examples, remove junk
-
- ☐ implement tags
-   tag,tag,-tag,+tag   ; "," works as &&; + work as "or"
-
- ☐ alerts
-    ☐ script | url
-
- ☐ universal hb-message package
-    ☐ url (get|post|post-js)
-    ☐ discord
-    ☐ telegram
-    ☐ twilio
-   ☐  SET: set of methods with priorities / settings
-    ☐ message.$method => descr
- ☐ universal hb-alert package
-   command 2>&1 >/dev/null | hb-alert
-    ☐ - spam control
-    ☐ - skip X (per method)
-    ☐ - escalation()
-    ☐ script | hb-message destination
-
- ☐ Confugurable alerting
-   @see messaging channels (u can configure multiple destinations, and rules there)
-   alert.$NAME
-
- ☐ better docs
-
-
- ☐ rename: STest::$DOMAIN to STest::$HOST
-
- ☐ parallel web testing /[url,url,url]
-
- ☐ failure detection
-
-
-OLD - review old ideas:
-
-
-
- Stest and tiers / environments:
-   ☐ tiers:
-     dvp  = development
-     test = staging, ci, stage
-     prod = production
-   ☐ default tier = "development"
-   ☐ specifying tier:
-     ☐ --tier="tier"   << force set tier
-     ☐ local config file
-       tier = "..."
-     ☐ global config file
-       ☐ tier:
-           dvp: host1, host2, host3
-   ☐ Using Tiers:
-     TIER == 'prod' {    << SYNTAX
-       ... TESTS
-     }
-     ☐  STest::$DOMAIN = ['tier' => ..., 'tier' =>]
-
-   ☐ Setting and using variables:
-     $NAME=XXX
-     STest::$DOMAIN = "$NAME.example.com"
-
-
-STEP 1:
-
-
-
- ☐ docs
-
- ☐ switch Error Handler Modes - stest mode around eval, report mode otherwise
-
- ☐ "@tag" support - analyze 1st 5-ve comments in file for "# @tag space-delimited tag list"
-    stest --tag="tag1 -tag2, tag3"   # (tag1 but no tag2) or (tag3)
-
-
-
-
- ☐ AutoGenerate test for a given class
-   ☐ static methods (along with params)
-   ☐ dynamic methods
-
- ☐ Split InstanceConfig to Instance and Config:  C(...)
-
-
- ☐ reporting:
-   success / fail / alert
-   ☐ --error-as-alert support
-
- ☐ incorporate smart array & string compare
-    incorporate smart string compare
-    show/highlight only changed / removed parts
-
-  ☐ STest::enable / disable
-    Ability to Skip Some Tests Based on user-defined conditions
-    ^^^ HOW TO RE-ENABLE ??? - need special syntax - ";; "
-
- ☐ --new << ?? - idea execute previous expression
-
- ☐ /[$urls] test - parallel curl test
-
-
-STEP 2:
-  * Web tests
-    * prod / stable / ci / local tests
-    easy switch
-  ☐ * "~ .. " tests
-    "~" = non empty string
-    ~ [301 => null]
-
- ☐ smart param parsing for Pages::dispatch
-
-STEP 3:
-  ☐ tags
-  ☐ run-all-tests (@tags)
-  ☐ inotify readers
-
-
-STEP 4:
-
-
-
-  ☐ web alert system
-  ☐ iphone / android notification app
-
-Features:
- ☐ New output format:
-   "code;"
-   "code;        # DESCRIPTION"     // if test failed you'll see "DESCRIPTION"
-   "    result;"                    // result as PHP code (var_export-alike)
-                                    // Exceptions and Classes are converted to Arrays (see examples)
-   "    ~ special-result-test;"     //
-   internally - every code-tests works like "$_ = eval($code)"
-
- ☐ Universal inotify-based php-linter & tester
-   parses out /** @test .... */
-
- ☐ SPECIAL RESULT checks
-   one expression can have several special tests
-   ☐ ~ "item"            // string exists in result (strpos() !== false)
-   ☐ ~ /RE/              // REGEXP on result
-   ☐ ~ [$item]           // item exists in array
-   ☐ ~ [$i1, $i2]        // items $i1, $i2 exists in array
-   ☐ ~ [$key => $item]   // key exists in array
-   ☐ ~ xp "xpath"        // treat result as XML/HTML, make sure xpath expression non-empty
-   ☐ ~ xp "xpath" == "x" // treat result as XML/HTML
-   ☐ ~ > $value          // make sure expression is true supported operations: (< > >= <= != ==)
-
- ☐ WEB Test integration
-   $DOMAIN = "site.com"
-   $DOMAIN = "https://site.com"
-   $DOMAIN = ["https://site.com", $IP]
-
-   \stest\domain("https://site.com");  // set root
-   /path?x=y             # same as \stest\curl("/path?x=y")
-   /path ["x" => "y"]
-   /path?params [php-params] [custom-headers] [cookies]
-   POST /path
-
-   special result tests
-   ~ http_code 301
-   ~ header "name"             # header exists
-   ~ header "name" == "value"  # check header value
-   ~ redirect "expected-redirect-location"
-   ~ cookie "name"
-
-   extra response (RS) fields: -
-      \stest\RS::$http_code    // last response http_code
-      \stest\RS::$headers
-      \stest\RS::$cookies
-
-   globally specifying custom headers: -
-      \stest\Curl::$headers    // \stest\Curl::$headers['User-Agent'] = "spartan-test 3.0"
-      \stest\Curl::$cookies    // currently accumulated cookies
-
-   ☐ Expects
-     ☐ RE
-     ☐ XPath
-       ☐ xp ....
-
-   ☐ Generic Errors Detection
-
- ☐ WEB API Tests (json)
-   ☐ json /path
-
- ☐ REMOTE API reporting (json & slack)
-   ☐ test execution
-   ☐ test failures (errors)
-   ☐ critical errors
-   ☐ local/remote alert system integration
-
- ☐ Execute All Tests
-   ☐ (with filters)
-     ☐ recently changed tests
-     ☐ recently changed files associated tests
-     ☐ scripts with TAG, scripts w/o tags
-     ☐ other filters
-   ☐ specify critical-tests in config file
-     ☐ critical tests executed first, if critical test is failed - no futher testing performed
-
- ☐ TESTS tagging
-   ☐ you can TAG scripts
-     TAG = any keyword
-     DOT = hierarhy.  TAG='db.mongo' is the same as TAG='db db.mongo'
-   ☐ # @TAGS: space delimited tag-list
-   you can see all defined tags (and counts)
-
- ☐ TEST-ACTIONS
-   users can specify action taken
-   ☐ on-first-fail action (php | web api)
-   ☐ on-test-fail action (php | web api)
-   ☐ on-success action (php | web api)
-
- ☐ Early / Conditional Test Execution Stop
-   ☐ Test Critical Part
-     ☐ Any error in critical part means stop test & report alert
-   ☐ e.g. stop DB test if DB connection failed
-   ☐ time based test ignore:
-     a. using script
-        allows to turn off test for some time, using json file (or cli tool)
-     b. using web service
-        including GITHUB
-
- ☐ autotest scripts
-    ☐ cron-based
-    ☐ inotify-based auto-test
-      ☐ PHP file specify its TESTS via "@test "
-      ☐ once file is changed - test is auto-executed
-    ☐ once-a-(hour-day-week) test support
-    ☐ no-parallel execution test support (via memcached)
-    ☐ linux desktop alerting
-    ☐ slack alerting
-
-  ☐ NO-KEY-SORT test option
-
- ☐ special TEST setting - stop-on-errors
-
- ☐ add special comment line at the top of the test successful test with datetime and server
-
- ☐ smart iNotify tracker. Test coverage report
-   - use get-included-files method to map tests to source files
-   - when source file is changed all system will execute all dependent tests
-
-Minor Features:
- ☐ smart comparison display: show in colors added/removed blocks
- ☐ multiline support
-
-Default behaviour:
- ☐ show added tests
- ☐ regen - show changed tests
-
-Implementation:
-
-  ☐ config file
-    location: test-directory and parent directories
-    name: stest-config.yaml.local, stest-config.yaml
-    if both files exists "local" config treated as a changeset
-    we suggest you add "*.local" to your ".gitignore" file
-
-    config file can be a "partial-or-override config"  (include-parent-config: true)
-       in this case it treated as a changeset for config from parent directory
-
-
-
-Unsorted Ideas:
- ☐ Add Option to show timing for every test line
-   * TEST-NAME
-   [12.3]
-
- ☐ place stest-config.yaml or .stest-config.yaml or stest-config.yaml.local
-   in one of parent directories
-   provide config there
-
- ☐ Class stest tempate generation / coverage report
-
-   spartan-test generate-test Class    >> generate "Class.stest" / update stest using all class methods
-   spartan-test generate-test --coverage Class    >> list methods w/o tests or with incomplete tests
-
-OLD:
-
- ☐ New spartan test
-   ☐ stop test ahead of time
-   ☐ web-test
-   ☐ json/xml services tests
-   ☐ do not escape results
-     present them as arrays with 4x"space" identation
-   ☐ allow to suppress sorting
-   ☐ compile tests into phar
-   ☐ integration with alert system
-   ☐ integration with stat system
-
-
-
-
-
-＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
-Archive:
- ✔ Web Test - check service presense on domain:port before first call, auto-fail if port is down @done (22-04-06 18:17) @project(Ideas)
-  ; $fp = fsockopen("127.0.0.2", 8080, $errno, $errstr, 5);
-  if (! $fp)
-  \STest::error("no webserver running on ".STest::$DOMAIN." : $errno / $errstr");
- ✘ isProd, isDVP, isCI @cancelled (22-04-06 16:14) @project(STEP 1)
- ✘ change POST syntax to "/path POST .." @cancelled (22-04-06 16:14) @project(STEP 1)
- ✘ ##X test ok, ##Y tests failed calls @cancelled (22-04-06 16:14) @project(STEP 1)
- ✘  Exception in init.php @cancelled (22-04-06 16:14) @project(STEP 1)
- ✔ composer package @done (22-04-06 16:14) @project(STEP 1)
-  https://knpuniversity.com/screencast/question-answer-day/create-composer-package
-  https://getcomposer.org/doc/articles/vendor-binaries.md
- ✘ stest && get_included_files @cancelled (22-04-06 16:13) @project(STEP 1)
- ✘ idea 2: .file @cancelled (22-04-06 16:13) @project(STEP 1)
- ✘ idea 1: same file @cancelled (22-04-06 16:13) @project(STEP 1)
- ✘ STEST - public static methods ONLY @cancelled (22-04-06 16:13) @project(STEP 1)
- ✔ run-all-tests (using parallel) @done (22-04-06 16:13) @project(STEP 1)
- ✔ parallel execution (via parallel) @done (22-04-06 16:13) @project(STEP 3)
- ✔ Web Test - check https ; http2.0 @done (22-04-06 16:11) @project(Ideas)
- ✔ TEST-result spacing @done (17-05-26 17:49) @project(STEP 1)
-  LINE 2      << 2 spaces - multi-line test
-  "RESULT"  << 4 spaces - TEST result
-  "3 spaces" << ERROR !!!
- ✔ missing line#: @done (17-05-24 16:18) @project(STEP 1)
-  ➤ ./test-1.stest
-  *** /rd/research.local/spartan-test/examples/3-web-tests/test-1.stest
-  Error at line : test_empty: Empty Response
- ✔ /URL [...] @done (17-05-22 10:05) @project(STEP 1)
- ✔ multi-line result @done (17-05-16 15:48) @project(STEP 1)
-  (ident 4 chars)
- ✔ ~ tests @done (17-05-12 17:13) @project(STEP 1)
-  ~ "SubString"
-  ~ [$ArrayItem]
-  ~ method $args
-  ~ is Class
- ✔ rewrite test loop @done (17-05-12 17:13) @project(STEP 1)
-  no early returns return
- ✔ rewrite special test - @done (17-05-12 17:13) @project(STEP 1)
-  should only return ERR !!!
- ✘ logs @cancelled (17-05-12 17:12) @project(STEP 1)
- ✔ testFailAlert @done (17-05-12 17:12) @project(STEP 1)
- ✔ Alerter:: @done (17-05-12 17:12) @project(STEP 1)
- ✔ Syslog, json @done (17-05-11 17:10) @project(STEP 1)
- ✔ syslog reporting @done (17-05-10 15:48) @project(STEP 1)
- ✔ config @done (17-05-10 14:23) @project(STEP 1)
- ✔ -h (doc) @done (17-05-08 15:48) @project(STEP 1)
- ✔ array sorting @done (17-05-08 13:05) @project(STEP 1)
- ✔ PHP notices & errors @done (17-05-08 13:05) @project(STEP 1)
- ✔ 1st error @done (17-05-08 10:38) @project(STEP 1)
- ✔ Console::e(" sprintf pattern ", ...) @done (17-05-08 10:21) @project(STEP 1)
- ✘ * special case for "if, for, foreach, switch" keywords @cancelled (17-05-05 13:37) @project(STEP 1)
- ✔ multi-line expressions and tests (right way) @done (17-05-05 13:37) @project(STEP 1)
-  special cases for expressions ("; x\n  x\n  x....") << 2 chars indent
- ✔ do not re-ident "; expressions" @done (17-05-05 13:37) @project(TODO )
- ✔ * simple tests @done (17-05-05 13:37) @project(STEP 1)
-  * basic options
-  * config reader
-  global, local
-  * execution policy
-  * reporting
- ✔ variable name clash @done (17-05-05 13:16) @project(TODO )
- ✔ Switch to i("XX") model - use common singletons @done (17-05-04 17:57) @project(STEP 1)
+# Spartan Test TODO
+
+Current roadmap. Completed, cancelled, duplicated, and historical items remain available
+in Git history instead of being mixed into the active list.
+
+Parser and syntax:
+ ☐ Support complete multi-line PHP syntax in `; code ...` definition blocks
+ ☐ Allow function and class definitions without the `;` prefix
+ ☐ Redesign critical-test syntax; current `!expr` conflicts with PHP's logical-not operator
+ ☐ Design conditional test sections that can be enabled again later in the file
+ ☐ Add a concise JSON API request syntax, including `POST-JS $uri $data`
+
+Execution control:
+ ☐ Add `STest::once($period)` for running an unchanged test once per period
+ ☐ Let `STest::once()` include source class modification times in its cache key
+ ☐ Add `STest::failOnce($period)` to suppress repeated reports for unchanged failures
+ ☐ Add CLI controls for once/fail-once state: enable, reset, and ignore
+ ☐ Generalize temporary suspension beyond the existing dated `STest::stop()`
+ ☐ Allow temporary suppression of failure reporting while still executing the test
+ ☐ Pass additional arguments from `stest-all` to every selected test
+ ☐ Add `stest-all --realm` as a standard forwarded option
+ ☐ Allow controlled GNU Parallel arguments through `stest-all`
+ ☐ Design explicit environments/tiers (`dvp`, `test`, `prod`) selected by CLI or config
+ ☐ Allow host, domain, and other test settings to vary by environment/tier
+ ☐ Support critical tests that run first and abort the suite when they fail
+ ☐ Support tests that must not execute in parallel
+
+Tags and selection:
+ ☐ List all defined tags with test counts
+ ☐ Evaluate hierarchical tags, e.g. `db.mongo` also matching `db`
+ ☐ Map changed source files to dependent tests, not only recently changed test files
+
+Comparison and output:
+ ☐ Show focused colored diffs for added, removed, and changed result sections
+ ☐ Improve smart string and nested array comparisons
+ ☐ Add relational result checks such as `~ > $value` and related operators
+ ☐ Add XPath result assertions for HTML/XML values
+ ☐ Show timing for individual test expressions
+ ☐ Optionally record the last successful run time and server in test metadata
+
+Web and API testing:
+ ☐ Add parallel URL execution syntax such as `/[$urls]`
+ ☐ Add first-class JSON API tests and assertions
+ ☐ Expand response assertions for headers, redirects, cookies, XPath, and generic errors
+ ☐ Improve parameter parsing for application dispatch integrations
+
+Reporting and alerts:
+ ☐ Add hooks for first failure, per-test failure, and success
+ ☐ Add configurable alert destinations and routing rules
+ ☐ Support script, URL, Slack, Discord, Telegram, and Twilio destinations
+ ☐ Add alert spam control, temporary suppression, priorities, and escalation
+ ☐ Add remote JSON reporting for runs, failures, and critical errors
+ ☐ Add `--error-as-alert`
+
+Automation and coverage:
+ ☐ Build an inotify-based runner that executes tests when source files change
+ ☐ Use `get_included_files()` to map tests to their source dependencies
+ ☐ Generate or update a test skeleton from a class and its methods
+ ☐ Report class methods without test coverage
+ ☐ Add a git-push test-server workflow
+ ☐ Add cron/inotify orchestration for once-per-period and dependency-based runs
+
+Configuration and architecture:
+ ☐ Evaluate YAML configuration with local overrides and parent inheritance
+ ☐ Split instance creation from configuration responsibilities
+ ☐ Evaluate renaming `STest::$DOMAIN` to `STest::$HOST`
+ ☐ Separate error-handler modes for test evaluation and reporting
+ ☐ Support configurable discovery/parallel options without exposing unsafe shell input
+
+Maintenance:
+ ☐ Review examples and remove obsolete or intentionally broken files from normal docs
+ ☐ Consolidate and improve user documentation

@@ -33,6 +33,14 @@ recent_minutes() {
   esac
 }
 
+recent_duration() {
+  local v="${1:-1day}"
+  case "$v" in
+    *day|*days) printf '%s\n' "$v" ;;
+    *) printf '%sday\n' "$v" ;;
+  esac
+}
+
 discover_with_find() {
   local find_args=(-name "*.stest")
   if [[ $all != 1 ]]; then
@@ -59,7 +67,7 @@ discover_with_fd() {
     fd_args+=(--exclude vendor --exclude node_modules)
   fi
   if [[ -n "$recent" ]]; then
-    fd_args+=(--changed-within "$recent")
+    fd_args+=(--changed-within "$(recent_duration "$recent")")
   fi
 
   error_file=$(mktemp "${TMPDIR:-/tmp}/stest-all-fd.XXXXXX") || return 1
@@ -145,7 +153,7 @@ parse_tag_selectors() {
 
 file_matches_tags() {
   local file=$1
-  local line directive definition token
+  local line directive definition token read_status
   local line_number=0
   local required_match=0
   local positive_match=0
@@ -157,8 +165,15 @@ file_matches_tags() {
     echo "Unable to read test file: $file" >&2
     return 2
   fi
-  while (( line_number < 4 )) && IFS= read -r line <&3; do
+  while (( line_number < 4 )); do
+    line=
+    IFS= read -r line <&3
+    read_status=$?
+    if [[ -z $line && $read_status != 0 ]]; then
+      break
+    fi
     ((line_number++))
+    line=${line%$'\r'}
     if [[ $line =~ ^[[:space:]]*#[[:space:]]*@(tag|require-tag)([[:space:]]+(.*))?$ ]]; then
       directive=${BASH_REMATCH[1]}
       definition=${BASH_REMATCH[3]}

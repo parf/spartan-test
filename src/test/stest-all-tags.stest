@@ -13,10 +13,12 @@
 ; $runDir = "$tmp/run";
 ; $invalidDir = "$tmp/invalid";
 ; $symlinkDir = "$tmp/symlink";
+; $headerDir = "$tmp/headers";
 ; mkdir($tagDir);
 ; mkdir($runDir);
 ; mkdir($invalidDir);
 ; mkdir($symlinkDir);
+; mkdir($headerDir);
 ; $stest = escapeshellarg($root . "/bin/stest");
 ; $all = escapeshellarg($root . "/bin/stest-all");
 ; $write = function (string $dir, string $name, array $headers, bool $pass = true, int $mode = 0755): string {
@@ -48,7 +50,7 @@
     $write($tagDir, ".hidden-prod", ["# @tag prod"]);
     mkdir("$tagDir/ignored");
     $write("$tagDir/ignored", "ignored-prod", ["# @tag prod"]);
-    file_put_contents("$tagDir/.gitignore", "ignored/\n");
+    file_put_contents("$tagDir/.ignore", "ignored/\n");
   }
 ; $symlinkTarget = "$symlinkDir/target";
 ; file_put_contents($symlinkTarget, "#!/usr/bin/env stest\n# @tag prod\n1;\n    1;\n");
@@ -88,6 +90,25 @@ $list("--tag=long");
 $list("--tag=stage");
     [0, ['./required-prod.stest']];
 
+; $noFinalNewline = "$headerDir/no-final-newline.stest";
+; file_put_contents(
+    $noFinalNewline,
+    "#!/usr/bin/env stest\n# line 2\n# line 3\n# @require-tag explicit"
+  );
+; chmod($noFinalNewline, 0755);
+; $crlf = "$headerDir/crlf.stest";
+; file_put_contents($crlf, "#!/usr/bin/env stest\r\n# @tag windows\r\n1;\r\n    1;\r\n");
+; chmod($crlf, 0755);
+
+$list("", $headerDir);
+    [0, ['./crlf.stest']];
+
+$list("--tag=explicit", $headerDir);
+    [0, ['./no-final-newline.stest']];
+
+$list("--tag=windows", $headerDir);
+    [0, ['./crlf.stest']];
+
 $list("--tag=prod --tag=smoke");
     [0, ['./prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest', './smoke.stest']];
 
@@ -115,6 +136,9 @@ $list("--tag=" . escapeshellarg("prod -long") . " --new");
 
 $list("--tag=" . escapeshellarg("prod -long") . " --recent");
     [0, ['./required-prod.stest']];
+
+$list("--recent=3");
+    [0, ['./late-required.stest', './prod-long.stest', './smoke.stest', './untagged.stest']];
 
 $list("--tag=missing");
     [0, []];

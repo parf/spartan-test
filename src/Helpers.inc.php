@@ -749,7 +749,7 @@ class Reporter {
     }
 
     /**
-     * STest::stop endpoint
+     * STest::stop endpoint when no test has already failed
      * default: considered as success
      */
     function stop(string $test, array $stats = []) {

@@ -22,9 +22,11 @@ Write your tests in style:
 * To see more help just run `stest --help` or `stest-all --help`
 
 `STest::stop($message)` intentionally skips the rest of the current test file. A stopped
-test is successful: it calls `Reporter::stop()` and contributes exit status `0` to
-`stest`, `stest-all`, CI, and cron runs. `STest::error()` and `STest::alert()` are the
-failure paths: they terminate the current file and contribute nonzero status.
+test with no prior failures is successful: it calls `Reporter::stop()` and contributes
+exit status `0` to `stest`, `stest-all`, CI, and cron runs. If a test already failed,
+including under `--first_error`, that failure takes precedence: `Reporter::fail()` is
+called and the process exits nonzero. `STest::error()` and `STest::alert()` are the
+explicit failure paths and also contribute nonzero status.
 
 ## Selecting tagged tests with stest-all
 
