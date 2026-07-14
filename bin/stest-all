@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -o pipefail
+
 #
 # HELP
 
@@ -38,7 +40,7 @@ list_tests() {
   fi
 
   if [[ -n "$new" ]]; then
-    find . "${find_args[@]}" -printf "%T@ %p\n" | sort -rn | head -n "$new" | cut -d " " -f 2-
+    find . "${find_args[@]}" -printf "%T@ %p\n" | sort -rn | sed -n "1,${new}p" | cut -d " " -f 2-
   else
     find . "${find_args[@]}"
   fi

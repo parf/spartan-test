@@ -50,6 +50,92 @@ $run("$bin " . escapeshellarg($fail) . " --cron") !== 0;
 $run("$bin " . escapeshellarg($generateFail) . " --generate");
     0;
 
+$run("$bin " . escapeshellarg("$tmp/missing.stest")) !== 0;
+    true;
+
+# --generate intentionally remains successful even when an input cannot be read.
+$run("$bin " . escapeshellarg("$tmp/missing.stest") . " --generate");
+    0;
+
+; $setupWarning = "$tmp/setup-warning.stest";
+; file_put_contents($setupWarning, "#!/usr/bin/env stest\n; trigger_error(\"setup broken\", E_USER_WARNING);\n");
+; chmod($setupWarning, 0755);
+
+$run("$bin " . escapeshellarg($setupWarning) . " -q") !== 0;
+    true;
+
+; $warningStop = "$tmp/warning-stop.stest";
+; $warningStopLog = "$tmp/warning-stop.stderr";
+; $warningStopText = "#!/usr/bin/env stest\n"
+    . "; trigger_error(\"ignored before stop\", E_USER_WARNING); STest::stop(\"skip\");\n";
+; file_put_contents($warningStop, $warningStopText);
+; chmod($warningStop, 0755);
+; exec(
+    "$bin " . escapeshellarg($warningStop) . " " . escapeshellarg($pass)
+      . " -q >/dev/null 2>" . escapeshellarg($warningStopLog),
+    $warningStopOutput,
+    $warningStopCode
+  );
+
+$warningStopCode;
+    0;
+
+file_get_contents($warningStopLog);
+    '';
+
+; $futureMarker = "$tmp/future-stop-ran";
+; $futureStop = "$tmp/future-stop.stest";
+; $futureStopText = "#!/usr/bin/env stest\n"
+    . "; STest::stop(\"disabled\", 29990101);\n"
+    . "; file_put_contents(" . var_export($futureMarker, true) . ", \"ran\");\n";
+; file_put_contents($futureStop, $futureStopText);
+; chmod($futureStop, 0755);
+
+$run("$bin " . escapeshellarg($futureStop));
+    0;
+
+file_exists($futureMarker);
+    false;
+
+; $expiredMarker = "$tmp/expired-stop-ran";
+; $expiredStop = "$tmp/expired-stop.stest";
+; $expiredStopText = "#!/usr/bin/env stest\n"
+    . "; STest::stop(\"expired\", 20000101);\n"
+    . "; file_put_contents(" . var_export($expiredMarker, true) . ", \"ran\");\n";
+; file_put_contents($expiredStop, $expiredStopText);
+; chmod($expiredStop, 0755);
+
+$run("$bin " . escapeshellarg($expiredStop));
+    0;
+
+file_get_contents($expiredMarker);
+    'ran';
+
+; $readOnly = "$tmp/read-only.stest";
+; $readOnlyText = "#!/usr/bin/env stest\n1+1;\n";
+; file_put_contents($readOnly, $readOnlyText);
+; chmod($readOnly, 0444);
+
+$run("$bin " . escapeshellarg($readOnly) . " -q") !== 0;
+    true;
+
+file_get_contents($readOnly) === $readOnlyText;
+    true;
+
+; chmod($readOnly, 0644);
+; $atomicSave = "$tmp/atomic-save.stest";
+; file_put_contents($atomicSave, "#!/usr/bin/env stest\n1+1;\n");
+; chmod($atomicSave, 0755);
+
+$run("$bin " . escapeshellarg($atomicSave));
+    0;
+
+fileperms($atomicSave) & 0777;
+    493;
+
+str_contains(file_get_contents($atomicSave), "    2;\n");
+    true;
+
 $run("cd " . escapeshellarg($tmp) . " && $path ./pass.stest");
     0;
 
@@ -71,6 +157,15 @@ $run("$path $all " . escapeshellarg($passDir));
     0;
 
 $run("$path $all " . escapeshellarg($mixedDir)) !== 0;
+    true;
+
+; $fakeBin = "$tmp/fake-bin";
+; mkdir($fakeBin);
+; file_put_contents("$fakeBin/find", "#!/bin/sh\necho forced-find-error >&2\nexit 42\n");
+; chmod("$fakeBin/find", 0755);
+; $findFailurePath = "PATH=" . escapeshellarg($fakeBin . ":" . $root . "/bin:" . getenv("PATH"));
+
+$run("$findFailurePath $all -q " . escapeshellarg($passDir)) !== 0;
     true;
 
 ; $recentDir = "$tmp/recent-dir";

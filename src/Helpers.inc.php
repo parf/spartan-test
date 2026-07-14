@@ -37,7 +37,7 @@ class InstanceConfig {
             return;
         $DIR = $dir = realpath($file);
         if (! $DIR)
-            die("Can't access file `$file`");
+            throw new \InvalidArgumentException("Can't access file `$file`");
 
         while (($dir = dirname($dir)) != '/') {
             self::debug("Loading configs: $dir");
@@ -821,4 +821,3 @@ class Alerter {
     }
 
 }
-

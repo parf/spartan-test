@@ -59,7 +59,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.3.19"; // 2026-07-10
+const VERSION = "3.3.20"; // 2026-07-13
 
 //
 // INTERNAL
@@ -119,7 +119,7 @@ class STest {
         if (self::$ARG['force'] ?? 0) {
             return;
         }
-        if ($until_yyyymmdd && (int)date("Ymd") < $until_yyyymmdd) {
+        if ($until_yyyymmdd && (int)date("Ymd") >= $until_yyyymmdd) {
             return;
         }
         throw new StopException($message);
@@ -389,7 +389,7 @@ class STest {
             InstanceConfig::init($file);
             $T = helper\Parser::Reader($file);
         } catch (\Exception $ex) {
-            i('out')->e("*** {alert}$file{/}. Error: " . $ex->getMessage());
+            i('out')->err("*** {alert}$file{/}. Error: " . $ex->getMessage() . "\n");
             self::$FAILED += 1;
             return 1;
         }
@@ -403,7 +403,11 @@ class STest {
                     self::$FAILED += $failed;
                     return $failed;
                 }
-                STest_File_Commands::$a($T, $v);
+                $result = STest_File_Commands::$a($T, $v);
+                if (($a === 'save' || $a === 'clean') && $result === false) {
+                    self::$FAILED += 1;
+                    return 1;
+                }
                 break; // execute only only command
             }
         }
@@ -766,6 +770,9 @@ class STest_File_Commands {
                         } finally {
                             restore_error_handler();
                         }
+                        if ($__error = Error::get()) {
+                            throw new ErrorException("PHP error in setup expression: " . x2s($__error));
+                        }
                     } catch (StopException $__ex) {
                         throw $__ex;
                     } catch (\Exception $__ex) {
@@ -835,6 +842,7 @@ class STest_File_Commands {
             // MAIN TEST LOOP END ------------------
             //
         } catch (StopException $__ex) { // Stop/Error/Alert
+            Error::get(); // terminal exceptions own the result; discard captured PHP-error state
             $m = $__ex->getMessage();
             $reason = str_replace(["Exception", "stest\\"], "", get_class($__ex)); // Stop/Error/Alert
             if ($reason === "Stop") {
@@ -850,6 +858,14 @@ class STest_File_Commands {
         if ($__t->softNeeded && !($ARG['soft'] ?? 0)) {
             self::$softNeeded = true;
             return 0;
+        }
+
+        // Save before reporting so persistence failures are part of the result.
+        if (($__t->new && !$__t->fail) || ($ARG['generate'] ?? 0) || (($ARG['soft'] ?? 0) && $__t->reformat)) {
+            if (!self::save($__t->T)) {
+                $__t->fail++;
+                $__t->details[] = ['error' => 'Unable to save test file'];
+            }
         }
 
         $dur = microtime(1) - $__t->start;
@@ -870,10 +886,6 @@ class STest_File_Commands {
             i('out')->e("*** {head}%s{/} $stat\n", $__t->filename);
         }
 
-        // save test when '--generate' option, soft-regen reformatted lines, or new items added and no failures
-        if (($__t->new && !$__t->fail) || ($ARG['generate'] ?? 0) || (($ARG['soft'] ?? 0) && $__t->reformat)) {
-            self::save($__t->T);
-        }
         $how = $fail ? "fail" : "success";
         if ($ARG['alert']??0)
             $how = "alert";
@@ -1095,24 +1107,55 @@ class STest_File_Commands {
     /**
      * save corrected test (missing ";" added, identation fixed)
      */
-    static function save($T) {
-        # echo json_encode($T);
+    static function save($T): bool {
         $filename = i('stest')->file;
-        i('out')->e("*** {head}%s{/} saved\n", $filename);
+        $target = realpath($filename) ?: $filename;
         $s = self::cat($T, 0);
-        file_put_contents($filename, $s);
+        $mode = @fileperms($target);
+        $writableMode = $mode === false || ($mode & 0222);
+        $uid = function_exists('posix_geteuid') ? posix_geteuid() : getmyuid();
+        $lock = @fopen(sys_get_temp_dir() . "/stest-save-$uid.lock", 'c');
+        $locked = $lock !== false && @flock($lock, LOCK_EX);
+        $tmp = $writableMode && $locked ? @tempnam(dirname($target), "." . basename($target) . ".") : false;
+        $saved = false;
+
+        if ($tmp !== false) {
+            $written = @file_put_contents($tmp, $s, LOCK_EX);
+            $modePreserved = $mode === false || @chmod($tmp, $mode & 0777);
+            if ($written === strlen($s) && $modePreserved) {
+                $saved = @rename($tmp, $target);
+            }
+            if (!$saved) {
+                @unlink($tmp);
+            }
+        }
+
+        if ($locked) {
+            @flock($lock, LOCK_UN);
+        }
+        if ($lock !== false) {
+            @fclose($lock);
+        }
+
+        if (!$saved) {
+            i('out')->err("*** {alert}%s{/}. Error: unable to save test file\n", $filename);
+            return false;
+        }
+
+        i('out')->e("*** {head}%s{/} saved\n", $filename);
+        return true;
     }
 
     /**
      * remove all generated results from test
      */
-    static function clean($T) {
+    static function clean($T): bool {
         foreach ($T as &$v) {
             if ($v[1][0] == 'test') {
                 unset($v[1][2]);
             }
         }
-        self::save($T);
+        return self::save($T);
     }
 
     /**
