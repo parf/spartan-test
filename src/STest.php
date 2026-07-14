@@ -58,7 +58,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.3.23"; // 2026-07-14
+const VERSION = "3.3.24"; // 2026-07-14
 
 //
 // INTERNAL
@@ -93,6 +93,7 @@ class STest {
         'C' => ['color' => 0],      // force no-color
         'v' => 'verbose',           // show test lines being executed
         '1' => 'first_error',       // stop on first error in test
+        'f' => 'force',             // ignore intentional STest::stop calls
         'h' => 'help',              // show help
         // option to set of options
         'cron' => ['color' => 0, 'silent' => 1],   // --cron - show only errors, no colors
@@ -105,8 +106,8 @@ class STest {
 
     /**
      * intentionally skip the rest of this test file successfully
-     * calls Reporter::stop(), does not increment failures, and contributes exit status 0
-     * can be overridden by "--force"
+     * calls Reporter::stop() and contributes exit status 0 when no earlier test failed
+     * can be overridden by "-f" or "--force"
      *
      * Usage:
      *   \STest::stop("message");            << test disable
@@ -376,9 +377,6 @@ class STest {
         }
         foreach (self::$TESTS as $test)
             $this->runTest($test);
-        if (self::$ARG['generate'] ?? 0) {
-            exit(0);
-        }
         exit(self::$FAILED ? min(255, self::$FAILED) : 0);
     }
 
@@ -390,6 +388,9 @@ class STest {
             $T = helper\Parser::Reader($file);
         } catch (\Exception $ex) {
             i('out')->err("*** {alert}$file{/}. Error: " . $ex->getMessage() . "\n");
+            if (self::$ARG['generate'] ?? 0) {
+                return 0;
+            }
             self::$FAILED += 1;
             return 1;
         }
@@ -404,7 +405,7 @@ class STest {
                     return $failed;
                 }
                 $result = STest_File_Commands::$a($T, $v);
-                if (($a === 'save' || $a === 'clean') && $result === false) {
+                if ($result === false) {
                     self::$FAILED += 1;
                     return 1;
                 }
@@ -470,7 +471,7 @@ class STest_Global_Commands {
     }
 
     /**
-     * (-g) re-generate test. replace all results
+     * (-g) re-generate test. replace all results; failure to save remains an error
      */
     static function generate() {
     }
@@ -628,7 +629,7 @@ class STest_File_Commands {
     /** default action:
      * perform testing, generate and save new results
      * -v | --verbose  - show statements being executed
-     * -g | --generate - regenerate test, ignore errors
+     * -g | --generate - regenerate test, ignore test errors but not save failures
      */
     static function test(array /* parsed-test */ $__TEST) {
         self::$softNeeded = false;
@@ -836,6 +837,9 @@ class STest_File_Commands {
             }
             $reportReason = $reason === "Stop" && $__t->fail ? "fail" : $reason;
             i('reporter')->$reportReason($__t->filename, ['message' => $m, 'tests' => $__t->tests, 'new' => $__t->new, 'fail' => $__t->fail, 'details' => $__t->details]);
+            if ($ARG['generate'] ?? 0) {
+                return 0;
+            }
             return $reason === "Stop" ? (int) $__t->fail : max(1, $__t->fail);
         }
 
@@ -846,8 +850,10 @@ class STest_File_Commands {
         }
 
         // Save before reporting so persistence failures are part of the result.
+        $saveFailed = false;
         if (($__t->new && !$__t->fail) || ($ARG['generate'] ?? 0) || (($ARG['soft'] ?? 0) && $__t->reformat)) {
             if (!self::save($__t->T)) {
+                $saveFailed = true;
                 $__t->fail++;
                 $__t->details[] = ['error' => 'Unable to save test file'];
             }
@@ -875,6 +881,9 @@ class STest_File_Commands {
         if ($ARG['alert']??0)
             $how = "alert";
         i('reporter')->$how($__t->filename, array_filter(['tests' => $__t->tests, 'new' => $__t->new, 'reformat' => $__t->reformat, 'fail' => $__t->fail, 'details' => $__t->details]));
+        if ($ARG['generate'] ?? 0) {
+            return (int) $saveFailed;
+        }
         return $__t->fail;
     }
 
@@ -1097,11 +1106,13 @@ class STest_File_Commands {
         $target = realpath($filename) ?: $filename;
         $s = self::cat($T, 0);
         $mode = @fileperms($target);
-        $writableMode = $mode === false || ($mode & 0222);
-        $uid = function_exists('posix_geteuid') ? posix_geteuid() : getmyuid();
-        $lock = @fopen(sys_get_temp_dir() . "/stest-save-$uid.lock", 'c');
-        $locked = $lock !== false && @flock($lock, LOCK_EX);
-        $tmp = $writableMode && $locked ? @tempnam(dirname($target), "." . basename($target) . ".") : false;
+        $directory = dirname($target);
+        $writable = is_writable($directory) && (!file_exists($target) || is_writable($target));
+        $lockName = hash('sha256', $target);
+        $lock = @fopen(sys_get_temp_dir() . "/stest-save-$lockName.lock", 'c');
+        $locked = $lock !== false && @flock($lock, LOCK_EX | LOCK_NB);
+        // Locking is best-effort; the unique temporary file and rename provide atomic replacement.
+        $tmp = $writable ? @tempnam($directory, "." . basename($target) . ".") : false;
         $saved = false;
 
         if ($tmp !== false) {

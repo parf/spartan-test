@@ -32,26 +32,26 @@
 $run("$bin " . escapeshellarg($pass));
     0;
 
-$run("$bin " . escapeshellarg($fail)) !== 0;
-    true;
+$run("$bin " . escapeshellarg($fail));
+    1;
 
-$run("$bin " . escapeshellarg($fail) . " -s") !== 0;
-    true;
+$run("$bin " . escapeshellarg($fail) . " -s");
+    1;
 
-$run("$bin " . escapeshellarg($fail) . " -q") !== 0;
-    true;
+$run("$bin " . escapeshellarg($fail) . " -q");
+    1;
 
 $run("$bin --help 2>&1 | grep -q -- '-s, -q'");
     0;
 
-$run("$bin " . escapeshellarg($fail) . " --cron") !== 0;
-    true;
+$run("$bin " . escapeshellarg($fail) . " --cron");
+    1;
 
 $run("$bin " . escapeshellarg($generateFail) . " --generate");
     0;
 
-$run("$bin " . escapeshellarg("$tmp/missing.stest")) !== 0;
-    true;
+$run("$bin " . escapeshellarg("$tmp/missing.stest"));
+    1;
 
 # --generate intentionally remains successful even when an input cannot be read.
 $run("$bin " . escapeshellarg("$tmp/missing.stest") . " --generate");
@@ -61,8 +61,8 @@ $run("$bin " . escapeshellarg("$tmp/missing.stest") . " --generate");
 ; file_put_contents($setupWarning, "#!/usr/bin/env stest\n; trigger_error(\"setup broken\", E_USER_WARNING);\n");
 ; chmod($setupWarning, 0755);
 
-$run("$bin " . escapeshellarg($setupWarning) . " -q") !== 0;
-    true;
+$run("$bin " . escapeshellarg($setupWarning) . " -q");
+    1;
 
 ; $warningStop = "$tmp/warning-stop.stest";
 ; $warningStopLog = "$tmp/warning-stop.stderr";
@@ -91,11 +91,11 @@ file_get_contents($warningStopLog);
 ; file_put_contents($failThenStop, $failThenStopText);
 ; chmod($failThenStop, 0755);
 
-$run("$bin " . escapeshellarg($failThenStop) . " -q") !== 0;
-    true;
+$run("$bin " . escapeshellarg($failThenStop) . " -q");
+    1;
 
-$run("$bin " . escapeshellarg($fail) . " --first_error -q") !== 0;
-    true;
+$run("$bin " . escapeshellarg($fail) . " --first_error -q");
+    1;
 
 ; $reporterDir = "$tmp/reporter";
 ; $reporterMarker = "$reporterDir/result";
@@ -115,8 +115,8 @@ $run("$bin " . escapeshellarg($fail) . " --first_error -q") !== 0;
 ; file_put_contents("$reporterDir/fail-stop.stest", $failThenStopText);
 ; chmod("$reporterDir/fail-stop.stest", 0755);
 
-$run("$bin " . escapeshellarg("$reporterDir/fail-stop.stest") . " -q") !== 0;
-    true;
+$run("$bin " . escapeshellarg("$reporterDir/fail-stop.stest") . " -q");
+    1;
 
 file_get_contents($reporterMarker);
     'fail';
@@ -144,6 +144,39 @@ $run("$bin " . escapeshellarg($futureStop));
 file_exists($futureMarker);
     false;
 
+$run("$bin " . escapeshellarg($futureStop) . " --force");
+    0;
+
+file_get_contents($futureMarker);
+    'ran';
+
+; unlink($futureMarker);
+
+$run("$bin " . escapeshellarg($futureStop) . " -f");
+    0;
+
+file_get_contents($futureMarker);
+    'ran';
+
+; $terminalError = "$tmp/terminal-error.stest";
+; $terminalAlert = "$tmp/terminal-alert.stest";
+; file_put_contents($terminalError, "#!/usr/bin/env stest\n; STest::error('broken');\n");
+; file_put_contents($terminalAlert, "#!/usr/bin/env stest\n; STest::alert('broken');\n");
+; chmod($terminalError, 0755);
+; chmod($terminalAlert, 0755);
+
+$run("$bin " . escapeshellarg($terminalError) . " -q");
+    1;
+
+$run("$bin " . escapeshellarg($terminalError) . " --force -q");
+    1;
+
+$run("$bin " . escapeshellarg($terminalAlert) . " -q");
+    1;
+
+$run("$bin " . escapeshellarg($terminalAlert) . " --force -q");
+    1;
+
 ; $expiredMarker = "$tmp/expired-stop-ran";
 ; $expiredStop = "$tmp/expired-stop.stest";
 ; $expiredStopText = "#!/usr/bin/env stest\n"
@@ -163,8 +196,11 @@ file_get_contents($expiredMarker);
 ; file_put_contents($readOnly, $readOnlyText);
 ; chmod($readOnly, 0444);
 
-$run("$bin " . escapeshellarg($readOnly) . " -q") !== 0;
-    true;
+$run("$bin " . escapeshellarg($readOnly) . " -q");
+    1;
+
+$run("$bin " . escapeshellarg($readOnly) . " --generate -q");
+    1;
 
 file_get_contents($readOnly) === $readOnlyText;
     true;
@@ -173,9 +209,15 @@ file_get_contents($readOnly) === $readOnlyText;
 ; $atomicSave = "$tmp/atomic-save.stest";
 ; file_put_contents($atomicSave, "#!/usr/bin/env stest\n1+1;\n");
 ; chmod($atomicSave, 0755);
+; $saveLock = sys_get_temp_dir() . "/stest-save-" . hash('sha256', realpath($atomicSave)) . ".lock";
+; is_file($saveLock) && unlink($saveLock);
+; is_dir($saveLock) && rmdir($saveLock);
+; mkdir($saveLock);
 
 $run("$bin " . escapeshellarg($atomicSave));
     0;
+
+; rmdir($saveLock);
 
 fileperms($atomicSave) & 0777;
     493;
@@ -186,8 +228,8 @@ str_contains(file_get_contents($atomicSave), "    2;\n");
 $run("cd " . escapeshellarg($tmp) . " && $path ./pass.stest");
     0;
 
-$run("cd " . escapeshellarg($tmp) . " && $path ./fail.stest") !== 0;
-    true;
+$run("cd " . escapeshellarg($tmp) . " && $path ./fail.stest");
+    1;
 
 ; $passDir = "$tmp/pass-dir";
 ; $mixedDir = "$tmp/mixed-dir";
@@ -203,8 +245,8 @@ $run("cd " . escapeshellarg($tmp) . " && $path ./fail.stest") !== 0;
 $run("$path $all " . escapeshellarg($passDir));
     0;
 
-$run("$path $all " . escapeshellarg($mixedDir)) !== 0;
-    true;
+$run("$path $all " . escapeshellarg($mixedDir));
+    1;
 
 ; $fakeBin = "$tmp/fake-bin";
 ; mkdir($fakeBin);
@@ -219,8 +261,8 @@ $run("$path $all " . escapeshellarg($mixedDir)) !== 0;
 ; chmod("$fakeBin/fd", 0755);
 ; $discoveryFailurePath = "PATH=" . escapeshellarg($fakeBin . ":" . $root . "/bin:" . getenv("PATH"));
 
-$run("$discoveryFailurePath $all -q " . escapeshellarg($passDir)) !== 0;
-    true;
+$run("$discoveryFailurePath $all -q " . escapeshellarg($passDir));
+    1;
 
 file_exists($discoveryMarker);
     false;
@@ -236,8 +278,8 @@ file_exists($discoveryMarker);
 $run("$path $all --recent " . escapeshellarg($recentDir));
     0;
 
-$run("$path $all --recent=2day " . escapeshellarg($recentDir)) !== 0;
-    true;
+$run("$path $all --recent=2day " . escapeshellarg($recentDir));
+    1;
 
 ; $newDir = "$tmp/new-dir";
 ; mkdir($newDir);
@@ -251,8 +293,26 @@ $run("$path $all --recent=2day " . escapeshellarg($recentDir)) !== 0;
 $run("$path $all --new " . escapeshellarg($newDir));
     0;
 
-$run("$path $all --new=2 " . escapeshellarg($newDir)) !== 0;
-    true;
+$run("$path $all --new=2 " . escapeshellarg($newDir));
+    1;
+
+; $dstDir = "$tmp/dst-new-dir";
+; mkdir($dstDir);
+; copy($fail, "$dstDir/older-edt-fail.stest");
+; copy($pass, "$dstDir/newer-est-pass.stest");
+; chmod("$dstDir/older-edt-fail.stest", 0755);
+; chmod("$dstDir/newer-est-pass.stest", 0755);
+; touch(
+    "$dstDir/older-edt-fail.stest",
+    (new DateTimeImmutable('2025-11-02T01:45:00-04:00'))->getTimestamp()
+  );
+; touch(
+    "$dstDir/newer-est-pass.stest",
+    (new DateTimeImmutable('2025-11-02T01:15:00-05:00'))->getTimestamp()
+  );
+
+$run("TZ=America/New_York $path $all --new " . escapeshellarg($dstDir));
+    0;
 
 ; $allDir = "$tmp/all-dir";
 ; mkdir($allDir);
@@ -263,8 +323,8 @@ $run("$path $all --new=2 " . escapeshellarg($newDir)) !== 0;
 ; touch("$allDir/exec-pass.stest", time() - 60);
 ; touch("$allDir/nonexec-fail.stest", time());
 
-$run("$path $all --list " . escapeshellarg($allDir) . " | grep -q './nonexec-fail.stest'") !== 0;
-    true;
+$run("$path $all --list " . escapeshellarg($allDir) . " | grep -q './nonexec-fail.stest'");
+    1;
 
 $run("$path $all --list --all " . escapeshellarg($allDir) . " | grep -q './nonexec-fail.stest'");
     0;
@@ -272,17 +332,49 @@ $run("$path $all --list --all " . escapeshellarg($allDir) . " | grep -q './nonex
 $run("$path $all " . escapeshellarg($allDir));
     0;
 
-$run("$path $all --all " . escapeshellarg($allDir)) !== 0;
-    true;
+$run("$path $all --all " . escapeshellarg($allDir));
+    1;
 
 $run("$path $all -q " . escapeshellarg($allDir));
     0;
 
-$run("$path $all --all -q " . escapeshellarg($allDir)) !== 0;
-    true;
+$run("$path $all --all -q " . escapeshellarg($allDir));
+    1;
 
 $run("$path $all --list --all --new " . escapeshellarg($allDir) . " | grep -q './nonexec-fail.stest'");
     0;
+
+; $findBin = "$tmp/find-bin";
+; $findDir = "$tmp/find-dir";
+; mkdir($findBin);
+; mkdir($findDir);
+; foreach (['cat', 'cut', 'dirname', 'find', 'mktemp', 'rm', 'sed', 'sort', 'stat'] as $command) {
+    symlink(trim(shell_exec("command -v $command")), "$findBin/$command");
+  }
+; copy($pass, "$findDir/normal.stest");
+; copy($pass, "$findDir/.hidden.stest");
+; chmod("$findDir/normal.stest", 0755);
+; chmod("$findDir/.hidden.stest", 0755);
+; mkdir("$findDir/vendor");
+; copy($pass, "$findDir/vendor/vendor.stest");
+; chmod("$findDir/vendor/vendor.stest", 0755);
+; mkdir("$findDir/not-a-file.stest");
+; file_put_contents("$findDir/target", $passText);
+; chmod("$findDir/target", 0755);
+; symlink('target', "$findDir/link.stest");
+; $findOnlyPath = "PATH=" . escapeshellarg($findBin);
+; $findList = function (string $args = '') use ($all, $findDir, $findOnlyPath): array {
+    $output = [];
+    exec("$findOnlyPath $all --list $args " . escapeshellarg($findDir) . " 2>/dev/null", $output, $code);
+    sort($output);
+    return [$code, $output];
+  };
+
+$findList();
+    [0, ['./link.stest', './normal.stest']];
+
+$findList('--unrestricted');
+    [0, ['./.hidden.stest', './link.stest', './normal.stest', './vendor/vendor.stest']];
 
 ; $reflectionDeprecated = "$tmp/reflection-deprecated.stest";
 ; $reflectionDeprecatedText = "#!/usr/bin/env stest\n"

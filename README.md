@@ -28,6 +28,9 @@ including under `--first_error`, that failure takes precedence: `Reporter::fail(
 called and the process exits nonzero. `STest::error()` and `STest::alert()` are the
 explicit failure paths and also contribute nonzero status.
 
+`stest --generate` intentionally suppresses test failures while regenerating results.
+It still exits nonzero when the regenerated file cannot be saved.
+
 ## Selecting tagged tests with stest-all
 
 `stest-all` can select complete test files using metadata in the first four physical
@@ -56,15 +59,17 @@ Positive tags use OR matching. Negative tags exclude any file carrying that tag.
 With only negative tags, `stest-all --tag=-long` runs otherwise eligible tests except
 those tagged `long`; required-tag tests remain skipped. Tag selection composes with
 `--all`, `--recent`, `--new`, and `--list`. `--all` includes non-executable files but
-does not bypass `@require-tag`.
+does not bypass `@require-tag`. A positive-only tag query that matches no files exits
+nonzero, which prevents tag typos from producing an empty successful test run. A query
+that intentionally excludes every match with a negative tag remains successful.
 
 When `fd` is installed, `stest-all` uses it for substantially faster discovery and
-follows its default hidden/ignore behavior. Hidden files and paths excluded by
-`.gitignore`, `.ignore`, or `.fdignore` are skipped. `vendor` and `node_modules`
-directories are also excluded by default with either discovery backend. Use `-u` or
-`--unrestricted` to include them. This is separate from `--all`: use both options to
-include ignored, hidden, dependency-directory, and non-executable `.stest` files.
-Systems without `fd` fall back to `find`.
+follows its ignore-file behavior. Both discovery backends skip hidden files plus
+`vendor` and `node_modules` directories by default; `fd` additionally honors
+`.gitignore`, `.ignore`, and `.fdignore`. Use `-u` or `--unrestricted` to include those
+paths. This is separate from `--all`: use both options to include hidden,
+dependency-directory, ignored (with `fd`), and non-executable `.stest` files. Systems
+without `fd` fall back to `find`.
 
 
 # Composer / Laravel Autoload Integration

@@ -18,6 +18,8 @@ Line read can be a:
       any formatting you like
     - if the stored result differs in VALUE, an error is generated (the result is not changed;
       use `stest -g` to force-overwrite all results)
+    - `stest -g` exits successfully for regenerated differences, but exits nonzero if the
+      updated test file cannot be saved
 
 * STest catches
     - Return values
@@ -116,11 +118,12 @@ line one. Declarations after line four are ordinary comments and are ignored by
   files remain skipped because no required tag was positively requested.
 - Repeated `--tag` options and comma-separated values are merged using the same rules.
 - `--all` includes non-executable `.stest` files but does not override `@require-tag`.
-- When `fd` is installed, hidden and ignored files are skipped by default. Use `-u` or
-  `--unrestricted` to include paths excluded by hidden-name rules, `.gitignore`,
-  `.ignore`, or `.fdignore`. `vendor` and `node_modules` directories are also skipped
-  by default with either discovery backend and included by `--unrestricted`. Systems
-  without `fd` use the `find` fallback.
+- A positive-only tag query with no matches exits nonzero. If negative tags intentionally
+  exclude every positive match, the empty result remains successful.
+- Both discovery backends skip hidden files, `vendor`, and `node_modules` by default.
+  When installed, `fd` additionally honors `.gitignore`, `.ignore`, and `.fdignore`.
+  Use `-u` or `--unrestricted` to include these paths. Systems without `fd` use the
+  `find` fallback.
 
 Selection order is executable/`--all`, then `--recent`, tags, `--new`, and finally
 execution or `--list`. Examples:

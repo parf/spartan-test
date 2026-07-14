@@ -1,7 +1,7 @@
 #!/usr/bin/env stest
 # @tag example long
 # @require-tag opt-in staging
-# Run with: stest-all --tag=opt-in examples/1-basics
+# stest-all --tag=opt-in examples/1-basics
 
 strtoupper("tagged test");
     'TAGGED TEST';
