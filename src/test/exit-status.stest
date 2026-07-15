@@ -29,6 +29,12 @@
     return $code;
   };
 
+; $versionOutput = [];
+; exec("$bin --version 2>&1", $versionOutput, $versionCode);
+
+[$versionCode, $versionOutput];
+    [0, ['3.3.26 (build 2026-07-14)']];
+
 $run("$bin " . escapeshellarg($pass));
     0;
 

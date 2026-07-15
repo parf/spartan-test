@@ -58,7 +58,8 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.3.25"; // 2026-07-14
+const VERSION = "3.3.26";
+const DATE_BUILD = "2026-07-14";
 
 //
 // INTERNAL
@@ -534,10 +535,10 @@ class STest_Global_Commands {
     }
 
     /**
-     * Print current version
+     * Print current version and build date
      */
     static function version() {
-        echo VERSION, "\n";
+        echo VERSION, " (build ", DATE_BUILD, ")\n";
         exit(0);
     }
 

@@ -1,3 +1,7 @@
+# Before every release, update both constants in src/STest.php:
+#   VERSION    - release version
+#   DATE_BUILD - release date in YYYY-MM-DD format
+
 [00:15:44] parf@parf  main /hbfr/spartan-test (0)
 > git tag -a 3.1.4 -m "V3.1.4 - Description of changes"
 [00:16:28] parf@parf  main /hbfr/spartan-test (0)
