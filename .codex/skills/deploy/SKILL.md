@@ -80,9 +80,10 @@ Never bump, commit, tag, push, or publish unless the user requested that operati
   PATH; `sudo php-tools ...` fails on some standard hosts.
 - Support both updater generations: current `php-tools update spartan-test` and legacy
   `/usr/local/src/php-tools/update spartan-test`.
-- Legacy checkouts may have divergent local commits. Set repository-local
-  `pull.rebase=false` before the legacy update so Git preserves both histories with a
-  merge; never reset the checkout.
+- Remote checkouts may have divergent local commits. Set repository-local
+  `pull.rebase=false` before either updater generation runs so Git preserves both
+  histories with a merge. Run this config command as the checkout owner to avoid Git's
+  dubious-ownership rejection; never reset the checkout.
 - Execute remote commands through Bash because interactive remote shells may be Fish.
 - Use `php-tools update spartan-test`; do not reset, replace, or clean a remote checkout.
 - Do not silently ignore dirty checkout, pull, test, or version failures.

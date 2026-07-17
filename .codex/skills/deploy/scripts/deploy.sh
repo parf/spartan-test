@@ -63,11 +63,13 @@ if [[ -z $php_tools ]]; then
   fi
 fi
 
+stest_repo=/usr/local/src/php-tools/tools/spartan-test
+if [[ -d $stest_repo/.git ]]; then
+  repo_owner=$(stat -c '%U' "$stest_repo")
+  sudo -u "$repo_owner" git -C "$stest_repo" config pull.rebase false
+fi
+
 if [[ -n $legacy_update ]]; then
-  legacy_repo=/usr/local/src/php-tools/tools/spartan-test
-  if [[ -d $legacy_repo/.git ]]; then
-    sudo git -C "$legacy_repo" config pull.rebase false
-  fi
   sudo env TERM="${TERM:-xterm}" "$legacy_update" spartan-test
 else
   php_tools=$(readlink -f "$php_tools")
