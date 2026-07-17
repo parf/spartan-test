@@ -14,6 +14,16 @@ Write your tests in style:
 - [Web Tests](https://github.com/parf/spartan-test/blob/main/web-tests.md)
 - [Config](https://github.com/parf/spartan-test/blob/main/Config.md)
 
+PHP setup code starts with `;` in column one and runs without result comparison. For a
+multi-line setup statement, only its first line has the prefix; Spartan Test uses PHP's
+parser to find the end rather than relying on indentation. Supported forms include
+typed closures with `use`, named functions, named classes, nested arrays/calls,
+heredoc/nowdoc, loops, and `try` with `catch` and/or `finally`. Functions and classes
+must keep the `;` prefix and are declared only once during formatting regeneration;
+ordinary setup expressions run again to recreate local state. See the
+[complete syntax](Syntax.md#php-setup-code-and-multi-line-blocks) and the runnable
+[multi-line example](examples/1-basics/multiline-setup.stest).
+
 * Examples
     - [Basic test example](https://github.com/parf/spartan-test/blob/main/examples/1-basics/1-first-test.stest)
     - (advanced) [Custom comparison methods](https://github.dev/parf/spartan-test/blob/main/examples/1-basics/special-tests.stest)
@@ -71,6 +81,11 @@ follows its ignore-file behavior. Both discovery backends skip hidden files plus
 paths. This is separate from `--all`: use both options to include hidden,
 dependency-directory, ignored (with `fd`), and non-executable `.stest` files. Systems
 without `fd` fall back to `find`.
+
+Test execution is I/O-oriented and uses the highest GNU Parallel job count that fits
+the process soft file-descriptor limit, with a small descriptor reserve. This keeps
+parallelism substantially above the CPU count without triggering GNU Parallel's file
+handle warning.
 
 
 # Composer / Laravel Autoload Integration

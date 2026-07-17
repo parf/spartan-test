@@ -1,8 +1,7 @@
 #!/usr/bin/env stest
-; function ex() { 
-     throw new Exception("hit the fan");
-  };
+; function exception_example_throw(): void {
+    throw new Exception("hit the fan");
+}
 
-ex();
+exception_example_throw();
     ['Exception', 'hit the fan'];
-

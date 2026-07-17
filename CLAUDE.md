@@ -121,7 +121,13 @@ Config specifies which classes to use for core components:
 Test files use a special syntax:
 - **Unindented lines**: Test expressions (PHP code that returns a value)
 - **4-space indented lines**: Expected results (auto-generated if missing)
-- **Lines starting with `;`**: PHP expressions to execute (no testing)
+- **Lines starting with `;` in column one**: PHP setup statements/blocks to execute
+  without result comparison. Only the first line is prefixed. `PHPBlockParser` uses
+  `PhpToken::tokenize(..., TOKEN_PARSE)` to detect completion, so closures, named
+  functions/classes, nested expressions, loops, and try/catch/finally can use normal
+  PHP formatting. Named function/class lexemes are skipped during soft regeneration;
+  other setup blocks execute again to recreate local state. Bare function/class
+  declarations and interface/trait/enum declarations are not supported.
 - **Lines starting with `!`**: Critical tests (execution stops if failed)
 - **Lines starting with `?`**: Inspect class/variable (debugging)
 - **Lines starting with `/`**: Web test GET requests

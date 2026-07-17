@@ -1,9 +1,9 @@
 #!/usr/bin/env stest
 # math test
-2*2;    # tests have 0 identation, result must be idented by 4 spaces;
+2*2;    # tests have 0 indentation; results are indented by 4 spaces
     4;
     
-# php-expression prefixed by ";" just executed
+# setup code prefixed by ";" is executed without result comparison
 # no tests performed for ";" prefixed code    
 ; $x = M_PI / 6;  
 sin($x) < 2;

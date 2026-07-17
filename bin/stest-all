@@ -42,6 +42,22 @@ recent_duration() {
   esac
 }
 
+parallel_jobs() {
+  local fd_limit jobs
+
+  fd_limit=$(ulimit -Sn) || return 1
+  if [[ $fd_limit == unlimited ]]; then
+    echo 0
+    return
+  fi
+
+  # Grouped GNU Parallel jobs use about four descriptors each. Keep room for
+  # Parallel's own descriptors and inherited shell descriptors.
+  jobs=$(( (fd_limit - 32) / 4 ))
+  (( jobs < 1 )) && jobs=1
+  echo "$jobs"
+}
+
 discover_with_find() {
   local find_args=(\( -type f -o -type l \) -name "*.stest")
   if [[ $all != 1 ]]; then
@@ -354,12 +370,13 @@ fi
 
 # check for GNU parallel
 [[ $(type -P parallel) ]] || { echo "GNU parallel required"; exit 1; }
+jobs=$(parallel_jobs) || { echo "Unable to determine parallel job limit" >&2; exit 1; }
 
 # show errors only (in STDERR)
 if [[ $quiet == 1 ]]; then
-  parallel -j0 "$stest_bin {} -q" :::: "$test_list"
+  parallel -j "$jobs" "$stest_bin {} -q" :::: "$test_list"
   exit $?
 fi
 
-parallel -j0 "echo {}; $stest_bin {} --color" :::: "$test_list"
+parallel -j "$jobs" "echo {}; $stest_bin {} --color" :::: "$test_list"
 exit $?

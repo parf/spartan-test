@@ -215,6 +215,111 @@ function cut(string $s, $len=360) {
  */
 
 
+class PHPBlockParser {
+
+    /**
+     * Read one semicolon-prefixed PHP setup statement. PHP's parser decides when
+     * the accumulated source is complete, so block boundaries do not depend on
+     * indentation.
+     */
+    static function read($ln, string $line, Iterator_Put $I): array {
+        $code = trim($line);
+        $definition = self::isNamedDefinition($code);
+        $tryBlock = self::firstTokenId($code) === T_TRY;
+        $lastError = null;
+
+        while (true) {
+            [$complete, $normalized, $lastError] = self::complete($code);
+            if ($complete) {
+                if (!self::appendContinuation($code, $I, $tryBlock)) {
+                    return [$ln, [$definition ? 'definition' : 'expr', $normalized]];
+                }
+                continue;
+            }
+
+            $next = $I->getKV();
+            if ($next === null) {
+                $message = $lastError ? $lastError->getMessage() : 'incomplete PHP setup block';
+                throw new \stest\SyntaxErrorException("Syntax Error in PHP setup block starting on Line $ln: $message");
+            }
+            $code .= "\n" . $next[1];
+        }
+    }
+
+    private static function complete(string $code): array {
+        try {
+            \PhpToken::tokenize("<?php\n" . $code, TOKEN_PARSE);
+            return [true, $code, null];
+        } catch (\ParseError $error) {
+            // Preserve the historical convenience of auto-adding a missing
+            // semicolon to a simple setup expression.
+            if (substr(rtrim($code), -1) !== ';') {
+                $normalized = rtrim($code) . ';';
+                try {
+                    \PhpToken::tokenize("<?php\n" . $normalized, TOKEN_PARSE);
+                    return [true, $normalized, null];
+                } catch (\ParseError $withSemicolonError) {
+                    $error = $withSemicolonError;
+                }
+            }
+            return [false, $code, $error];
+        }
+    }
+
+    /**
+     * Preserve the original indented-continuation syntax. A complete try block
+     * may also be followed by an unindented catch/finally clause.
+     */
+    private static function appendContinuation(string &$code, Iterator_Put $I, bool $tryBlock): bool {
+        $next = $I->getKV();
+        if ($next === null) {
+            return false;
+        }
+        $indented = $next[1] !== '' && $next[1][0] === ' ';
+        $tryContinuation = $tryBlock && preg_match('/^\s*(?:catch|finally)\b/', $next[1]);
+        if ($indented || $tryContinuation) {
+            $code .= "\n" . $next[1];
+            return true;
+        }
+        $I->putKV($next);
+        return false;
+    }
+
+    private static function isNamedDefinition(string $code): bool {
+        $tokens = self::significantTokens($code);
+        $position = 0;
+        $modifiers = [T_ABSTRACT, T_FINAL];
+        if (defined('T_READONLY')) {
+            $modifiers[] = constant('T_READONLY');
+        }
+        while (isset($tokens[$position]) && in_array($tokens[$position]->id, $modifiers, true)) {
+            $position++;
+        }
+        $token = $tokens[$position] ?? null;
+        if (!$token || ($token->id !== T_FUNCTION && $token->id !== T_CLASS)) {
+            return false;
+        }
+        $position++;
+        while (isset($tokens[$position]) && $tokens[$position]->text === '&') {
+            $position++;
+        }
+        return isset($tokens[$position]) && $tokens[$position]->id === T_STRING;
+    }
+
+    private static function firstTokenId(string $code): ?int {
+        return self::significantTokens($code)[0]->id ?? null;
+    }
+
+    private static function significantTokens(string $code): array {
+        $tokens = \PhpToken::tokenize("<?php\n" . $code);
+        return array_values(array_filter($tokens, function (\PhpToken $token) {
+            return !in_array($token->id, [T_OPEN_TAG, T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)
+                && $token->text !== ';';
+        }));
+    }
+}
+
+
 class Parser {
 
     /**
@@ -224,7 +329,8 @@ class Parser {
      *
      * Lexem types:
      * - comment  - php comment
-     * - expr     - expression
+     * - expr     - setup expression or block
+     * - definition - named function or class definition
      * - test     - test
      * - result   - test-result (null if result is not in file)
      * - br       - empty line
@@ -278,24 +384,12 @@ class Parser {
             return [$ln, ['comment', $l]];
         };
 
-        // PHP Expression
-        // "; ..." and all idented lines after this
+        // PHP setup expression/block. The leading ";" distinguishes setup code
+        // from tests; PHPBlockParser determines multi-line boundaries.
         $php_expr = function ($ln, $l, $I) {
-            if ($l[0] != ';')
+            if (($l[0] ?? '') != ';')
                 return;
-            while ([$nl, $s] = $I->getKV()) {
-                if (!$s || $s[0] !== ' ') { // empty line or non idented line
-                    $I->putKV([$nl, $s]);
-                    break;
-                }
-                # $l .= "\n  ".trim($s); // fix formatting to 2 spaces
-                $l .= "\n".$s; // keep expression formatting as is
-            }
-            $l = trim($l);
-            // auto-fix missing ";"
-            if ($l[-1] !== ';')
-                $l .= ';';
-            return [$ln, ['expr', $l]];
+            return PHPBlockParser::read($ln, $l, $I);
         };
 
         // TEST expression (many lines idented by (1..3) spaces), then (optional)result (idented by 4 spaces)

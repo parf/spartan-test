@@ -6,8 +6,8 @@
 #
 
 
-// every unidented line is considered as a test-expression
-// line idented by 4 spaces is test result
+// every unindented line is considered a test expression
+// a line indented by 4 spaces is the test result
 // test result line is automatically generated
 // if result line exists - it checked vs test-result
 1+2;
@@ -21,8 +21,8 @@
 
 
 /*
-  line started with ";" is an expression
-  expressions are executed, result is not tested
+  a line starting with ";" is setup code
+  setup code is executed, but its result is not tested
 */
 ; $a = "a"
 $a.$a;
@@ -35,14 +35,15 @@ $a.$a;
 3+3
     6
 
-// multi line expressions - just use ident
+// Legacy multi-line setup expressions may use indentation.
+// New code may use normal PHP formatting.
 ; $a = 2 +
   3 + 5
     + 6
     +7;
 
 
-// multi line expressions - just use ident, STest will auto-add missing ";"
+// A missing final ";" is auto-added when that makes the setup expression valid.
 ; $a = 3 +
   3 +
    1 +
@@ -54,7 +55,7 @@ $r;
 
 /* one line comment */
 
-# This idented comments will automatically unindented
+# These indented comments are automatically unindented
     /* idented one line comment */
     // idented comment
     # idented comment
@@ -64,9 +65,8 @@ $r;
 print("aaa");
 
 // Exception catching
-; function ex() {
+; function sample_exception() {
     throw new Exception("aaa");
-  }
+}
 
-ex();
-
+sample_exception();

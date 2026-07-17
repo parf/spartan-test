@@ -1,0 +1,53 @@
+#!/usr/bin/env stest
+# Multi-line PHP setup uses ";" only on the first physical line.
+
+; function total(array $values): int {
+    return array_sum($values);
+}
+
+total([2, 3, 5]);
+    10;
+
+; class PriceFixture {
+    public function annual(float $monthly): float {
+        return $monthly * 12;
+    }
+}
+
+; $fixture = new PriceFixture();
+
+$fixture->annual(1250.0);
+    15000;
+
+; $rent = function (array $data, float $sqft = 0.0, float $lp = 0.0, string $tt = 'ForRent') use ($fixture) {
+    static $id = 999000200;
+    return [++$id, $tt, $data, $sqft, $lp, $fixture->annual($lp)];
+};
+
+$rent(['unit' => 'month'], 900.0, 2500.0);
+    [999000201, 'ForRent', ["unit"=>'month'], 900, 2500, 30000];
+
+; $trace = [];
+; try {
+    $trace[] = 'try';
+}
+finally {
+    $trace[] = 'finally';
+}
+
+$trace;
+    ['try', 'finally'];
+
+; $trace = [];
+; try {
+    throw new RuntimeException('expected');
+}
+catch (RuntimeException $error) {
+    $trace[] = $error->getMessage();
+}
+finally {
+    $trace[] = 'finally';
+}
+
+$trace;
+    ['expected', 'finally'];

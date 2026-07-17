@@ -33,7 +33,7 @@
 ; exec("$bin --version 2>&1", $versionOutput, $versionCode);
 
 [$versionCode, $versionOutput];
-    [0, ['3.3.26 (build 2026-07-14)']];
+    [0, ['3.3.27 (build 2026-07-17)']];
 
 $run("$bin " . escapeshellarg($pass));
     0;
@@ -369,6 +369,22 @@ $run("$path $all --all -q " . escapeshellarg($allDir));
 
 $run("$path $all --list --all --new " . escapeshellarg($allDir) . " | grep -q './nonexec-fail.stest'");
     0;
+
+; $parallelBin = "$tmp/parallel-bin";
+; $parallelArgs = "$tmp/parallel-args";
+; mkdir($parallelBin);
+; file_put_contents(
+    "$parallelBin/parallel",
+    "#!/bin/sh\nprintf '%s\\n' \"\$@\" > " . escapeshellarg($parallelArgs) . "\n"
+  );
+; chmod("$parallelBin/parallel", 0755);
+; $parallelPath = "PATH=" . escapeshellarg($parallelBin . ":" . $root . "/bin:" . getenv("PATH"));
+
+$run("bash -c " . escapeshellarg("ulimit -n 64; $parallelPath $all -q " . escapeshellarg($passDir)));
+    0;
+
+array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 2);
+    ['-j', '8'];
 
 ; $findBin = "$tmp/find-bin";
 ; $findDir = "$tmp/find-dir";

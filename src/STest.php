@@ -58,8 +58,8 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "3.3.26";
-const DATE_BUILD = "2026-07-14";
+const VERSION = "3.3.27";
+const DATE_BUILD = "2026-07-17";
 
 //
 // INTERNAL
@@ -744,7 +744,12 @@ class STest_File_Commands {
             //
             foreach ($__t->T as &$__line__tp_v_r) { // [ln, [tp, v, r]]
                 [$__line, [$__type, $__code]] = $__line__tp_v_r;
-                if ($__type == 'expr') {
+                if ($__type == 'expr' || $__type == 'definition') {
+                    // Named declarations survive eval() and cannot be declared
+                    // again during the formatting-only soft-regeneration pass.
+                    if ($__type == 'definition' && ($ARG['soft'] ?? 0)) {
+                        continue;
+                    }
                     try {
                         ($ARG['verbose']??0) && i('out')->e("{grey}%s{/}\n", $__code);
                         self::_push_php_compat_error_handler();

@@ -1,10 +1,10 @@
 # SPARTAN-TEST SYNTAX
-Minimalistic PHP 7, PHP 8 Unit Testing Framework / Web Testing Framework
+Minimalistic PHP 8.5 Unit Testing Framework / Web Testing Framework
 
 * Spartan test reads test-file line by line
 
 Line read can be a:
- - PHP-expression
+ - PHP setup expression or block
  - Test-expression (or just `test`)
  - Test-result
  - Comment
@@ -32,7 +32,7 @@ BASIC SYNTAX
 -----------
 * Spartan test is a set of expressions and their results
     - types of expressions:
-        + "; php-code" php code to execute, no testing
+        + "; php-code" PHP setup code to execute, no result comparison
         + "test-expression" - php-code that produce result
         + "    result" - stored test-expression result (valid php code)
         + "    ~ custom-result-test" - custom comparison method (see below)
@@ -51,13 +51,94 @@ Sample spartan test:
 2*2;    # tests have 0 indentation
     4;  # result must be indented by 4 spaces; if no result present it will be auto-generated
 
-/* lines starting with ";" are just php-expressions */
-; $x = M_PI / 6;  # php-expression prefixed by ";";
+/* lines starting with ";" are PHP setup code */
+; $x = M_PI / 6;
 sin($x) < 2;
     true;
 range(3,4);
     [3, 4];
 ```
+
+### PHP setup code and multi-line blocks
+
+Setup code runs before or between tests without producing an expected-result entry.
+Its first physical line must start with `;` in column one. This prefix is stest syntax,
+not a replacement for PHP's terminating semicolon.
+
+Simple setup statements stay on one line:
+
+```php
+; $timeout = 5;
+; require_once __DIR__ . '/fixture.php';
+```
+
+For a multi-line statement or block, put `;` only on its first line. Spartan Test
+accumulates source until PHP reports that the statement is syntactically complete, so
+normal PHP indentation and zero-indented closing braces are supported. Exact formatting
+is preserved when the test file is saved.
+
+Supported multi-line forms include:
+
+- assignments using closures, anonymous classes, arrays, calls, heredoc, and nowdoc;
+- named `function` declarations;
+- named `class` declarations, including methods and nested blocks;
+- compound statements that remain syntactically incomplete until their closing clause,
+  including loops and `do`/`while`;
+- `try`/`catch`, `try`/`finally`, and `try`/`catch`/`finally`. `catch` and `finally` may
+  start on their own unindented lines.
+
+```php
+; $rent = function (array $data) use ($T) {
+    return $T->Model($data);
+};
+
+; function normalizeRent(array $data): array {
+    return array_filter($data);
+}
+
+; class RentFixture {
+    public array $data = [];
+}
+
+; try {
+    loadFixture();
+} catch (RuntimeException $error) {
+    recoverFixture($error);
+} finally {
+    closeFixture();
+}
+```
+
+Rules and boundaries:
+
+- The `;` prefix is mandatory for functions and classes. A bare `function` or `class`
+  line is parsed as a test expression, not setup code.
+- Each new top-level setup statement starts with its own `;`. Continuation lines do not.
+- A missing final PHP semicolon is still auto-added when adding it makes the complete
+  setup statement valid. Explicit semicolons are recommended for clarity.
+- Legacy indented setup continuations remain supported, but indentation is no longer
+  required for a PHP fragment that is still syntactically incomplete.
+- Named functions and classes are evaluated once. A formatting-only soft-regeneration
+  pass skips their declarations to prevent `Cannot redeclare` errors.
+- PHP function and class names remain process-global. If one `stest` command receives
+  several files, declarations across those files must use unique names or namespaces.
+- Closures, anonymous classes, assignments, and `try` blocks are setup expressions and
+  run again during soft-regeneration so their local variables are recreated.
+- Official named-declaration support is currently limited to `function` and `class`.
+  Do not use `interface`, `trait`, `enum`, or attributed declarations in `.stest` setup
+  blocks: they are not yet protected from redeclaration during soft-regeneration.
+- For `if`/`elseif`/`else`, keep `elseif` or `else` on the same physical line as the
+  preceding closing brace (`} else {`). A separate zero-indented `else` is not yet
+  recognized as continuation; legacy indentation also keeps it attached.
+- Do not add `<?php` inside a setup block. The optional top-level `<?php` line in an
+  older `.stest` file is treated as a comment for compatibility.
+
+Multi-line test expressions are different: they still use 1-2 spaces for continuation,
+and expected results still use exactly 4 spaces. The PHP-block rules above apply only
+to entries whose first character is `;`.
+
+See [multiline-setup.stest](examples/1-basics/multiline-setup.stest) for a runnable
+example and [basic.stest](examples/1-basics/basic.stest) for the legacy indentation form.
 
 @see [more complex example](https://github.com/parf/spartan-test/blob/main/examples/1-basics/basic.stest)
 

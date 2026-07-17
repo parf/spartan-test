@@ -4,8 +4,7 @@ Current roadmap. Completed, cancelled, duplicated, and historical items remain a
 in Git history instead of being mixed into the active list.
 
 Parser and syntax:
- ☐ Support complete multi-line PHP syntax in `; code ...` definition blocks
- ☐ Allow function and class definitions without the `;` prefix
+ ☐ Support unindented `else`/`elseif` continuations in `;` PHP blocks
  ☐ Redesign critical-test syntax; current `!expr` conflicts with PHP's logical-not operator
  ☐ Design conditional test sections that can be enabled again later in the file
  ☐ Add a concise JSON API request syntax, including `POST-JS $uri $data`

@@ -1,0 +1,176 @@
+#!/usr/bin/env stest
+# Multi-line semicolon-prefixed PHP setup blocks use PHP syntax, not indentation.
+
+; function stest_multiline_total(array $values): int {
+    return array_sum($values);
+}
+
+stest_multiline_total([2, 3, 5]);
+    10;
+
+; class STestMultilineFixture {
+    public function Model(int $id, array $data): object {
+        return (object) [
+            'rentOriginalUnit' => $data['data']['unit'],
+            'rentPerSqftYear' => $data['area_sqft'],
+            'rentMonth' => $data['listprice'],
+        ];
+    }
+}
+
+; $T = new STestMultilineFixture();
+; $rent = function (array $data, float $sqft = 0.0, float $lp = 0.0, string $tt = 'ForRent') use ($T) {
+    static $id = 999000200;
+    $l = $T->Model(++$id, ['transactiontype' => $tt, 'data' => $data, 'area_sqft' => $sqft, 'listprice' => $lp]);
+    return [$l->rentOriginalUnit, $l->rentPerSqftYear, $l->rentMonth];
+};
+
+$rent(['unit' => 'month'], 24.5, 3200.0);
+    ['month', 24.5, 3200];
+
+; $anonymous = new class {
+    public function value(): int {
+        return 7;
+    }
+};
+
+$anonymous->value();
+    7;
+
+; $nested = [
+    'call' => implode(
+        ':',
+        ['a', 'b', 'c']
+    ),
+    'array' => [
+        2,
+        3,
+    ],
+];
+
+$nested;
+    ["array"=>[2, 3], "call"=>'a:b:c'];
+
+; $heredoc = <<<TEXT
+alpha
+beta
+TEXT;
+
+str_contains($heredoc, "alpha\nbeta");
+    true;
+
+; $nowdoc = <<<'TEXT'
+$notExpanded
+TEXT;
+
+$nowdoc;
+    '$notExpanded';
+
+; $branch = '';
+; if (false) {
+    $branch = 'if';
+} elseif (false) {
+    $branch = 'elseif';
+} else {
+    $branch = 'else';
+}
+
+$branch;
+    'else';
+
+; $loops = [];
+; foreach ([1, 2] as $value) {
+    $loops[] = "foreach:$value";
+}
+; for ($value = 1; $value <= 2; $value++) {
+    $loops[] = "for:$value";
+}
+; $value = 1;
+; while ($value <= 2) {
+    $loops[] = "while:$value";
+    $value++;
+}
+; do {
+    $loops[] = "do:$value";
+    $value++;
+}
+while ($value <= 4);
+
+$loops;
+    ['foreach:1', 'foreach:2', 'for:1', 'for:2', 'while:1', 'while:2', 'do:3', 'do:4'];
+
+; $switchValue = '';
+; switch (2) {
+    case 1:
+        $switchValue = 'one';
+        break;
+    case 2:
+        $switchValue = 'two';
+        break;
+}
+
+$switchValue;
+    'two';
+
+; $catchOnly = '';
+; try {
+    throw new LogicException('caught');
+}
+catch (LogicException $error) {
+    $catchOnly = $error->getMessage();
+}
+
+$catchOnly;
+    'caught';
+
+; $finallyTrace = [];
+; try {
+    $finallyTrace[] = 'try';
+}
+finally {
+    $finallyTrace[] = 'finally';
+}
+
+$finallyTrace;
+    ['try', 'finally'];
+
+; $catchTrace = [];
+; try {
+    throw new RuntimeException('expected');
+}
+catch (RuntimeException $error) {
+    $catchTrace[] = $error->getMessage();
+}
+finally {
+    $catchTrace[] = 'finally';
+}
+
+$catchTrace;
+    ['expected', 'finally'];
+
+; $self = realpath(\stest\i('stest')->file);
+; $root = realpath(dirname($self, 3));
+; $tmp = sys_get_temp_dir() . '/stest-multiline-soft-' . getmypid() . '.stest';
+; $softFixture = <<<'STEST'
+#!/usr/bin/env stest
+; class STestMultilineSoftFixture {
+    public static function values(): array {
+        return ['b' => 2, 'a' => 1];
+    }
+}
+; function stest_multiline_soft_definition(): array {
+    return STestMultilineSoftFixture::values();
+}
+stest_multiline_soft_definition();
+    ['a' => 1, 'b' => 2];
+STEST;
+; file_put_contents($tmp, $softFixture . "\n");
+; exec(escapeshellarg($root . '/bin/stest') . ' -q ' . escapeshellarg($tmp), $softOutput, $softCode);
+
+$softCode;
+    0;
+
+str_contains(file_get_contents($tmp), '["a"=>1, "b"=>2];');
+    true;
+
+; unlink($tmp);
