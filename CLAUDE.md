@@ -83,6 +83,13 @@ composer test-list     # List all tests
 - Various helper functions for output coloring, string manipulation, etc.
 
 **`src/WebTest.inc.php`** - Web testing functionality
+
+### Repository Operational Skills
+
+- `.codex/skills/deploy` - prepare, test, review, publish, and deploy a release to
+  explicitly named hosts.
+- `.codex/skills/sync-versions` - update and verify the standard fleet: localhost, p4,
+  rdvp, t4cre-stage, t4cre-rc, t4cre-prod, and t4test.
 - `WebTest` class: HTTP request/response testing
 - Supports GET, POST, JSONPOST operations
 - Cookie/session preservation across requests

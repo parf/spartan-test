@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sync Spartan Test Versions"
+  short_description: "Update and verify Spartan Test everywhere"
+  default_prompt: "Use $sync-versions to update all standard hosts to the latest Spartan Test version."

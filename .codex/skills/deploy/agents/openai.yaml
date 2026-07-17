@@ -1,0 +1,4 @@
+interface:
+  display_name: "Release and Deploy Spartan Test"
+  short_description: "Prepare, publish, and deploy Spartan Test"
+  default_prompt: "Use $deploy to bump, test, review, publish, and deploy the next Spartan Test release."

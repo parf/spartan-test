@@ -1,12 +1,21 @@
-# Before every release, update both constants in src/STest.php:
-#   VERSION    - release version
-#   DATE_BUILD - release date in YYYY-MM-DD format
+# Canonical agent workflow:
+#   .codex/skills/deploy/SKILL.md
+#
+# Release checklist:
+# 1. Update affected docs, examples, and CHANGELOG.
+# 2. Bump VERSION and DATE_BUILD in src/STest.php.
+# 3. Update the exact --version assertion in src/test/exit-status.stest.
+# 4. Run PHP/Bash/ShellCheck/Composer validation and bin/stest-all -q src/test.
+# 5. Review the complete diff and require a clean, understood release scope.
+# 6. Commit as "Release VERSION" and create an annotated VERSION tag.
+# 7. Push main and the tag.
+# 8. Verify GitHub refs and Packagist source metadata.
+# 9. Deploy named hosts with .codex/skills/deploy/scripts/deploy.sh.
+# 10. Synchronize the standard fleet with $sync-versions when requested.
 
-[00:15:44] parf@parf  main /hbfr/spartan-test (0)
-> git tag -a 3.1.4 -m "V3.1.4 - Description of changes"
-[00:16:28] parf@parf  main /hbfr/spartan-test (0)
-> git push --tags
+git tag -a VERSION -m "VVERSION - Release summary"
+git push origin main
+git push origin VERSION
 
-
-# webhook configured, no need to do this anymore
-go: https://packagist.org/packages/parf/spartan-test  ;   do "update"
+# Packagist updates through the GitHub webhook. Verify:
+# https://repo.packagist.org/p2/parf/spartan-test.json
