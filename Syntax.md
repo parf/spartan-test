@@ -84,6 +84,8 @@ Supported multi-line forms include:
 - named `class` declarations, including methods and nested blocks;
 - compound statements that remain syntactically incomplete until their closing clause,
   including loops and `do`/`while`;
+- `if`/`elseif`/`else`, including `elseif`, `else if`, and `else` starting on their own
+  unindented lines;
 - `try`/`catch`, `try`/`finally`, and `try`/`catch`/`finally`. `catch` and `finally` may
   start on their own unindented lines.
 
@@ -98,6 +100,13 @@ Supported multi-line forms include:
 
 ; class RentFixture {
     public array $data = [];
+}
+
+; if ($environment === 'prod') {
+    loadProductionFixture();
+}
+else {
+    loadDevelopmentFixture();
 }
 
 ; try {
@@ -127,9 +136,6 @@ Rules and boundaries:
 - Official named-declaration support is currently limited to `function` and `class`.
   Do not use `interface`, `trait`, `enum`, or attributed declarations in `.stest` setup
   blocks: they are not yet protected from redeclaration during soft-regeneration.
-- For `if`/`elseif`/`else`, keep `elseif` or `else` on the same physical line as the
-  preceding closing brace (`} else {`). A separate zero-indented `else` is not yet
-  recognized as continuation; legacy indentation also keeps it attached.
 - Do not add `<?php` inside a setup block. The optional top-level `<?php` line in an
   older `.stest` file is treated as a comment for compatibility.
 

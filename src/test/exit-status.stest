@@ -33,7 +33,7 @@
 ; exec("$bin --version 2>&1", $versionOutput, $versionCode);
 
 [$versionCode, $versionOutput];
-    [0, ['4.0.0 (build 2026-07-17)']];
+    [0, ['4.0.1 (build 2026-07-17)']];
 
 $run("$bin " . escapeshellarg($pass));
     0;

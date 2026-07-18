@@ -225,13 +225,15 @@ class PHPBlockParser {
     static function read($ln, string $line, Iterator_Put $I): array {
         $code = trim($line);
         $definition = self::isNamedDefinition($code);
-        $tryBlock = self::firstTokenId($code) === T_TRY;
+        $firstTokenId = self::firstTokenId($code);
+        $tryBlock = $firstTokenId === T_TRY;
+        $ifBlock = $firstTokenId === T_IF;
         $lastError = null;
 
         while (true) {
             [$complete, $normalized, $lastError] = self::complete($code);
             if ($complete) {
-                if (!self::appendContinuation($code, $I, $tryBlock)) {
+                if (!self::appendContinuation($code, $I, $tryBlock, $ifBlock)) {
                     return [$ln, [$definition ? 'definition' : 'expr', $normalized]];
                 }
                 continue;
@@ -267,17 +269,23 @@ class PHPBlockParser {
     }
 
     /**
-     * Preserve the original indented-continuation syntax. A complete try block
-     * may also be followed by an unindented catch/finally clause.
+     * Preserve the original indented-continuation syntax. Complete try and if
+     * blocks may also be followed by their unindented continuation clauses.
      */
-    private static function appendContinuation(string &$code, Iterator_Put $I, bool $tryBlock): bool {
+    private static function appendContinuation(
+        string &$code,
+        Iterator_Put $I,
+        bool $tryBlock,
+        bool $ifBlock
+    ): bool {
         $next = $I->getKV();
         if ($next === null) {
             return false;
         }
         $indented = $next[1] !== '' && $next[1][0] === ' ';
         $tryContinuation = $tryBlock && preg_match('/^\s*(?:catch|finally)\b/', $next[1]);
-        if ($indented || $tryContinuation) {
+        $ifContinuation = $ifBlock && preg_match('/^\s*(?:elseif\b|else\b(?:\s+if\b)?)/', $next[1]);
+        if ($indented || $tryContinuation || $ifContinuation) {
             $code .= "\n" . $next[1];
             return true;
         }

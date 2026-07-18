@@ -78,6 +78,45 @@ $nowdoc;
 $branch;
     'else';
 
+; $standaloneElse = '';
+; if (true) {
+    $standaloneElse = 'if';
+}
+else {
+    $standaloneElse = 'else';
+}
+
+$standaloneElse;
+    'if';
+
+; $standaloneElseif = '';
+; if (false) {
+    $standaloneElseif = 'if';
+}
+elseif (true) {
+    $standaloneElseif = 'elseif';
+}
+else {
+    $standaloneElseif = 'else';
+}
+
+$standaloneElseif;
+    'elseif';
+
+; $standaloneElseIf = '';
+; if (false) {
+    $standaloneElseIf = 'if';
+}
+else if (true) {
+    $standaloneElseIf = 'else if';
+}
+else {
+    $standaloneElseIf = 'else';
+}
+
+$standaloneElseIf;
+    'else if';
+
 ; $loops = [];
 ; foreach ([1, 2] as $value) {
     $loops[] = "foreach:$value";
