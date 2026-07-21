@@ -44,10 +44,14 @@ recent_duration() {
 
 parallel_jobs() {
   local fd_limit jobs
+  # stest is IO-bound, not CPU-bound: cap concurrency at a fixed ceiling rather
+  # than scaling with the fd limit. A large ulimit -Sn (e.g. 524288) would
+  # otherwise launch every test at once and thrash the machine.
+  local max=100
 
   fd_limit=$(ulimit -Sn) || return 1
   if [[ $fd_limit == unlimited ]]; then
-    echo 0
+    echo "$max"
     return
   fi
 
@@ -55,6 +59,7 @@ parallel_jobs() {
   # Parallel's own descriptors and inherited shell descriptors.
   jobs=$(( (fd_limit - 32) / 4 ))
   (( jobs < 1 )) && jobs=1
+  (( jobs > max )) && jobs=$max
   echo "$jobs"
 }
 
