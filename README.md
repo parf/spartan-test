@@ -82,10 +82,10 @@ paths. This is separate from `--all`: use both options to include hidden,
 dependency-directory, ignored (with `fd`), and non-executable `.stest` files. Systems
 without `fd` fall back to `find`.
 
-Test execution is I/O-oriented and uses the highest GNU Parallel job count that fits
-the process soft file-descriptor limit, with a small descriptor reserve. This keeps
-parallelism substantially above the CPU count without triggering GNU Parallel's file
-handle warning.
+Test execution is I/O-oriented and uses up to 100 GNU Parallel jobs, reduced when the
+process soft file-descriptor limit cannot safely support that many. This keeps
+parallelism substantially above the CPU count without launching every discovered test
+at once or triggering GNU Parallel's file-handle warning.
 
 
 # Composer / Laravel Autoload Integration

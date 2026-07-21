@@ -33,7 +33,7 @@
 ; exec("$bin --version 2>&1", $versionOutput, $versionCode);
 
 [$versionCode, $versionOutput];
-    [0, ['4.0.1 (build 2026-07-17)']];
+    [0, ['4.0.2 (build 2026-07-21)']];
 
 $run("$bin " . escapeshellarg($pass));
     0;
@@ -385,6 +385,12 @@ $run("bash -c " . escapeshellarg("ulimit -n 64; $parallelPath $all -q " . escape
 
 array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 2);
     ['-j', '8'];
+
+$run("bash -c " . escapeshellarg("ulimit -n 1024; $parallelPath $all -q " . escapeshellarg($passDir)));
+    0;
+
+array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 2);
+    ['-j', '100'];
 
 ; $findBin = "$tmp/find-bin";
 ; $findDir = "$tmp/find-dir";
