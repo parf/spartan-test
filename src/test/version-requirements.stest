@@ -1,0 +1,182 @@
+#!/usr/bin/env stest
+# Packagist version checks and minimum-version requirements.
+
+; $metadata = json_encode([
+    'packages' => [
+        'parf/spartan-test' => [
+            ['version' => 'dev-main'],
+            ['version' => '4.2.0-beta.1'],
+            ['version' => 'v4.1.0'],
+            ['version' => '4.2.0+build.7'],
+            ['version' => '4.0.9'],
+        ],
+    ],
+]);
+; $fetch = fn() => $metadata;
+
+\STest::latestVersion($fetch);
+    '4.2.0+build.7';
+
+\STest::checkLatestVersion($fetch);
+    '4.2.0+build.7';
+
+; $olderMetadata = json_encode([
+    'packages' => [
+        'parf/spartan-test' => [
+            ['version' => '3.9.9'],
+        ],
+    ],
+]);
+
+\STest::checkLatestVersion(fn() => $olderMetadata) === \stest\VERSION;
+    true;
+
+; $capture = function (callable $call): array {
+    try {
+        $value = $call();
+        return ['return', $value];
+    } catch (Throwable $error) {
+        return [get_class($error), $error->getMessage()];
+    }
+};
+
+; $nonStringMetadata = $capture(fn() => \STest::latestVersion(fn() => []));
+
+$nonStringMetadata;
+    ['UnexpectedValueException', 'Spartan Test version metadata must be a JSON string'];
+
+; $invalidJson = $capture(fn() => \STest::latestVersion(fn() => '{'));
+
+$invalidJson[0];
+    'UnexpectedValueException';
+
+str_starts_with($invalidJson[1], 'Invalid Spartan Test version metadata:');
+    true;
+
+; $missingPackage = $capture(fn() => \STest::latestVersion(fn() => '{"packages":{}}'));
+
+$missingPackage;
+    ['UnexpectedValueException', 'Spartan Test version metadata does not contain parf/spartan-test'];
+
+; $noStableMetadata = json_encode([
+    'packages' => ['parf/spartan-test' => [
+        ['version' => 'dev-main'],
+        ['version' => '5.0.0-beta.1'],
+    ]],
+]);
+; $noStable = $capture(fn() => \STest::latestVersion(fn() => $noStableMetadata));
+
+$noStable;
+    ['UnexpectedValueException', 'Spartan Test version metadata contains no stable SemVer release'];
+
+$capture(fn() => \STest::requireVersion('0.0.1'));
+    ['return', NULL];
+
+; $stopFailure = $capture(fn() => \STest::requireVersion('999.0.0', 'stop'));
+
+$stopFailure[0];
+    'stest\\StopException';
+
+preg_match('/^Spartan Test 999\.0\.0\+ required; installed \d+\.\d+\.\d+$/', $stopFailure[1]);
+    1;
+
+; $errorFailure = $capture(fn() => \STest::requireVersion('999.0.0', 'error'));
+
+$errorFailure[0];
+    'stest\\ErrorException';
+
+preg_match('/^Spartan Test 999\.0\.0\+ required; installed \d+\.\d+\.\d+$/', $errorFailure[1]);
+    1;
+
+; $invalidCore = $capture(fn() => \STest::requireVersion('4.01.0'));
+; $invalidPrerelease = $capture(fn() => \STest::requireVersion('4.0.0-01'));
+
+str_starts_with($invalidCore[1], 'Invalid Spartan Test SemVer requirement');
+    true;
+
+str_starts_with($invalidPrerelease[1], 'Invalid Spartan Test SemVer requirement');
+    true;
+
+; $invalidMode = $capture(fn() => \STest::requireVersion('0.0.1', 'ignore'));
+
+$invalidMode;
+    ['InvalidArgumentException', 'Invalid Spartan Test version failure mode \'ignore\'; expected stop or error'];
+
+; $forceStop = function () {
+    $previous = \stest\STest::$ARG['force'] ?? null;
+    \stest\STest::$ARG['force'] = 1;
+    try {
+        \STest::requireVersion('999.0.0', 'stop');
+        return 'continued';
+    } finally {
+        if ($previous === null) {
+            unset(\stest\STest::$ARG['force']);
+        } else {
+            \stest\STest::$ARG['force'] = $previous;
+        }
+    }
+};
+
+$forceStop();
+    'continued';
+
+; $forceError = function () use ($capture) {
+    $previous = \stest\STest::$ARG['force'] ?? null;
+    \stest\STest::$ARG['force'] = 1;
+    try {
+        return $capture(fn() => \STest::requireVersion('999.0.0', 'error'));
+    } finally {
+        if ($previous === null) {
+            unset(\stest\STest::$ARG['force']);
+        } else {
+            \stest\STest::$ARG['force'] = $previous;
+        }
+    }
+};
+
+; $forcedErrorFailure = $forceError();
+
+$forcedErrorFailure[0];
+    'stest\\ErrorException';
+
+str_starts_with($forcedErrorFailure[1], 'Spartan Test 999.0.0+ required; installed ');
+    true;
+
+; $self = realpath(\stest\i('stest')->file);
+; $root = realpath(dirname($self, 3));
+; $bin = escapeshellarg($root . '/bin/stest');
+; $tmp = sys_get_temp_dir() . '/stest-version-requirements-' . getmypid();
+; exec('rm -rf ' . escapeshellarg($tmp));
+; mkdir($tmp, 0777, true);
+; register_shutdown_function(function () use ($tmp) {
+    exec('rm -rf ' . escapeshellarg($tmp));
+});
+; $run = function (string $command): int {
+    exec($command . ' >/dev/null 2>&1', $output, $code);
+    return $code;
+};
+; $stopFile = "$tmp/require-stop.stest";
+; $errorFile = "$tmp/require-error.stest";
+; file_put_contents(
+    $stopFile,
+    "#!/usr/bin/env stest\n"
+        . "; STest::requireVersion('999.0.0', 'stop');\n"
+        . "1 + 1;\n"
+        . "    3;\n"
+);
+; file_put_contents(
+    $errorFile,
+    "#!/usr/bin/env stest\n"
+        . "; STest::requireVersion('999.0.0', 'error');\n"
+);
+; chmod($stopFile, 0755);
+; chmod($errorFile, 0755);
+
+$run($bin . ' ' . escapeshellarg($stopFile) . ' -q');
+    0;
+
+$run($bin . ' ' . escapeshellarg($stopFile) . ' --force -q');
+    1;
+
+$run($bin . ' ' . escapeshellarg($errorFile) . ' -q');
+    1;

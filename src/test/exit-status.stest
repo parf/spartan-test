@@ -33,7 +33,7 @@
 ; exec("$bin --version 2>&1", $versionOutput, $versionCode);
 
 [$versionCode, $versionOutput];
-    [0, ['4.0.2 (build 2026-07-21)']];
+    [0, ['4.0.3 (build 2026-07-24)']];
 
 $run("$bin " . escapeshellarg($pass));
     0;
@@ -383,14 +383,51 @@ $run("$path $all --list --all --new " . escapeshellarg($allDir) . " | grep -q '.
 $run("bash -c " . escapeshellarg("ulimit -n 64; $parallelPath $all -q " . escapeshellarg($passDir)));
     0;
 
-array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 2);
-    ['-j', '8'];
+array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 3);
+    ['-j', '8', '--tag'];
 
 $run("bash -c " . escapeshellarg("ulimit -n 1024; $parallelPath $all -q " . escapeshellarg($passDir)));
     0;
 
-array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 2);
-    ['-j', '100'];
+array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 3);
+    ['-j', '100', '--tag'];
+
+; $hardExitDir = "$tmp/hard-exit-dir";
+; $hardExitLog = "$tmp/hard-exit.stderr";
+; mkdir($hardExitDir);
+; $hardExit = "$hardExitDir/hard-exit.stest";
+; file_put_contents(
+    $hardExit,
+    "#!/usr/bin/env stest\n; fwrite(STDERR, \"fatal-marker\\n\"); exit(7);\n"
+  );
+; chmod($hardExit, 0755);
+; exec(
+    "$all -q " . escapeshellarg($hardExitDir)
+      . " >/dev/null 2>" . escapeshellarg($hardExitLog),
+    $hardExitOutput,
+    $hardExitCode
+  );
+
+$hardExitCode !== 0;
+    true;
+
+file_get_contents($hardExitLog);
+    './hard-exit.stest	fatal-marker
+    ';
+
+; exec(
+    "$all " . escapeshellarg($hardExitDir)
+      . " >/dev/null 2>" . escapeshellarg($hardExitLog),
+    $hardExitOutput,
+    $hardExitCode
+  );
+
+$hardExitCode !== 0;
+    true;
+
+file_get_contents($hardExitLog);
+    './hard-exit.stest	fatal-marker
+    ';
 
 ; $findBin = "$tmp/find-bin";
 ; $findDir = "$tmp/find-dir";

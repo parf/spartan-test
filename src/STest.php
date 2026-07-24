@@ -14,7 +14,7 @@ use function stest\helper\cut;
 // var_export alike
 
 /**
- * Spartan Test 3.3.x - PHP 8.5 testing framework done right
+ * Spartan Test 4.x - PHP 8.5 testing framework done right
  * RTFM: README.md
  */
 
@@ -58,14 +58,17 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "4.0.2";
-const DATE_BUILD = "2026-07-21";
+const VERSION = "4.0.3";
+const DATE_BUILD = "2026-07-24";
 
 //
 // INTERNAL
 //
 
 class STest {
+
+    private const PACKAGIST_PACKAGE = 'parf/spartan-test';
+    private const PACKAGIST_METADATA_URL = 'https://repo.packagist.org/p2/parf/spartan-test.json';
 
     static $ARG;
     static $TESTS;
@@ -156,6 +159,147 @@ class STest {
     // ONLY specific version
     static function php83(string $message=""): void {
         self::phpVersion("8.3", $message);
+    }
+
+    /**
+     * Return the newest stable Spartan Test SemVer published on Packagist.
+     *
+     * The optional fetcher exists for deterministic/offline callers and tests.
+     * It must return the Packagist P2 JSON document as a string.
+     */
+    static function latestVersion(?callable $fetch = null): string {
+        $metadata = $fetch ? $fetch() : self::fetchPackagistMetadata();
+        if (!is_string($metadata)) {
+            throw new \UnexpectedValueException("Spartan Test version metadata must be a JSON string");
+        }
+
+        try {
+            $decoded = json_decode($metadata, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $error) {
+            throw new \UnexpectedValueException(
+                "Invalid Spartan Test version metadata: " . $error->getMessage(),
+                0,
+                $error
+            );
+        }
+
+        $packages = $decoded['packages'][self::PACKAGIST_PACKAGE] ?? null;
+        if (!is_array($packages)) {
+            throw new \UnexpectedValueException(
+                "Spartan Test version metadata does not contain " . self::PACKAGIST_PACKAGE
+            );
+        }
+
+        $latest = null;
+        foreach ($packages as $package) {
+            $version = is_array($package) ? ($package['version'] ?? null) : null;
+            if (!is_string($version)) {
+                continue;
+            }
+            $version = preg_replace('/^v(?=\d)/', '', $version);
+            if (!self::isSemver($version) || str_contains(explode('+', $version, 2)[0], '-')) {
+                continue;
+            }
+            if ($latest === null || self::compareSemver($version, $latest) > 0) {
+                $latest = $version;
+            }
+        }
+
+        if ($latest === null) {
+            throw new \UnexpectedValueException(
+                "Spartan Test version metadata contains no stable SemVer release"
+            );
+        }
+        return $latest;
+    }
+
+    /**
+     * Return the newest version when comparing this installation with Packagist.
+     */
+    static function checkLatestVersion(?callable $fetch = null): string {
+        $published = self::latestVersion($fetch);
+        return self::compareSemver($published, VERSION) > 0 ? $published : VERSION;
+    }
+
+    /**
+     * Require a minimum Spartan Test SemVer for the current test file.
+     *
+     * $on_fail="stop" is a successful skip and honors --force.
+     * $on_fail="error" is a test failure.
+     */
+    static function requireVersion(string $version, string $on_fail = 'stop'): void {
+        if (!self::isSemver($version)) {
+            throw new \InvalidArgumentException(
+                "Invalid Spartan Test SemVer requirement '$version'; expected MAJOR.MINOR.PATCH"
+            );
+        }
+        if (!in_array($on_fail, ['stop', 'error'], true)) {
+            throw new \InvalidArgumentException(
+                "Invalid Spartan Test version failure mode '$on_fail'; expected stop or error"
+            );
+        }
+        if (self::compareSemver(VERSION, $version) >= 0) {
+            return;
+        }
+
+        $message = "Spartan Test $version+ required; installed " . VERSION;
+        if ($on_fail === 'stop') {
+            self::stop($message);
+            return;
+        }
+        self::error($message);
+    }
+
+    private static function fetchPackagistMetadata(): string {
+        if (function_exists('curl_init')) {
+            $curl = curl_init(self::PACKAGIST_METADATA_URL);
+            if ($curl === false) {
+                throw new \RuntimeException("Unable to initialize Spartan Test version check");
+            }
+            curl_setopt_array($curl, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FAILONERROR => true,
+                CURLOPT_CONNECTTIMEOUT => 3,
+                CURLOPT_TIMEOUT => 5,
+                CURLOPT_USERAGENT => "Spartan-Test/" . VERSION,
+            ]);
+            $metadata = curl_exec($curl);
+            if ($metadata === false) {
+                throw new \RuntimeException(
+                    "Unable to query Packagist for Spartan Test versions: " . curl_error($curl)
+                );
+            }
+            return $metadata;
+        }
+
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => 5,
+                'header' => "User-Agent: Spartan-Test/" . VERSION . "\r\n",
+            ],
+        ]);
+        $metadata = @file_get_contents(self::PACKAGIST_METADATA_URL, false, $context);
+        if ($metadata === false) {
+            throw new \RuntimeException("Unable to query Packagist for Spartan Test versions");
+        }
+        return $metadata;
+    }
+
+    private static function isSemver(string $version): bool {
+        return (bool) preg_match(
+            '/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)'
+                . '(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)'
+                . '(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?'
+                . '(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/D',
+            $version
+        );
+    }
+
+    private static function compareSemver(string $left, string $right): int {
+        return version_compare(
+            explode('+', $left, 2)[0],
+            explode('+', $right, 2)[0]
+        );
     }
 
 

@@ -247,9 +247,24 @@ See [tagged-test.stest](examples/1-basics/tagged-test.stest) for file metadata s
 - `STest::stop($message, int $until_yyyymmdd)` - successfully disable the test until the date; execution resumes on that date
 - `STest::error($message)` - terminate the current test file as a failure, call `Reporter::error()`, and contribute nonzero status
 - `STest::alert($message)` - terminate the current test file as a failure, call `Reporter::alert()`, and contribute nonzero status
+- `STest::latestVersion()` - query Packagist and return the newest stable published
+  Spartan Test SemVer. Network, HTTP, malformed JSON, and missing-version failures throw
+  explicit exceptions instead of being treated as "up to date".
+- `STest::checkLatestVersion()` - compare the Packagist release with the installed
+  `\stest\VERSION` and return the newer version string.
+- `STest::requireVersion($version, $on_fail = 'stop')` - require a minimum strict SemVer
+  (`MAJOR.MINOR.PATCH`, optional prerelease/build metadata). An unmet requirement uses
+  the normal successful `STest::stop()` path by default; use `on_fail: 'error'` for a
+  nonzero test failure. `--force` bypasses only the `stop` mode.
 - `STest::debug($message, $level)` - show text to STDERR when `--debug=$level >= $level`
 - `STest::inspect(/* "object | string className" */ $object, $show_line = 0)` - backend for `? object`
 - `STest::runTest($file)`  -  execute OTHER stest in current context
+
+```php
+; \STest::requireVersion('4.0.0');
+; \STest::requireVersion('4.1.0', on_fail: 'error');
+; $latest = \STest::checkLatestVersion();
+```
 
 # Web Tests
 

@@ -38,6 +38,13 @@ including under `--first_error`, that failure takes precedence: `Reporter::fail(
 called and the process exits nonzero. `STest::error()` and `STest::alert()` are the
 explicit failure paths and also contribute nonzero status.
 
+Tests can require the installed framework version with
+`STest::requireVersion('4.0.0')`. The default unmet-requirement behavior is the same
+successful skip as `STest::stop()`; pass `on_fail: 'error'` when an old framework must
+fail CI. `STest::latestVersion()` reads the newest stable release from Packagist, while
+`STest::checkLatestVersion()` returns the newer of that release and the installed
+`\stest\VERSION`. See [built-in methods](Syntax.md#built-in-stest-methods).
+
 `stest --generate` intentionally suppresses test failures while regenerating results.
 It still exits nonzero when an input file cannot be read or a regenerated file cannot
 be saved.
@@ -85,7 +92,9 @@ without `fd` fall back to `find`.
 Test execution is I/O-oriented and uses up to 100 GNU Parallel jobs, reduced when the
 process soft file-descriptor limit cannot safely support that many. This keeps
 parallelism substantially above the CPU count without launching every discovered test
-at once or triggering GNU Parallel's file-handle warning.
+at once or triggering GNU Parallel's file-handle warning. Every output line is prefixed
+with its `.stest` path, so even a hard process exit remains attributable to the test
+that produced it; successful tests remain silent under `-q`.
 
 
 # Composer / Laravel Autoload Integration

@@ -24,6 +24,7 @@ usage() {
 #  echo " -v  : verbose - show test names"   << DEFAULT
   echo "  -q              : quiet - show only errors; test selection is unchanged"
   echo "  GNU Parallel concurrency is file-descriptor-safe and capped at 100 jobs"
+  echo "  Output lines are prefixed with the .stest path that produced them"
 }
 
 recent_minutes() {
@@ -380,9 +381,9 @@ jobs=$(parallel_jobs) || { echo "Unable to determine parallel job limit" >&2; ex
 
 # show errors only (in STDERR)
 if [[ $quiet == 1 ]]; then
-  parallel -j "$jobs" "$stest_bin {} -q" :::: "$test_list"
+  parallel -j "$jobs" --tag "$stest_bin {} -q" :::: "$test_list"
   exit $?
 fi
 
-parallel -j "$jobs" "echo {}; $stest_bin {} --color" :::: "$test_list"
+parallel -j "$jobs" --tag "$stest_bin {} --color" :::: "$test_list"
 exit $?
