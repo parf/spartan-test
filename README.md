@@ -1,7 +1,7 @@
 SPARTAN-TEST
 ============
 
-Minimalistic PHP 7, PHP 8 Unit Testing Framework / Web Testing Framework
+Minimalistic PHP 8+ Unit Testing Framework / Web Testing Framework
 
 Write your tests in style:
 * Very simple tests
