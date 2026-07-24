@@ -1,121 +1,168 @@
-SPARTAN-TEST
-============
+# Spartan Test
 
-Minimalistic PHP 8+ Unit Testing Framework / Web Testing Framework
+**PHP 8+ unit and web tests that read like PHP and run like scripts.**
 
-Write your tests in style:
-* Very simple tests
-* Run as an executable file
-* Both unit and web testing
-* PHP code, minimal learning curve
-* Less cruft, more fun
+Spartan Test is a small testing framework for developers who want tests to stay close
+to the code they exercise. A test is an ordinary PHP expression followed by its
+expected result, all inside a simple executable `.stest` file.
 
-- [Syntax](https://github.com/parf/spartan-test/blob/main/Syntax.md)
-- [Web Tests](https://github.com/parf/spartan-test/blob/main/web-tests.md)
-- [Config](https://github.com/parf/spartan-test/blob/main/Config.md)
-
-PHP setup code starts with `;` in column one and runs without result comparison. For a
-multi-line setup statement, only its first line has the prefix; Spartan Test uses PHP's
-parser to find the end rather than relying on indentation. Supported forms include
-typed closures with `use`, named functions, named classes, nested arrays/calls,
-heredoc/nowdoc, loops, and `try` with `catch` and/or `finally`. Functions and classes
-must keep the `;` prefix and are declared only once during formatting regeneration;
-ordinary setup expressions run again to recreate local state. See the
-[complete syntax](Syntax.md#php-setup-code-and-multi-line-blocks) and the runnable
-[multi-line example](examples/1-basics/multiline-setup.stest).
-
-* Examples
-    - [Basic test example](https://github.com/parf/spartan-test/blob/main/examples/1-basics/1-first-test.stest)
-    - (advanced) [Custom comparison methods](https://github.dev/parf/spartan-test/blob/main/examples/1-basics/special-tests.stest)
-    - [Web-tests](/web-tests.md)
-
-* To see more help just run `stest --help` or `stest-all --help`
-
-`STest::stop($message)` intentionally skips the rest of the current test file. A stopped
-test with no prior failures is successful: it calls `Reporter::stop()` and contributes
-exit status `0` to `stest`, `stest-all`, CI, and cron runs. If a test already failed,
-including under `--first_error`, that failure takes precedence: `Reporter::fail()` is
-called and the process exits nonzero. `STest::error()` and `STest::alert()` are the
-explicit failure paths and also contribute nonzero status.
-
-Tests can require the installed framework version with
-`STest::requireVersion('4.0.0')`. The default unmet-requirement behavior is the same
-successful skip as `STest::stop()`; pass `on_fail: 'error'` when an old framework must
-fail CI. `STest::latestVersion()` reads the newest stable release from Packagist, while
-`STest::checkLatestVersion()` returns the newer of that release and the installed
-`\stest\VERSION`. See [built-in methods](Syntax.md#built-in-stest-methods).
-
-`stest --generate` intentionally suppresses test failures while regenerating results.
-It still exits nonzero when an input file cannot be read or a regenerated file cannot
-be saved.
-
-## Selecting tagged tests with stest-all
-
-`stest-all` can select complete test files using metadata in the first four physical
-lines of each `.stest` file. The shebang counts as the first line. Direct `stest`
-execution does not filter by these tags.
-
-```text
+```php
 #!/usr/bin/env stest
-# @tag web smoke long
-# @require-tag prod staging
+
+; $prices = [12, 18, 30];
+
+array_sum($prices);
+    60;
 ```
 
-`@tag` declares normal tags. These tests still run when no tag filter is provided.
-`@require-tag` makes the file opt-in: at least one required tag must be explicitly
-requested as a positive tag.
+Run it directly:
 
 ```bash
-stest-all --tag=smoke
-stest-all --tag="prod smoke"
-stest-all --tag=prod,smoke
-stest-all --tag="prod -long"
-stest-all --tag=prod --tag=-long
+chmod +x price.stest
+./price.stest
 ```
 
-Positive tags use OR matching. Negative tags exclude any file carrying that tag.
-With only negative tags, `stest-all --tag=-long` runs otherwise eligible tests except
-those tagged `long`; required-tag tests remain skipped. Tag selection composes with
-`--all`, `--recent`, `--new`, and `--list`. `--all` includes non-executable files but
-does not bypass `@require-tag`. A positive-only tag query that matches no files exits
-nonzero, which prevents tag typos from producing an empty successful test run. A query
-that intentionally excludes every match with a negative tag remains successful.
+That is a complete test.
 
-When `fd` is installed, `stest-all` uses it for substantially faster discovery and
-follows its ignore-file behavior. Both discovery backends skip hidden files plus
-`vendor` and `node_modules` directories by default; `fd` additionally honors
-`.gitignore`, `.ignore`, and `.fdignore`. Use `-u` or `--unrestricted` to include those
-paths. This is separate from `--all`: use both options to include hidden,
-dependency-directory, ignored (with `fd`), and non-executable `.stest` files. Systems
-without `fd` fall back to `find`.
+## ✦ What Makes It Distinctive
 
-Test execution is I/O-oriented and uses up to 100 GNU Parallel jobs, reduced when the
-process soft file-descriptor limit cannot safely support that many. This keeps
-parallelism substantially above the CPU count without launching every discovered test
-at once or triggering GNU Parallel's file-handle warning. Every output line is prefixed
-with its `.stest` path, so even a hard process exit remains attributable to the test
-that produced it; successful tests remain silent under `-q`.
+- **▶ Tests are executable files.** Run one file directly, pass several files to
+  `stest`, or discover a complete suite with `stest-all`.
+- **↻ Expected results live beside the code.** If a result is missing, Spartan Test
+  generates and saves it. Results stay readable, reviewable, and easy to track in Git.
+- **◆ PHP remains visible.** Use normal expressions, application objects, closures,
+  functions, exceptions, and setup code without wrapping every check in a test class.
+- **◎ Unit and web tests use the same format.** Test return values, services, pages,
+  redirects, cookies, APIs, headers, and response content from `.stest` files.
+- **⚡ Repository-scale execution is built in.** `stest-all` provides discovery,
+  file-level tags, selection filters, and high-I/O parallel execution.
+- **✓ CI behavior is predictable.** Failures return nonzero, intentional skips remain
+  successful, and infrastructure errors are not reported as passing tests.
 
+## How A Test File Works
 
-# Composer / Laravel Autoload Integration
-Upon start spartan test includes `bootstrap/autoload.php` or `vendor/autoload` or `init.php` file from current or parent directories
+Each entry has a simple role:
 
-You can specify your custom autoload file using "--init=$path_filename" option or via `stest.config` file
+```php
+; $user = loadUser(42);     // setup: starts with ";" in column one
 
+$user->displayName();       // expression under test
+    'Ada Lovelace';         // expected result: four-space indentation
+```
 
-INSTALL (GIT)
--------
-    mkdir -p ~/src ~/bin
-    git clone https://github.com/parf/spartan-test.git ~/src/spartan-test
-    ln -s ~/src/spartan-test/stest ~/bin
+Spartan Test captures:
 
+- return values;
+- thrown exceptions and errors;
+- stdout from `echo` and `print`;
+- PHP notices and warnings;
+- web responses and request state.
 
-INSTALL (COMPOSER)
--------
-    composer require parf/spartan-test
-    ln -s ./vendor/bin/stest ~/bin
-    ln -s ./vendor/bin/stest-all ~/bin
+When an expected result is absent, the first run adds its canonical PHP representation
+to the file. A later value change fails normally. Use `--generate` when updating stored
+results is intentional.
 
+You can also use focused matchers when an exact value is unnecessary:
 
-- `stest` provides testing framework
-- `stest-all` runs all or specific tests in parallel (gnu-parallel utility required)
+```php
+$responseBody;
+    ~ "account created";
+    ~ /request-id:\s+\w+/i;
+```
+
+Setup code supports normal PHP syntax. Multi-line PHP works as expected; only the first
+physical line needs the `;` setup prefix.
+
+## ◎ Unit And Web Testing
+
+Unit-style tests call PHP directly:
+
+```php
+calculateTax(100, 0.2);
+    20;
+```
+
+Web tests keep cookies and referrers between requests and can check pages, redirects,
+JSON APIs, headers, XPath results, and response content:
+
+```php
+; \STest::domain('https://example.test');
+
+/account;
+    ~ "Welcome";
+```
+
+See [Web Tests](web-tests.md) for the request syntax and runnable examples.
+
+## Running Tests
+
+```bash
+stest price.stest                 # run one file
+stest first.stest second.stest    # run several files
+stest price.stest -q              # show failures only
+stest price.stest --generate      # intentionally refresh stored results
+```
+
+Use `stest-all` for a repository:
+
+```bash
+stest-all                         # executable .stest files
+stest-all -q                      # quiet suite run
+stest-all --all                   # include non-executable .stest files
+stest-all --list                  # inspect the selected files
+stest-all --tag="smoke -long"     # include and exclude file tags
+```
+
+By default, suite discovery skips hidden paths, `vendor`, and `node_modules`. Install
+[`fd`](https://github.com/sharkdp/fd) for faster discovery in large repositories;
+systems without it automatically use `find`. GNU Parallel powers suite execution.
+
+Run `stest --help` or `stest-all --help` for all CLI options.
+
+## ◆ Application Integration
+
+Spartan Test searches the test directory and its parents for configuration and common
+bootstrap files:
+
+- `bootstrap/autoload.php`
+- `vendor/autoload.php`
+- `init.php`
+
+Use `--init=/path/to/bootstrap.php` for a one-off override, or configure your project in
+`stest-config.json` / `stest-config.local.json`.
+
+## Installation
+
+Requirements:
+
+- PHP 8.0 or newer;
+- GNU Parallel for `stest-all`;
+- `fd` is optional and recommended for large repositories.
+
+### Composer
+
+```bash
+composer require --dev parf/spartan-test
+vendor/bin/stest price.stest
+vendor/bin/stest-all -q
+```
+
+### Git
+
+```bash
+mkdir -p ~/src ~/bin
+git clone https://github.com/parf/spartan-test.git ~/src/spartan-test
+ln -s ~/src/spartan-test/bin/stest ~/bin/stest
+ln -s ~/src/spartan-test/bin/stest-all ~/bin/stest-all
+```
+
+## Learn More
+
+- [Complete syntax](Syntax.md)
+- [Web testing](web-tests.md)
+- [Configuration](Config.md)
+- [Examples](examples/)
+- [Changelog and new features](CHANGELOG)
+
+Start with [the first test](examples/1-basics/1-first-test.stest), then explore
+[advanced result matching](examples/1-basics/special-tests.stest).
