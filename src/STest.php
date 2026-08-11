@@ -58,7 +58,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "4.0.4";
+const VERSION = "4.0.5";
 const DATE_BUILD = "2026-08-11";
 
 //
@@ -83,6 +83,10 @@ class STest {
     static $PATH = "";    // last PATH used
     static $COOKIE = [];  // array cookie => value
     static $WebTest_TIMEOUT = 15;  // curl connect/transfer timeout (sec) for web tests; tests may override
+
+    static function webTestTimeout(): int {
+        return (int) (self::$ARG['timeout'] ?? self::$WebTest_TIMEOUT);
+    }
 
     static $DIR;           // current directory
 
@@ -590,6 +594,16 @@ class STest {
                 self::$ARG[$nk] = $v;
             }
         }
+        if (array_key_exists('timeout', self::$ARG)) {
+            $timeout = self::$ARG['timeout'] === true
+                ? false
+                : filter_var(self::$ARG['timeout'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($timeout === false) {
+                fwrite(STDERR, "--timeout expects a positive integer number of seconds, e.g. --timeout=5\n");
+                exit(1);
+            }
+            self::$ARG['timeout'] = $timeout;
+        }
     }
 
 }
@@ -629,6 +643,13 @@ class STest_Global_Commands {
      * (-s, -q) show errors on STDERR only, suppress any STDOUT
      */
     static function silent() {
+    }
+
+    /**
+     * curl connect/transfer timeout in seconds for web requests (default 15)
+     * example: --timeout=5
+     */
+    static function timeout($v) {
     }
 
     /**

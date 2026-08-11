@@ -20,7 +20,17 @@ hint: use `--debug=9 -v` to debug your web test
 ## Request Timeout
 
 Web requests use a curl connect/transfer timeout of `15` seconds by default.
-Override it (per test, before the requests) via the `STest::$WebTest_TIMEOUT` property:
+Override it from the command line for one file or a complete suite:
+
+```bash
+stest api.stest --timeout=5
+stest-all --timeout=10
+```
+
+The CLI option must be a positive integer number of seconds and takes precedence over
+the per-test property. Without the CLI option, set `STest::$WebTest_TIMEOUT` before the
+requests:
+
 ```
 ; STest::$WebTest_TIMEOUT = 5;   # seconds; applies to all following GET / POST / JSONPOST
 ```

@@ -101,6 +101,7 @@ stest price.stest                 # run one file
 stest first.stest second.stest    # run several files
 stest price.stest -q              # show failures only
 stest price.stest --generate      # intentionally refresh stored results
+stest api.stest --timeout=5       # web request timeout in seconds
 ```
 
 Use `stest-all` for a repository:
@@ -111,6 +112,7 @@ stest-all -q                      # quiet suite run
 stest-all --executable            # only executable .stest files
 stest-all --list                  # inspect the selected files
 stest-all --tag="smoke -long"     # include and exclude file tags
+stest-all --timeout=10            # timeout for every web request in the suite
 ```
 
 By default, suite discovery includes executable and non-executable `.stest` files, while

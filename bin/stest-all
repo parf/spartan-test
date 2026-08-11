@@ -21,6 +21,7 @@ usage() {
   echo "  --recent=2day   : select tests changed in the last 2 days"
   echo "  --new           : select the newest test after other filters"
   echo "  --new=4         : select the 4 newest tests after other filters"
+  echo "  --timeout=15    : curl connect/transfer timeout for each web request"
 #  echo " -v  : verbose - show test names"   << DEFAULT
   echo "  -q              : quiet - show only errors; test selection is unchanged"
   echo "  GNU Parallel concurrency is file-descriptor-safe and capped at 100 jobs"
@@ -281,6 +282,8 @@ executable_only=0
 unrestricted=0
 recent=
 new=
+timeout=
+timeout_set=0
 dir=
 tag_filters=()
 declare -A requested_tags=()
@@ -327,6 +330,14 @@ while [[ $# -gt 0 ]]; do
     --new=*)
       new="${1#--new=}"
       ;;
+    --timeout=*)
+      timeout="${1#--timeout=}"
+      timeout_set=1
+      ;;
+    --timeout)
+      echo "--timeout requires a value, e.g. --timeout=5" >&2
+      exit 1
+      ;;
     -*)
       echo "Unknown option: $1" >&2
       usage >&2
@@ -353,6 +364,11 @@ fi
 
 if [[ -n "$recent" && ! "$recent" =~ ^[1-9][0-9]*(day|days)?$ ]]; then
   echo "--recent expects a positive number of days, e.g. --recent=2day" >&2
+  exit 1
+fi
+
+if [[ $timeout_set == 1 && ! "$timeout" =~ ^[1-9][0-9]*$ ]]; then
+  echo "--timeout expects a positive integer number of seconds, e.g. --timeout=5" >&2
   exit 1
 fi
 
@@ -383,10 +399,12 @@ fi
 jobs=$(parallel_jobs) || { echo "Unable to determine parallel job limit" >&2; exit 1; }
 
 # show errors only (in STDERR)
+printf -v stest_command '%q {}' "$stest_bin"
+[[ -n "$timeout" ]] && stest_command+=" --timeout=$timeout"
 if [[ $quiet == 1 ]]; then
-  parallel -j "$jobs" --tag "$stest_bin {} -q" :::: "$test_list"
+  parallel -j "$jobs" --tag "$stest_command -q" :::: "$test_list"
   exit $?
 fi
 
-parallel -j "$jobs" --tag "$stest_bin {} --color" :::: "$test_list"
+parallel -j "$jobs" --tag "$stest_command --color" :::: "$test_list"
 exit $?

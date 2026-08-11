@@ -1,6 +1,6 @@
 ---
 name: deploy
-description: "Prepare, publish, and deploy a Spartan Test release: update docs and CHANGELOG, bump version/build date, run tests, review changes, commit/tag/push, verify Packagist, update named SSH hosts through php-tools, and verify active versions. Use for requests such as bump/test/publish, deploy to p4, update stest on stage, or ship Spartan Test."
+description: "Prepare, publish, and deploy a Spartan Test release: update docs and CHANGELOG, bump version/build date, run tests, review changes, commit/tag/push, verify Packagist, roll published releases out to the standard server fleet, and verify active versions. Use for requests such as bump/test/publish, deploy to p4, update stest on stage, or ship Spartan Test."
 ---
 
 # Release And Deploy Spartan Test
@@ -9,9 +9,11 @@ Run from the Spartan Test repository root.
 
 ## Choose The Workflow
 
-- For an already-published release, skip directly to **Deploy Hosts**.
+- For an already-published release, skip directly to **Deploy Hosts Directly**.
 - For a bump, publish, or release request, complete **Prepare Release** and **Publish**
-  before deploying any shared host.
+  and then **Deploy The Published Release**. A publish request includes deployment to the
+  standard fleet unless the user explicitly says `publish only`, `no deploy`, or names a
+  different target list.
 
 ## Prepare Release
 
@@ -52,10 +54,34 @@ Run from the Spartan Test repository root.
 
 Never bump, commit, tag, push, or publish unless the user requested that operation.
 
-## Deploy Hosts
+## Deploy The Published Release
 
-1. Confirm the requested target hosts. Never infer production targets that the user did
-   not name.
+The standard fleet is `localhost`, `p4`, `rdvp`, `t4cre-stage`, `t4cre-rc`,
+`t4cre-prod`, and `t4test`.
+
+1. After Packagist verification, update localhost and every standard remote host, then
+   verify their active versions:
+
+   ```bash
+   .codex/skills/sync-versions/scripts/sync_versions.sh --expected=VERSION
+   ```
+
+2. A plain `publish`, `release`, or `ship` request authorizes this standard rollout; do
+   not stop after Packagist or ask for another confirmation.
+3. If the user explicitly names targets, pass those hosts after the options instead of
+   the standard remote list. Localhost remains part of the sync workflow.
+4. Add `--test` only when the user requests remote suites. Every rollout still verifies
+   `stest --version` on every target.
+5. Report each host, resolved `stest` path, active version, update result, and any
+   unreachable or mismatched host. A partial rollout is a failed deployment even when
+   publishing succeeded.
+
+## Deploy Hosts Directly
+
+Use this path for a deploy request that does not also publish a release.
+
+1. Confirm the requested target hosts. If none are named, use the standard fleet through
+   `sync_versions.sh`; named hosts override the standard remote list.
 2. Confirm the release is committed, tagged with the version from
    `src/STest.php`, pushed, and published before deploying shared hosts.
 3. Run:
