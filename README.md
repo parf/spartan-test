@@ -106,14 +106,15 @@ stest price.stest --generate      # intentionally refresh stored results
 Use `stest-all` for a repository:
 
 ```bash
-stest-all                         # executable .stest files
+stest-all                         # all .stest files
 stest-all -q                      # quiet suite run
-stest-all --all                   # include non-executable .stest files
+stest-all --executable            # only executable .stest files
 stest-all --list                  # inspect the selected files
 stest-all --tag="smoke -long"     # include and exclude file tags
 ```
 
-By default, suite discovery skips hidden paths, `vendor`, and `node_modules`. Install
+By default, suite discovery includes executable and non-executable `.stest` files, while
+skipping hidden paths, `vendor`, and `node_modules`. Install
 [`fd`](https://github.com/sharkdp/fd) for faster discovery in large repositories;
 systems without it automatically use `find`. GNU Parallel powers suite execution.
 

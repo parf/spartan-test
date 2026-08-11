@@ -204,7 +204,8 @@ line one. Declarations after line four are ordinary comments and are ignored by
 - Negative selectors never satisfy `@require-tag`. With `--tag=-long`, required-tag
   files remain skipped because no required tag was positively requested.
 - Repeated `--tag` options and comma-separated values are merged using the same rules.
-- `--all` includes non-executable `.stest` files but does not override `@require-tag`.
+- Executable and non-executable `.stest` files are included by default. Use
+  `-x` or `--executable` to select only files with the executable bit set.
 - A positive-only tag query with no matches exits nonzero. If negative tags intentionally
   exclude every positive match, the empty result remains successful.
 - Both discovery backends skip hidden files, `vendor`, and `node_modules` by default.
@@ -212,14 +213,14 @@ line one. Declarations after line four are ordinary comments and are ignored by
   Use `-u` or `--unrestricted` to include these paths. Systems without `fd` use the
   `find` fallback.
 
-Selection order is executable/`--all`, then `--recent`, tags, `--new`, and finally
-execution or `--list`. Examples:
+Selection order is optional `--executable` filtering, then `--recent`, tags, `--new`,
+and finally execution or `--list`. Examples:
 
 ```bash
 stest-all --tag=smoke
 stest-all --tag="prod -long" --recent=2day
-stest-all --list --all --tag=staging --new=4
-stest-all --list --all --unrestricted
+stest-all --list --tag=staging --new=4
+stest-all --list --executable --unrestricted
 ```
 
 See [tagged-test.stest](examples/1-basics/tagged-test.stest) for file metadata syntax.

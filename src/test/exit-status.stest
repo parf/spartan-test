@@ -33,7 +33,7 @@
 ; exec("$bin --version 2>&1", $versionOutput, $versionCode);
 
 [$versionCode, $versionOutput];
-    [0, ['4.0.3 (build 2026-07-24)']];
+    [0, ['4.0.4 (build 2026-08-11)']];
 
 $run("$bin " . escapeshellarg($pass));
     0;
@@ -350,24 +350,36 @@ $run("TZ=America/New_York $path $all --new " . escapeshellarg($dstDir));
 ; touch("$allDir/nonexec-fail.stest", time());
 
 $run("$path $all --list " . escapeshellarg($allDir) . " | grep -q './nonexec-fail.stest'");
-    1;
+    0;
 
 $run("$path $all --list --all " . escapeshellarg($allDir) . " | grep -q './nonexec-fail.stest'");
     0;
 
+$run("$path $all --list --executable " . escapeshellarg($allDir) . " | grep -q './nonexec-fail.stest'");
+    1;
+
+$run("$path $all --list -x " . escapeshellarg($allDir) . " | grep -q './nonexec-fail.stest'");
+    1;
+
 $run("$path $all " . escapeshellarg($allDir));
-    0;
+    1;
 
 $run("$path $all --all " . escapeshellarg($allDir));
     1;
 
 $run("$path $all -q " . escapeshellarg($allDir));
-    0;
-
-$run("$path $all --all -q " . escapeshellarg($allDir));
     1;
 
-$run("$path $all --list --all --new " . escapeshellarg($allDir) . " | grep -q './nonexec-fail.stest'");
+$run("$path $all --executable " . escapeshellarg($allDir));
+    0;
+
+$run("$path $all -x -q " . escapeshellarg($allDir));
+    0;
+
+$run("$path $all --list --new " . escapeshellarg($allDir) . " | grep -q './nonexec-fail.stest'");
+    0;
+
+$run("$path $all --list --executable --new " . escapeshellarg($allDir) . " | grep -q './exec-pass.stest'");
     0;
 
 ; $parallelBin = "$tmp/parallel-bin";
@@ -437,8 +449,10 @@ file_get_contents($hardExitLog);
     symlink(trim(shell_exec("command -v $command")), "$findBin/$command");
   }
 ; copy($pass, "$findDir/normal.stest");
+; copy($pass, "$findDir/nonexec.stest");
 ; copy($pass, "$findDir/.hidden.stest");
 ; chmod("$findDir/normal.stest", 0755);
+; chmod("$findDir/nonexec.stest", 0644);
 ; chmod("$findDir/.hidden.stest", 0755);
 ; mkdir("$findDir/vendor");
 ; copy($pass, "$findDir/vendor/vendor.stest");
@@ -456,9 +470,15 @@ file_get_contents($hardExitLog);
   };
 
 $findList();
+    [0, ['./link.stest', './nonexec.stest', './normal.stest']];
+
+$findList('--executable');
     [0, ['./link.stest', './normal.stest']];
 
 $findList('--unrestricted');
+    [0, ['./.hidden.stest', './link.stest', './nonexec.stest', './normal.stest', './vendor/vendor.stest']];
+
+$findList('--unrestricted --executable');
     [0, ['./.hidden.stest', './link.stest', './normal.stest', './vendor/vendor.stest']];
 
 ; $reflectionDeprecated = "$tmp/reflection-deprecated.stest";

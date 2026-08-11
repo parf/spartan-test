@@ -58,8 +58,8 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "4.0.3";
-const DATE_BUILD = "2026-07-24";
+const VERSION = "4.0.4";
+const DATE_BUILD = "2026-08-11";
 
 //
 // INTERNAL

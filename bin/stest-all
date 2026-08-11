@@ -7,11 +7,11 @@ set -o pipefail
 
 usage() {
   echo "Usage: stest-all [OPTION...] [TOP-DIRECTORY]"
-  echo "execute executable tests in current or given directory (and subdirectories) in parallel"
+  echo "execute .stest files in current or given directory (and subdirectories) in parallel"
   echo
   echo Options
   echo "  --list          : list selected tests instead of executing them"
-  echo "  --all           : include non-executable .stest files"
+  echo "  -x, --executable: select only executable .stest files"
   echo "  -u, --unrestricted: include hidden/ignored (fd), vendor, and node_modules files"
   echo "  --tag=prod      : select any requested tag; repeat or separate with comma/space"
   echo "  --tag='prod -long': select prod tests, excluding tests tagged long"
@@ -67,7 +67,7 @@ parallel_jobs() {
 
 discover_with_find() {
   local find_args=(\( -type f -o -type l \) -name "*.stest")
-  if [[ $all != 1 ]]; then
+  if [[ $executable_only == 1 ]]; then
     find_args+=(-executable)
   fi
   if [[ -n "$recent" ]]; then
@@ -97,7 +97,7 @@ discover_with_fd() {
 
   error_file=$(mktemp "${TMPDIR:-/tmp}/stest-all-fd.XXXXXX") || return 1
   fd "${fd_args[@]}" . 2> "$error_file" | while IFS= read -r file; do
-    if [[ $all == 1 || -x $file ]]; then
+    if [[ $executable_only != 1 || -x $file ]]; then
       printf '%s\n' "$file"
     fi
   done
@@ -277,7 +277,7 @@ list_tests() {
 
 quiet=0
 list=0
-all=0
+executable_only=0
 unrestricted=0
 recent=
 new=
@@ -296,8 +296,11 @@ while [[ $# -gt 0 ]]; do
     --list)
       list=1
       ;;
+    -x|--executable)
+      executable_only=1
+      ;;
     --all)
-      all=1
+      # Compatibility no-op: all .stest files are selected by default.
       ;;
     -u|--unrestricted)
       unrestricted=1

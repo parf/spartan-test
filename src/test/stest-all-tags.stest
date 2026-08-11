@@ -77,16 +77,19 @@
   };
 
 $list();
+    [0, ['./late-required.stest', './nonexec-prod.stest', './prod-long.stest', './prod.stest', './smoke.stest', './untagged.stest']];
+
+$list("--executable");
     [0, ['./late-required.stest', './prod-long.stest', './prod.stest', './smoke.stest', './untagged.stest']];
 
 $list("--tag=prod");
-    [0, ['./prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest']];
+    [0, ['./nonexec-prod.stest', './prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest']];
 
 $list("--tag=" . escapeshellarg("prod -long"));
-    [0, ['./prod.stest', './required-prod.stest']];
+    [0, ['./nonexec-prod.stest', './prod.stest', './required-prod.stest']];
 
 $list("--tag=-long");
-    [0, ['./late-required.stest', './prod.stest', './smoke.stest', './untagged.stest']];
+    [0, ['./late-required.stest', './nonexec-prod.stest', './prod.stest', './smoke.stest', './untagged.stest']];
 
 $list("--tag=long");
     [0, ['./prod-long.stest']];
@@ -136,16 +139,16 @@ $list("--tag=spaced", $formsDir);
     [0, ['./spaced.stest']];
 
 $list("--tag=prod --tag=smoke");
-    [0, ['./prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest', './smoke.stest']];
+    [0, ['./nonexec-prod.stest', './prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest', './smoke.stest']];
 
 $list("--tag=prod,smoke");
-    [0, ['./prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest', './smoke.stest']];
+    [0, ['./nonexec-prod.stest', './prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest', './smoke.stest']];
 
 $list("--tag=" . escapeshellarg("prod smoke"));
-    [0, ['./prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest', './smoke.stest']];
+    [0, ['./nonexec-prod.stest', './prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest', './smoke.stest']];
 
-$list("--all --tag=prod");
-    [0, ['./nonexec-prod.stest', './prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest']];
+$list("--all --tag=prod") === $list("--tag=prod");
+    true;
 
 ; $unrestrictedExpected = ['./node_modules/node-prod.stest', './nonexec-prod.stest', './prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest', './vendor/vendor-prod.stest'];
 ; if ($hasFd) {
@@ -154,20 +157,23 @@ $list("--all --tag=prod");
     sort($unrestrictedExpected);
   }
 
-$list("--unrestricted --all --tag=prod") === [0, $unrestrictedExpected];
+$list("--unrestricted --tag=prod") === [0, $unrestrictedExpected];
     true;
 
 $list("--tag=prod", $symlinkDir);
     [0, ['./link.stest']];
 
 $list("--tag=" . escapeshellarg("prod -long") . " --new");
+    [0, ['./nonexec-prod.stest']];
+
+$list("--executable --tag=" . escapeshellarg("prod -long") . " --new");
     [0, ['./required-prod.stest']];
 
 $list("--tag=" . escapeshellarg("prod -long") . " --recent");
-    [0, ['./required-prod.stest']];
+    [0, ['./nonexec-prod.stest', './required-prod.stest']];
 
 $list("--recent=3");
-    [0, ['./late-required.stest', './prod-long.stest', './smoke.stest', './untagged.stest']];
+    [0, ['./late-required.stest', './nonexec-prod.stest', './prod-long.stest', './smoke.stest', './untagged.stest']];
 
 $list("--tag=missing");
     [1, []];
@@ -180,12 +186,18 @@ $run("", $runDir);
     0;
 
 $run("--tag=dangerous", $runDir);
+    2;
+
+$run("--executable --tag=dangerous", $runDir);
     1;
 
 $run("--tag=missing", $runDir);
     1;
 
 $run("--tag=" . escapeshellarg("dangerous -blocked"), $runDir);
+    1;
+
+$run("--executable --tag=" . escapeshellarg("dangerous -blocked"), $runDir);
     0;
 
 $run("--all --tag=dangerous", $runDir);
@@ -234,3 +246,9 @@ str_contains($help, "@require-tag");
 
 str_contains($help, "unmatched positive-only query exits non-zero");
     true;
+
+str_contains($help, "-x, --executable");
+    true;
+
+str_contains($help, "--all");
+    false;
