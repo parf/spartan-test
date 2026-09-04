@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.codex/skills/sync-versions/scripts/sync_versions.sh:*)",
+      "Bash(.codex/skills/deploy/scripts/deploy.sh:*)"
+    ]
+  }
+}
