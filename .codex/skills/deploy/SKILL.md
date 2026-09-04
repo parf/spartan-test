@@ -10,10 +10,17 @@ Run from the Spartan Test repository root.
 ## Choose The Workflow
 
 - For an already-published release, skip directly to **Deploy Hosts Directly**.
-- For a bump, publish, or release request, complete **Prepare Release** and **Publish**
-  and then **Deploy The Published Release**. A publish request includes deployment to the
-  standard fleet unless the user explicitly says `publish only`, `no deploy`, or names a
-  different target list.
+- For a bump, publish, or release request, complete **Prepare Release**, **Publish**, and
+  **Deploy The Published Release** as ONE workflow. A release is not finished until every
+  standard fleet host reports the new version. Never stop after the push or the Packagist
+  check, and never ask whether to deploy. The only exceptions: the user explicitly says
+  `publish only` / `no deploy`, or names a target list (then deploy to those hosts instead
+  of the standard remote list).
+- If the deploy command is denied by a permission prompt or classifier, do not silently
+  finish. Report the exact blocked command, state that the release is published but NOT
+  deployed, and ask the user to run it (`! .codex/skills/sync-versions/scripts/sync_versions.sh --expected=VERSION`)
+  or to allow `Bash(.codex/skills/sync-versions/scripts/sync_versions.sh:*)` and
+  `Bash(.codex/skills/deploy/scripts/deploy.sh:*)` in `.claude/settings.json`.
 
 ## Prepare Release
 
@@ -51,6 +58,8 @@ Run from the Spartan Test repository root.
 5. Verify Packagist metadata contains `VERSION` and the same source commit. Wait and
    retry briefly if its webhook has not completed.
 6. Confirm the working tree is clean and `bin/stest --version` is exact.
+7. Immediately continue to **Deploy The Published Release**. This step is mandatory and
+   part of every publish.
 
 Never bump, commit, tag, push, or publish unless the user requested that operation.
 

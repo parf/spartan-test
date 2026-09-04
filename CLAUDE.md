@@ -86,8 +86,13 @@ composer test-list     # List all tests
 
 ### Repository Operational Skills
 
-- `.codex/skills/deploy` - prepare, test, review, publish, and deploy a release to
-  explicitly named hosts.
+- `.codex/skills/deploy` - prepare, test, review, publish, and deploy a release.
+  **Every publish/release/ship request ALWAYS ends with deploying to the standard fleet**
+  via `.codex/skills/sync-versions/scripts/sync_versions.sh --expected=VERSION`. A release
+  is not done until every fleet host reports the new version. Only an explicit
+  `publish only` / `no deploy` skips it; explicitly named hosts replace the standard
+  remote list. If the deploy command is permission-blocked, say so explicitly and hand the
+  exact command to the user instead of declaring the release complete.
 - `.codex/skills/sync-versions` - update and verify the standard fleet: localhost, p4,
   rdvp, t4cre-stage, t4cre-rc, t4cre-prod, and t4test.
 - `WebTest` class: HTTP request/response testing
