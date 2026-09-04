@@ -33,7 +33,7 @@
 ; exec("$bin --version 2>&1", $versionOutput, $versionCode);
 
 [$versionCode, $versionOutput];
-    [0, ['4.0.5 (build 2026-08-11)']];
+    [0, ['4.0.6 (build 2026-09-04)']];
 
 ; $timeoutDir = "$tmp/timeout-dir";
 ; $timeoutFile = "$timeoutDir/timeout.stest";
@@ -529,7 +529,10 @@ $findList('--unrestricted --executable');
     . "    throw new ErrorException(\$message, 0, \$level, \$file, \$line);\n"
     . "  });\n"
     . "(function () { \$m = new ReflectionMethod(DateTime::class, \"format\"); \$m->setAccessible(true); return 1; })();\n"
-    . "    1;\n";
+    . "    1;\n"
+    . "; \$p = new ReflectionProperty(Exception::class, \"message\"); \$p->setAccessible(true);\n"
+    . "(function () { \$p = new ReflectionProperty(Exception::class, \"message\"); \$p->setAccessible(true); return 2; })();\n"
+    . "    2;\n";
 ; file_put_contents($reflectionDeprecated, $reflectionDeprecatedText);
 ; chmod($reflectionDeprecated, 0755);
 

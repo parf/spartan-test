@@ -58,8 +58,8 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "4.0.5";
-const DATE_BUILD = "2026-08-11";
+const VERSION = "4.0.6";
+const DATE_BUILD = "2026-09-04";
 
 //
 // INTERNAL
@@ -1069,7 +1069,7 @@ class STest_File_Commands {
         $previous = set_error_handler(function ($level, $message, $file, $line) use (&$previous) {
             if (
                 $level === E_DEPRECATED
-                && str_contains($message, "ReflectionMethod::setAccessible()")
+                && preg_match('/\bReflection\w+::setAccessible\(\)/', $message)
                 && str_contains($message, "has no effect since PHP 8.1")
             ) {
                 return true;
