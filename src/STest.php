@@ -1178,6 +1178,13 @@ class STest_File_Commands {
                 }
                 foreach ($x as $k => $e) { // e - element
                     if (!is_int($k)) {
+                        if ($e === true || $e === false) { // key exists / does not exist
+                            if (array_key_exists($k, $got) === $e) {
+                                continue;
+                            }
+                            return " array-key {cyan}\"$k\"{/} expected " . ($e ? "to exist" : "not to exist")
+                                . ($e ? "" : ", got " . x2s($got[$k]));
+                        }
                         if (($got[$k] ?? null) == $e) {
                             continue;
                         }

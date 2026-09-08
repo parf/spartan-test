@@ -1,0 +1,32 @@
+#!/bin/env stest
+# `~ [key => true/false]` is a key-existence test (array_key_exists), NOT a truthy-value test:
+# a key holding 0 / '' / [] / null / false still exists. Asserting the VALUE is a separate form.
+
+; $a = ['zero' => 0, 'empty' => '', 'list' => [], 'nul' => null, 'no' => false, 'one' => 1];
+
+# every present key counts as present, whatever it holds
+$a;
+    ~ ['zero' => true, 'empty' => true, 'list' => true, 'nul' => true, 'no' => true, 'one' => true];
+
+# only a genuinely missing key counts as absent
+$a;
+    ~ ['missing' => false];
+
+# the negative direction, checked through the matcher itself (private, hence the reflection)
+; $match = function (string $exp) use ($a) {
+    $m = new \ReflectionMethod('stest\STest_File_Commands', '_custom_result_syntax');
+    $m->setAccessible(true);
+    return $m->invoke(null, $exp, $a);
+};
+
+# a present falsy key is NOT absent
+$match("~ ['zero' => false]");
+    ~ "expected not to exist";
+
+# a missing key is NOT present
+$match("~ ['missing' => true]");
+    ~ "expected to exist";
+
+# value assertions are unaffected: still a loose comparison on the stored value
+$a;
+    ~ ['zero' => 0, 'empty' => '', 'one' => 1];
