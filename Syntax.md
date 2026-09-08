@@ -1,48 +1,48 @@
 # SPARTAN-TEST SYNTAX
 Minimalistic PHP 8.5 Unit Testing Framework / Web Testing Framework
 
-* Spartan test reads test-file line by line
+* Spartan Test reads a test file line by line
 
-Line read can be a:
- - PHP setup expression or block
- - Test-expression (or just `test`)
- - Test-result
- - Comment
+Each line is one of:
+ - a PHP setup statement or block
+ - a test expression (or just `test`)
+ - a test result
+ - a comment
 
-* For test-expressions it calculates the result, then compares it to stored result
-    - comparison is textual against the canonical (auto-generated) form
-    - if no result stored in test-file, generated result is added to test-file
-    - if the stored result differs only in formatting / key order (same value), the test
-      is re-run in soft-regen mode that rewrites just those lines to canonical form and
-      saves the file (reported as `reformat: N`) — so you may write expected results in
+* For every test expression it computes the result and compares it with the stored one
+    - the comparison is textual, against the canonical (auto-generated) form
+    - if the file has no stored result, the generated result is added to the file
+    - if the stored result differs only in formatting or key order (same value), the file
+      is re-run in soft-regen mode, which rewrites just those lines to the canonical form
+      and saves the file (reported as `reformat: N`). So you may write expected results in
       any formatting you like
-    - if the stored result differs in VALUE, an error is generated (the result is not changed;
-      use `stest -g` to force-overwrite all results)
-    - `stest -g` exits successfully for regenerated differences, but exits nonzero if an
-      input file cannot be read or an updated test file cannot be saved
+    - if the stored result differs in VALUE, the test fails and the file is left unchanged
+      (use `stest -g` to overwrite every stored result)
+    - `stest -g` exits successfully after regenerating differences, but exits nonzero when
+      an input file cannot be read or an updated file cannot be saved
     - `stest --read-only` (`-r`) never rewrites the file: a missing result is a failure
       (nothing is generated), formatting-only differences pass without the soft-regen
       rewrite, and `--generate` / `--save` / `--clean` are rejected. `stest-all --read-only`
       passes the option to every test. Use it in CI or on checkouts that must stay clean.
 
-* STest catches
-    - Return values
-    - Exceptions (throwable)
-    - Stdout output (echo, print)
-    - PHP notices/warnings and errors
+* Spartan Test captures
+    - return values
+    - exceptions (any Throwable)
+    - STDOUT output (echo, print)
+    - PHP notices, warnings, and errors
 
 
 BASIC SYNTAX
 -----------
-* Spartan test is a set of expressions and their results
-    - types of expressions:
-        + "; php-code" PHP setup code to execute, no result comparison
-        + "test-expression" - php-code that produce result
-        + "    result" - stored test-expression result (valid php code)
-        + "    ~ custom-result-test" - custom comparison method (see below)
-        + "/url-path" - (see web-tests below)
-        + "! test-expression" - critical test. Test execution will stop if this test failed
-        + "? expression" - inspect Class/Variable - show class-name,parent-class,class-file-location
+* A Spartan test is a list of expressions and their results
+    - line types:
+        + "; php-code" - PHP setup code; executed, no result comparison
+        + "test-expression" - PHP code that produces a result
+        + "    result" - the stored result of the test expression (valid PHP code)
+        + "    ~ matcher" - custom comparison instead of an exact result (see below)
+        + "/url-path" - web request (see Web Tests below)
+        + "! test-expression" - critical test; execution stops if it fails
+        + "? expression" - inspect a class or variable: class name, parent class, and file location
 
 
 Sample spartan test:
@@ -52,8 +52,8 @@ Sample spartan test:
   first line makes test an executable script
 */
 # math test
-2*2;    # tests have 0 indentation
-    4;  # result must be indented by 4 spaces; if no result present it will be auto-generated
+2*2;    # tests are not indented
+    4;  # results are indented by 4 spaces; a missing result is generated on the first run
 
 /* lines starting with ";" are PHP setup code */
 ; $x = M_PI / 6;
@@ -153,34 +153,34 @@ example and [basic.stest](examples/1-basics/basic.stest) for the legacy indentat
 @see [more complex example](https://github.com/parf/spartan-test/blob/main/examples/1-basics/basic.stest)
 
 ### Array Result Sorting
-By default all results arrays are sorted by keys (unlimited DEPTH)\
-To turn off this behaviour add `$ARG['sort']=0;`; to re-enable it back `$ARG['sort']=1;`
+By default, array results are sorted by key, recursively.\
+Disable it with `; $ARG['sort'] = 0;` and re-enable it with `; $ARG['sort'] = 1;`
 
 @see (https://github.com/parf/spartan-test/blob/main/examples/2-advanced/result-sorting.stest)
 
 # Advanced Syntax / Advanced Tests
 
-Instead of result you can use one(or more) advanced tests
+Instead of an exact result you can use one or more matchers
 
-`~`   - test for NON empty string
+`~`   - result is a non-empty string
 
-`~~`  - test for NON empty result:   `if (! $result) FAIL();`
+`~~`  - result is truthy:   `if (! $result) FAIL();`
 
-`~ "substring"`  - substring present
+`~ "substring"`  - result contains the substring
 
-`~ Class`  - is-descendant
+`~ Class`  - result is an instance of Class or a descendant
 
-`~ []`            - is-array
+`~ []`            - result is an array
 
-`~ [$a, $b, ..]`  - VALUES $a and $b are in resulting array
+`~ [$a, $b, ..]`  - result array contains the VALUES $a and $b
 
-`~ [key => val]`    - KEY => VALUE is in resulting array
+`~ [key => val]`    - result array contains KEY => VALUE
 
-`~ [key => true]`    - KEY present
+`~ [key => true]`    - result array has KEY
 
-`~ [key => false]`    - KEY *NOT* present
+`~ [key => false]`    - result array does NOT have KEY
 
-`~ /regexp/x`     - is result matching regexp
+`~ /regexp/x`     - result matches the regular expression
 
 @see [special tests](https://github.com/parf/spartan-test/blob/main/examples/1-basics/special-tests.stest)
 
@@ -229,7 +229,7 @@ stest-all --list --executable --unrestricted
 
 See [tagged-test.stest](examples/1-basics/tagged-test.stest) for file metadata syntax.
 
-### You can have several Advanced tests for one expression
+### Several matchers may follow one expression
 
 ```
 \hb\Curl::get("example.com");
@@ -263,7 +263,7 @@ See [tagged-test.stest](examples/1-basics/tagged-test.stest) for file metadata s
   nonzero test failure. `--force` bypasses only the `stop` mode.
 - `STest::debug($message, $level)` - show text to STDERR when `--debug=$level >= $level`
 - `STest::inspect(/* "object | string className" */ $object, $show_line = 0)` - backend for `? object`
-- `STest::runTest($file)`  -  execute OTHER stest in current context
+- `STest::runTest($file)`  -  run another .stest file in the current context
 
 ```php
 ; \STest::requireVersion('4.0.0');
@@ -273,10 +273,10 @@ See [tagged-test.stest](examples/1-basics/tagged-test.stest) for file metadata s
 
 # Web Tests
 
-Web tests emulate web site queries; they keep all cookies and http_referrers, so it is easy to emulate user behaviour on sites
+Web tests emulate a browser session: cookies and the HTTP referrer are kept between requests, so user flows are easy to script.
 
-At bare minimum, web tests require all pages to be non-empty `code 200` (http success) pages\
-When standard `php-error output` found on a page, error will be raised
+At a minimum, every page must return a non-empty HTTP `200` response.\
+A page that contains standard PHP error output fails the test.
 
 @see [Web Tests](https://github.com/parf/spartan-test/blob/main/web-tests.md)
 

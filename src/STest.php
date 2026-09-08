@@ -564,7 +564,7 @@ class STest {
             $failed = STest_File_Commands::test($T);
             // normal run records when a formatting-only ("sort-fail") mismatch was found;
             // re-run in soft-regen mode to fix formatting and save (real value diffs stay failures)
-            if (STest_File_Commands::softNeeded() && !(self::$ARG['soft'] ?? 0) && !(self::$ARG['generate'] ?? 0) && !(self::$ARG['read_only'] ?? 0)) {
+            if (STest_File_Commands::_softNeeded() && !(self::$ARG['soft'] ?? 0) && !(self::$ARG['generate'] ?? 0) && !(self::$ARG['read_only'] ?? 0)) {
                 self::$ARG['soft'] = 1;
                 $failed = STest_File_Commands::test($T);
                 unset(self::$ARG['soft']);
@@ -620,89 +620,91 @@ class STest {
 
 /**
  *
- * @see  Readme.md file for details: how to write/execute tests
- * @see  See github for lastest/most complete docs: https://github.com/parf/spartan-test
+ * @see  README.md and Syntax.md for how to write and run tests
+ * @see  https://github.com/parf/spartan-test for the latest documentation
  */
 class STest_Global_Commands {
 
     /**
-     * Any non-null return value treated as STOP signal, @see STest->run
+     * Any non-null return value is treated as a STOP signal, @see STest->run
      */
 
     /**
-     * (-v) show every line being tested
-     * stest -v filename.stest
+     * (-v) verbose: print every test line before it runs
+     * example: stest -v filename.stest
      */
     static function verbose() {
     }
 
     /**
-     * (-g) re-generate test. replace all results; failure to save remains an error
+     * (-g) regenerate: replace every stored result with the current one
+     * changed values are reported but do not fail the run; a file that cannot be saved does
      */
     static function generate() {
     }
 
     /**
-     * turn output coloring on/off - default on
-     * --color=0 or -C - turn off
+     * colorize output (default: on)
+     * --color=0 or -C turns color off
      */
     static function color() {
     }
 
     /**
-     * (-s, -q) show errors on STDERR only, suppress any STDOUT
+     * (-s, -q) silent: print errors only, on STDERR; suppress all STDOUT
      */
     static function silent() {
     }
 
     /**
-     * curl connect/transfer timeout in seconds for web requests (default 15)
+     * curl connect/transfer timeout for web requests, in seconds (default 15)
      * example: --timeout=5
      */
     static function timeout($v) {
     }
 
     /**
-     * output to syslog (to send errors-only to syslog: --syslog -s)
+     * send output to syslog (errors only: --syslog -s)
      */
     static function syslog() {
     }
 
     /**
-     * (-1) stop on first error encountered in test
-     * inside test: "; $ARG['first_error'] = 1;"
+     * (-1) stop the test file at the first failing test
+     * inside a test: "; $ARG['first_error'] = 1;"
      */
     static function first_error() {
     }
 
     /**
-     * (-f) ignore \STest::stop (successful skip, exit 0); \STest::error/alert remain failures
+     * (-f) force: run tests that call \STest::stop (normally a successful skip, exit 0)
+     * \STest::error and \STest::alert still fail
      */
     static function force() {
     }
 
     /**
-     * (-r) read-only: run tests, never rewrite .stest files
-     * missing results are reported and fail (nothing is generated or saved)
-     * formatting-only differences pass silently (no soft-regen rewrite)
-     * cannot be combined with --generate, --save, --clean
+     * (-r) read-only: run tests without rewriting .stest files
+     * a missing result fails instead of being generated
+     * formatting-only differences pass and are left as written (no soft-regen rewrite)
+     * cannot be combined with --generate, --save, or --clean
      */
     static function read_only() {
     }
 
     /**
-     * call Reporter::alert when test failed (instead of ::fail)
-     * use `$ARG['alert'] = 1;` to enable inside script
+     * call Reporter::alert instead of Reporter::fail when a test fails
+     * inside a test: "; $ARG['alert'] = 1;"
      */
     static function alert() {
     }
 
     /**
-     * force custom error handler.
-     * Provided ones:
-     *   \stest\Error::suppress_notices  - ignore notices (suppress reporting)
-     *   \stest\Error::suppress_warnings - ignore warnings (suppress reporting)
-     *   \stest\Error::$error_reporting; - bitmask to suppress errors
+     * use a custom error handler
+     * provided handlers:
+     *   \stest\Error::suppress_notices  - ignore notices (do not report them)
+     *   \stest\Error::suppress_warnings - ignore warnings (do not report them)
+     *   \stest\Error::$error_reporting  - bitmask of error levels to suppress
      */
     static function error_handler($v = '\\stest\\Error::handler') {
         #set_error_handler($v, E_ALL);
@@ -710,7 +712,7 @@ class STest_Global_Commands {
     }
 
     /**
-     * Enable/Disable result sorting - to be used inside test only
+     * enable/disable sorting of array results (set it inside a test)
      * $ARG['sort'] = 0; // disable
      * $ARG['sort'] = 1; // enable (default)
      */
@@ -719,7 +721,7 @@ class STest_Global_Commands {
     }
 
     /**
-     * Print current version and build date
+     * print the current version and build date
      */
     static function version() {
         echo VERSION, " (build ", DATE_BUILD, ")\n";
@@ -727,7 +729,7 @@ class STest_Global_Commands {
     }
 
     /**
-     * this help
+     * show this help
      */
     static function help() {
         if (STest::$ARG['silent']??0) {
@@ -750,7 +752,7 @@ class STest_Global_Commands {
             }
             $e("\n");
         };
-        $e("{bold}{blue}STEST{/} {bold}(Spartan Test v" . VERSION . ") minimalistic PHP8.5 testing framework done right{/}\n");
+        $e("{bold}{blue}STEST{/} {bold}(Spartan Test v" . VERSION . ") minimalistic PHP 8.5 testing framework done right{/}\n");
         $h(helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), "Global Options --\$option");
         $h(helper\Documentor::classDoc("\\stest\\STest_File_Commands"), "File Options");
         #echo json_encode(helper\Documentor::classDoc("\\stest\\STest_Global_Commands"), JSON_PRETTY_PRINT), "\n";
@@ -758,28 +760,28 @@ class STest_Global_Commands {
     }
 
     /**
-     * 'init' php file to include, must provide autoload
-     * suggested use - specify 'init' in `stest.config` file @ root of your project
+     * PHP 'init' file to include; it must set up autoloading
+     * preferred: set "init" in stest-config.json at the root of your project
      */
     static function init($v) {
     }
 
     /**
-     * debug: show parsed arguments as json
+     * debug: print the parsed command-line arguments as JSON
      */
     static function debug_args() {
         echo json_encode(['args' => STest::$ARG, 'tests' => STest::$TESTS], JSON_PRETTY_PRINT) . "\n";
     }
 
     /**
-     * debug: show merged config (base + project configs)
+     * debug: print the merged config (base + project configs) as JSON
      */
     static function debug_config() {
         echo json_encode(\stest\helper\InstanceConfig::$config, JSON_PRETTY_PRINT) . "\n";
     }
 
     /**
-     * Debug test - some methods will provide additional information. --debug=1 - show most important debug, --debug=9 - show all debug messages
+     * debug output level: --debug=1 shows the most important messages, --debug=9 shows everything
      */
     static function debug() {
     }
@@ -803,16 +805,16 @@ class STest_File_Commands {
     // static function $Option(ParsedTest $T, $option_value)
     private static $softNeeded = false;
 
-    static function softNeeded(): bool {
+    static function _softNeeded(): bool {
         return self::$softNeeded;
     }
 
 
     /** default action:
-     * perform testing, generate and save new results
-     * -v | --verbose  - show statements being executed
-     * -g | --generate - regenerate test, ignore test errors but not save failures
-     * -r | --read-only - never rewrite the file; missing results fail
+     * run the test file, compare results, generate and save missing ones
+     * -v | --verbose   - print each statement as it runs
+     * -g | --generate  - replace every stored result; value changes do not fail the run, an unsaved file does
+     * -r | --read-only - never rewrite the file; a missing result fails
      */
     static function test(array /* parsed-test */ $__TEST) {
         self::$softNeeded = false;
@@ -1276,7 +1278,7 @@ class STest_File_Commands {
     }
 
     /**
-     * `cat` processed test to stdout (add missing semicolons, correct identation)
+     * print the normalized test to stdout (missing semicolons added, indentation fixed)
      */
     static function cat($T, $echo = 1): string { # test
         $s = "";
@@ -1296,7 +1298,7 @@ class STest_File_Commands {
     }
 
     /**
-     * save corrected test (missing ";" added, identation fixed)
+     * save the normalized test file (missing semicolons added, indentation fixed)
      */
     static function save($T): bool {
         $filename = i('stest')->file;
@@ -1344,7 +1346,7 @@ class STest_File_Commands {
     }
 
     /**
-     * remove all generated results from test
+     * remove every stored result from the test file
      */
     static function clean($T): bool {
         foreach ($T as &$v) {
@@ -1356,7 +1358,7 @@ class STest_File_Commands {
     }
 
     /**
-     * show parsed unprocessed test text
+     * print the parsed, unprocessed test representation
      */
     static function debug_test($T) { # echo internal test presentation
         foreach ($T as [$ln, $tv]) {

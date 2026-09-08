@@ -7,26 +7,26 @@ set -o pipefail
 
 usage() {
   echo "Usage: stest-all [OPTION...] [TOP-DIRECTORY]"
-  echo "execute .stest files in current or given directory (and subdirectories) in parallel"
+  echo "run every .stest file in the current or given directory tree, in parallel"
   echo
   echo Options
-  echo "  --list          : list selected tests instead of executing them"
+  echo "  --list          : list the selected tests instead of running them"
   echo "  -x, --executable: select only executable .stest files"
   echo "  -u, --unrestricted: include hidden/ignored (fd), vendor, and node_modules files"
-  echo "  --tag=prod      : select any requested tag; repeat or separate with comma/space"
-  echo "  --tag='prod -long': select prod tests, excluding tests tagged long"
-  echo "                     tests with @require-tag need an explicit positive match"
-  echo "                     an unmatched positive-only query exits non-zero"
-  echo "  --recent        : select tests changed in the last 1 day"
+  echo "  --tag=prod      : select files tagged prod; repeat, or separate tags with comma/space"
+  echo "  --tag='prod -long': select prod files, excluding those also tagged long"
+  echo "                     files with @require-tag run only when one of their tags is requested"
+  echo "                     a positive-only query that matches nothing exits non-zero"
+  echo "  --recent        : select tests changed in the last day"
   echo "  --recent=2day   : select tests changed in the last 2 days"
   echo "  --new           : select the newest test after other filters"
   echo "  --new=4         : select the 4 newest tests after other filters"
-  echo "  --timeout=15    : curl connect/transfer timeout for each web request"
-  echo "  -r, --read-only : run tests without rewriting any .stest file (missing results fail)"
+  echo "  --timeout=15    : curl connect/transfer timeout for each web request, in seconds"
+  echo "  -r, --read-only : never rewrite a .stest file; a missing result fails"
 #  echo " -v  : verbose - show test names"   << DEFAULT
-  echo "  -q              : quiet - show only errors; test selection is unchanged"
-  echo "  GNU Parallel concurrency is file-descriptor-safe and capped at 100 jobs"
-  echo "  Output lines are prefixed with the .stest path that produced them"
+  echo "  -q              : quiet - show errors only; test selection is unchanged"
+  echo "  Concurrency follows the file-descriptor limit and is capped at 100 GNU Parallel jobs"
+  echo "  Every output line is prefixed with the .stest path that produced it"
 }
 
 recent_minutes() {

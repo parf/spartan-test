@@ -244,7 +244,7 @@ str_contains($help, "--tag='prod -long'");
 str_contains($help, "@require-tag");
     true;
 
-str_contains($help, "unmatched positive-only query exits non-zero");
+str_contains($help, "positive-only query that matches nothing exits non-zero");
     true;
 
 str_contains($help, "-x, --executable");
