@@ -33,7 +33,7 @@
 ; exec("$bin --version 2>&1", $versionOutput, $versionCode);
 
 [$versionCode, $versionOutput];
-    [0, ['4.0.6 (build 2026-09-04)']];
+    [0, ['4.0.7 (build 2026-09-08)']];
 
 ; $timeoutDir = "$tmp/timeout-dir";
 ; $timeoutFile = "$timeoutDir/timeout.stest";
@@ -538,3 +538,57 @@ $findList('--unrestricted --executable');
 
 $run("$bin " . escapeshellarg($reflectionDeprecated));
     0;
+
+; $roDir = "$tmp/read-only-dir";
+; mkdir($roDir);
+; $roPass = "$roDir/pass.stest";
+; $roNew = "$roDir/new.stest";
+; $roFormat = "$roDir/format.stest";
+; $roPassText = "#!/usr/bin/env stest\n1+1;\n    2;\n";
+; $roNewText = "#!/usr/bin/env stest\n1+1;\n";
+; $roFormatText = "#!/usr/bin/env stest\n['b' => 1, 'a' => 2];\n    ['b'=>1,'a'=>2];\n";
+; file_put_contents($roPass, $roPassText);
+; file_put_contents($roNew, $roNewText);
+; file_put_contents($roFormat, $roFormatText);
+; chmod($roPass, 0755); chmod($roNew, 0755); chmod($roFormat, 0755);
+; $unchanged = fn(string $file, string $text): bool => file_get_contents($file) === $text;
+
+$run("$bin --help 2>&1 | grep -q -- '--read-only'");
+    0;
+
+$run("$all --help 2>&1 | grep -q -- '--read-only'");
+    0;
+
+# stored result matches: passes, file untouched
+[$run("$bin --read-only " . escapeshellarg($roPass)), $unchanged($roPass, $roPassText)];
+    [0, true];
+
+[$run("$bin -r " . escapeshellarg($roPass)), $unchanged($roPass, $roPassText)];
+    [0, true];
+
+# missing result: fails instead of being generated, file untouched
+[$run("$bin --read-only " . escapeshellarg($roNew)), $unchanged($roNew, $roNewText)];
+    [1, true];
+
+# formatting-only difference: passes, but no soft-regen rewrite
+[$run("$bin --read-only " . escapeshellarg($roFormat)), $unchanged($roFormat, $roFormatText)];
+    [0, true];
+
+# --read-only rejects every option that would rewrite the file
+; $roConflicts = [];
+; foreach (['-g', '--generate', '--save', '--clean'] as $writer) {
+    $roConflicts[$writer] = $run("$bin --read-only $writer " . escapeshellarg($roPass));
+  }
+[$roConflicts, $unchanged($roPass, $roPassText)];
+    [["--clean"=>1, "--generate"=>1, "--save"=>1, "-g"=>1], true];
+
+# stest-all passes --read-only through: the missing-result file fails, nothing is rewritten
+[$run("$all --read-only -q " . escapeshellarg($roDir)), $unchanged($roNew, $roNewText), $unchanged($roFormat, $roFormatText)];
+    [1, true, true];
+
+[$run("$all -r -q " . escapeshellarg($roDir)), $unchanged($roNew, $roNewText)];
+    [1, true];
+
+# without --read-only the same files are rewritten (control)
+[$run("$bin " . escapeshellarg($roNew)), $unchanged($roNew, $roNewText)];
+    [0, false];

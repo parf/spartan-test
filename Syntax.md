@@ -20,6 +20,10 @@ Line read can be a:
       use `stest -g` to force-overwrite all results)
     - `stest -g` exits successfully for regenerated differences, but exits nonzero if an
       input file cannot be read or an updated test file cannot be saved
+    - `stest --read-only` (`-r`) never rewrites the file: a missing result is a failure
+      (nothing is generated), formatting-only differences pass without the soft-regen
+      rewrite, and `--generate` / `--save` / `--clean` are rejected. `stest-all --read-only`
+      passes the option to every test. Use it in CI or on checkouts that must stay clean.
 
 * STest catches
     - Return values

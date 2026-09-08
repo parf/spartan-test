@@ -58,6 +58,9 @@ stest --cron test.stest
 
 # Force test execution (ignore STest::stop calls)
 stest --force test.stest
+
+# Read-only: never rewrite the .stest file (missing results fail, no soft-regen rewrite)
+stest --read-only test.stest      # also: -r, stest-all --read-only
 ```
 
 ### Composer Commands
@@ -194,7 +197,7 @@ Realms allow testing against different environments (dev/staging/prod) by modify
 
 By default, array results are sorted recursively by keys before comparison (can be disabled with `$ARG['sort']=0`).
 
-Comparison is textual against the canonical `x2s()` form. On a normal run, if a stored result differs from the generated one only in formatting/key-order (same value), `runTest()` re-runs the test in an internal **soft-regen** mode (`$ARG['soft']`) that canonicalizes just those lines and saves the file (reported as `reformat: N`); genuine value differences remain failures and are left untouched. This re-run re-executes the test. `-g` (`$ARG['generate']`) is the separate full regen that overwrites every result. See `STest::test()` (the soft/generate branches) and `STest::runTest()`.
+Comparison is textual against the canonical `x2s()` form. On a normal run, if a stored result differs from the generated one only in formatting/key-order (same value), `runTest()` re-runs the test in an internal **soft-regen** mode (`$ARG['soft']`) that canonicalizes just those lines and saves the file (reported as `reformat: N`); genuine value differences remain failures and are left untouched. This re-run re-executes the test. `-g` (`$ARG['generate']`) is the separate full regen that overwrites every result. `--read-only` (`$ARG['read_only']`) disables every write path: no new results, no soft-regen re-run, `save()` refuses. See `STest::test()` (the soft/generate branches) and `STest::runTest()`.
 
 Advanced comparison operators (lines starting with `~ `):
 - `~` or `~~` - Test for non-empty result

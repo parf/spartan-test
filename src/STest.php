@@ -58,8 +58,8 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "4.0.6";
-const DATE_BUILD = "2026-09-04";
+const VERSION = "4.0.7";
+const DATE_BUILD = "2026-09-08";
 
 //
 // INTERNAL
@@ -102,6 +102,8 @@ class STest {
         'v' => 'verbose',           // show test lines being executed
         '1' => 'first_error',       // stop on first error in test
         'f' => 'force',             // ignore intentional STest::stop calls
+        'r' => 'read_only',         // never rewrite .stest files
+        'read-only' => 'read_only', // canonical spelling of -r
         'h' => 'help',              // show help
         // option to set of options
         'cron' => ['color' => 0, 'silent' => 1],   // --cron - show only errors, no colors
@@ -562,7 +564,7 @@ class STest {
             $failed = STest_File_Commands::test($T);
             // normal run records when a formatting-only ("sort-fail") mismatch was found;
             // re-run in soft-regen mode to fix formatting and save (real value diffs stay failures)
-            if (STest_File_Commands::softNeeded() && !(self::$ARG['soft'] ?? 0) && !(self::$ARG['generate'] ?? 0)) {
+            if (STest_File_Commands::softNeeded() && !(self::$ARG['soft'] ?? 0) && !(self::$ARG['generate'] ?? 0) && !(self::$ARG['read_only'] ?? 0)) {
                 self::$ARG['soft'] = 1;
                 $failed = STest_File_Commands::test($T);
                 unset(self::$ARG['soft']);
@@ -603,6 +605,14 @@ class STest {
                 exit(1);
             }
             self::$ARG['timeout'] = $timeout;
+        }
+        if (self::$ARG['read_only'] ?? 0) {
+            foreach (['generate', 'save', 'clean'] as $writer) {
+                if (self::$ARG[$writer] ?? 0) {
+                    fwrite(STDERR, "--read-only cannot be combined with --$writer: both would rewrite the test file\n");
+                    exit(1);
+                }
+            }
         }
     }
 
@@ -669,6 +679,15 @@ class STest_Global_Commands {
      * (-f) ignore \STest::stop (successful skip, exit 0); \STest::error/alert remain failures
      */
     static function force() {
+    }
+
+    /**
+     * (-r) read-only: run tests, never rewrite .stest files
+     * missing results are reported and fail (nothing is generated or saved)
+     * formatting-only differences pass silently (no soft-regen rewrite)
+     * cannot be combined with --generate, --save, --clean
+     */
+    static function read_only() {
     }
 
     /**
@@ -793,6 +812,7 @@ class STest_File_Commands {
      * perform testing, generate and save new results
      * -v | --verbose  - show statements being executed
      * -g | --generate - regenerate test, ignore test errors but not save failures
+     * -r | --read-only - never rewrite the file; missing results fail
      */
     static function test(array /* parsed-test */ $__TEST) {
         self::$softNeeded = false;
@@ -872,6 +892,11 @@ class STest_File_Commands {
             $code = str_replace("\n", " ", $code);
             $code = preg_replace("/\s+/", " ", $code);
             if (!$expected) { // NEW TEST - generate result
+                if ($ARG['read_only'] ?? 0) { // never rewrite: an unverifiable result is a failure
+                    $addDetail(cut($got), "read-only: no stored result");
+                    $showError("read-only: no stored result, nothing saved\n  got:   {red}" . cut($got) . "{/}");
+                    return;
+                }
                 $__t->new++;
                 $expected = $got . ";"; // save generated result
                 $__err("{bold}{blue}L$line{/}: $code");
@@ -886,6 +911,9 @@ class STest_File_Commands {
             } catch (\Throwable $__ignore) { // expected not valid php => treat as real change
             }
             if ($sameValue) {
+                if ($ARG['read_only'] ?? 0) { // same value, never rewrite
+                    return;
+                }
                 if ($ARG['soft'] ?? 0) { // soft-regen pass: rewrite to canonical form
                     $expected = $got . ";";
                     $__t->reformat++;
@@ -1019,7 +1047,8 @@ class STest_File_Commands {
 
         // Save before reporting so persistence failures are part of the result.
         $saveFailed = false;
-        if (($__t->new && !$__t->fail) || ($ARG['generate'] ?? 0) || (($ARG['soft'] ?? 0) && $__t->reformat)) {
+        $wantsSave = ($__t->new && !$__t->fail) || ($ARG['generate'] ?? 0) || (($ARG['soft'] ?? 0) && $__t->reformat);
+        if ($wantsSave && !($ARG['read_only'] ?? 0)) {
             if (!self::save($__t->T)) {
                 $saveFailed = true;
                 $__t->fail++;
@@ -1271,6 +1300,10 @@ class STest_File_Commands {
      */
     static function save($T): bool {
         $filename = i('stest')->file;
+        if (\STest::$ARG['read_only'] ?? 0) {
+            i('out')->err("*** {alert}%s{/}. Error: --read-only forbids rewriting the test file\n", $filename);
+            return false;
+        }
         $target = realpath($filename) ?: $filename;
         $s = self::cat($T, 0);
         $mode = @fileperms($target);
