@@ -58,7 +58,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "4.0.8";
+const VERSION = "4.0.9";
 const DATE_BUILD = "2026-09-08";
 
 //
@@ -851,7 +851,9 @@ class STest_File_Commands {
                     $__err("{alert}L$line{/}: {red}$code{/}\n $err");
                 }
                 if ($ARG['first_error'] ?? 0) {
-                    throw new StopException("Stopping on first error");
+                    throw new StopException(
+                        'temp' === $ARG['first_error'] ? "Critical test (" . helper\Parser::CRITICAL . ") failed" : "Stopping on first error"
+                    );
                 }
             };
             $exp = trim($expected, ";");
@@ -970,12 +972,13 @@ class STest_File_Commands {
                     if ($__code[0] . $__code[1] === '? ') {
                         $__code = "STest::inspect(" . trim(substr($__code, 2), ";") . ");";
                     }
-                    // "! code" - turn ON stop-on-first-error for this line. ("!" symbol is ignored)
-                    if ($__code[0] === '!') {
+                    // "‼️ code" (typed as "!! code") - critical test: stop the file if this line fails.
+                    // A single "!" is ordinary PHP negation and has no special meaning.
+                    if (($__critical = self::_critical_prefix($__code)) !== null) {
+                        $__code = $__critical;
                         if (!($ARG['first_error'] ?? 0)) {
                             $ARG['first_error'] = 'temp';
                         }
-                        $__code = substr($__code, 1);
                     }
                     try {
                         if ($__error = Error::get()) {
@@ -1035,6 +1038,10 @@ class STest_File_Commands {
             }
             $reportReason = $reason === "Stop" && $__t->fail ? "fail" : $reason;
             i('reporter')->$reportReason($__t->filename, ['message' => $m, 'tests' => $__t->tests, 'new' => $__t->new, 'fail' => $__t->fail, 'details' => $__t->details]);
+            // a stopped file still gets its typed "!!" markers rewritten to ‼️ (results are left as they are)
+            if (helper\Parser::$criticalRewritten && !($ARG['read_only'] ?? 0) && !self::save($__t->T)) {
+                $__t->fail++;
+            }
             if ($ARG['generate'] ?? 0) {
                 return 0;
             }
@@ -1049,7 +1056,11 @@ class STest_File_Commands {
 
         // Save before reporting so persistence failures are part of the result.
         $saveFailed = false;
-        $wantsSave = ($__t->new && !$__t->fail) || ($ARG['generate'] ?? 0) || (($ARG['soft'] ?? 0) && $__t->reformat);
+        // "!!" prefixes rewritten to ‼️ while reading count as reformatting and require a save
+        if (($__normalized = helper\Parser::$criticalRewritten) && !($ARG['read_only'] ?? 0)) {
+            $__t->reformat += $__normalized;
+        }
+        $wantsSave = ($__t->new && !$__t->fail) || ($ARG['generate'] ?? 0) || (($ARG['soft'] ?? 0) && $__t->reformat) || $__normalized;
         if ($wantsSave && !($ARG['read_only'] ?? 0)) {
             if (!self::save($__t->T)) {
                 $saveFailed = true;
@@ -1084,6 +1095,16 @@ class STest_File_Commands {
             return (int) $saveFailed;
         }
         return $__t->fail;
+    }
+
+    // strip the critical-test marker ("‼️", "‼" or the typed "!!") from a test line; null = not critical
+    static private function _critical_prefix(string $code): ?string {
+        foreach ([helper\Parser::CRITICAL, "\u{203C}", "!!"] as $prefix) {
+            if (str_starts_with($code, $prefix)) {
+                return substr($code, strlen($prefix));
+            }
+        }
+        return null;
     }
 
     // get useful part of exception's backtrace as string

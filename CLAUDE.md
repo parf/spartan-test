@@ -143,7 +143,7 @@ Test files use a special syntax:
   PHP formatting. Named function/class lexemes are skipped during soft regeneration;
   other setup blocks execute again to recreate local state. Bare function/class
   declarations and interface/trait/enum declarations are not supported.
-- **Lines starting with `!`**: Critical tests (execution stops if failed)
+- **Lines starting with `‼️` (typed as `!!`)**: Critical tests (execution stops if failed). `!!` is rewritten to `‼️` on the first run; a single `!` is plain PHP negation
 - **Lines starting with `?`**: Inspect class/variable (debugging)
 - **Lines starting with `/`**: Web test GET requests
 - **Lines starting with `POST /`**: Web test POST requests

@@ -1,10 +1,11 @@
 #!/usr/bin/env stest
 #//
-// "! test" - critical-test (stop test if critical-test-line failed)
+// "‼️ test" - critical-test (stop test if critical-test-line failed)
+// type "!! test": stest rewrites "!!" to ‼️ on the first run
 //
 
 # stop test if error on following line
-! 1+1;  # Critical test intentionally failed, script execution stopped with error condition
+‼️ 1+1;  # Critical test intentionally failed, script execution stopped with error condition
     3;
 
 1+1

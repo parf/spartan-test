@@ -346,7 +346,14 @@ class Parser {
      *
      * $source_file = join("\n", array_values($lexems) );
      */
+    // critical-test marker stored in .stest files; the typed form "!!" is rewritten to it on read
+    const CRITICAL = "\u{203C}\u{FE0F}"; // ‼️
+
+    // number of "!!" prefixes rewritten to ‼️ by the last Reader() call (the file needs saving)
+    static int $criticalRewritten = 0;
+
     static function Reader(string $file)  { # Array or Generator | Exception
+        self::$criticalRewritten = 0;
         $lines = @file($file, FILE_IGNORE_NEW_LINES);
         if ($lines === false)
             throw new \InvalidArgumentException("file does not exists");
@@ -431,6 +438,12 @@ class Parser {
             }
             $l = trim($l);
             $rz = trim($rz);
+            // "!!" is legal PHP but practically never written; store it as ‼️ so the critical
+            // marker is visibly not PHP. A single "!" stays ordinary PHP negation.
+            if (str_starts_with($l, '!!')) {
+                $l = self::CRITICAL . substr($l, 2);
+                self::$criticalRewritten++;
+            }
             // auto-fix missing ";"
             if ($l[-1] !== ';')
                 $l .= ';';

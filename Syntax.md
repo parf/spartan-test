@@ -41,7 +41,9 @@ BASIC SYNTAX
         + "    result" - the stored result of the test expression (valid PHP code)
         + "    ~ matcher" - custom comparison instead of an exact result (see below)
         + "/url-path" - web request (see Web Tests below)
-        + "! test-expression" - critical test; execution stops if it fails
+        + "‼️ test-expression" - critical test; execution stops if it fails. Type it as
+          "!! test-expression": stest rewrites "!!" to ‼️ when it first runs the file
+          (not with --read-only). A single "!" is ordinary PHP negation, not a marker
         + "? expression" - inspect a class or variable: class name, parent class, and file location
 
 

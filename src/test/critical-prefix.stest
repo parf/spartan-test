@@ -1,0 +1,66 @@
+#!/usr/bin/env stest
+# Critical tests: "!!" is rewritten to ‼️ on the first run; a single "!" is PHP negation.
+
+; $self = realpath(\stest\i('stest')->file);
+; $root = realpath(dirname($self, 3));
+; $tmp = sys_get_temp_dir() . "/stest-critical-" . getmypid();
+; exec("rm -rf " . escapeshellarg($tmp));
+; mkdir($tmp, 0777, true);
+; register_shutdown_function(function () use ($tmp) {
+    exec("rm -rf " . escapeshellarg($tmp));
+  });
+; $bin = escapeshellarg($root . "/bin/stest");
+; $mark = "\u{203C}\u{FE0F}";
+; $run = function (string $cmd, ?array &$out = null): int {
+    $out = [];
+    exec($cmd . " 2>&1", $out, $code);
+    return $code;
+  };
+; $write = function (string $name, string $text) use ($tmp): string {
+    $file = "$tmp/$name.stest";
+    file_put_contents($file, $text);
+    return $file;
+  };
+
+# typed "!!" fails: the file stops at the critical line, the marker is rewritten, the result is untouched
+; $typed = $write("typed", "!! 1+1;\n    3;\n1+1;\n    2;\n");
+; $typedCode = $run("$bin -C " . escapeshellarg($typed), $typedOut);
+; $typedText = file_get_contents($typed);
+[$typedCode, $typedText === "$mark 1+1;\n    3;\n1+1;\n    2;\n", (bool) preg_grep('/Critical test \(' . $mark . '\) failed/', $typedOut)];
+    [1, true, true];
+
+# a passing "!!" line is still rewritten and saved (reported as reformat)
+; $typedOk = $write("typed-ok", "!! 1+1;\n    2;\n");
+; $typedOkCode = $run("$bin -C " . escapeshellarg($typedOk), $typedOkOut);
+[$typedOkCode, file_get_contents($typedOk) === "$mark 1+1;\n    2;\n", (bool) preg_grep('/reformat: 1/', $typedOkOut)];
+    [0, true, true];
+
+# the stored unicode marker is a critical test; the plain "‼" without the variation selector works too
+; $stored = $write("stored", "$mark 1+1;\n    3;\n2+2;\n    4;\n");
+[$run("$bin -C " . escapeshellarg($stored)), file_get_contents($stored) === "$mark 1+1;\n    3;\n2+2;\n    4;\n"];
+    [1, true];
+; $bare = $write("bare", "\u{203C} 1+1;\n    3;\n2+2;\n    4;\n");
+$run("$bin -C " . escapeshellarg($bare));
+    1;
+
+# a critical line that passes lets the file continue
+; $passes = $write("passes", "$mark 1+1;\n    2;\n2+2;\n    4;\n");
+$run("$bin -C " . escapeshellarg($passes));
+    0;
+
+# a single "!" is PHP negation, not a critical marker: the file runs to the end and the value is negated
+; $negation = $write("negation", "!true;\n    false;\n!0;\n    true;\n1+1;\n    3;\n");
+; $negationCode = $run("$bin -C " . escapeshellarg($negation), $negationOut);
+[$negationCode, (bool) preg_grep('/L5:/', $negationOut), (bool) preg_grep('/Critical/', $negationOut)];
+    [1, true, false];
+
+# --read-only never rewrites "!!" (but still treats the line as critical)
+; $ro = $write("read-only", "!! 1+1;\n    3;\n1+1;\n    2;\n");
+; $roCode = $run("$bin -C --read-only " . escapeshellarg($ro), $roOut);
+[$roCode, file_get_contents($ro) === "!! 1+1;\n    3;\n1+1;\n    2;\n", (bool) preg_grep('/Critical test/', $roOut)];
+    [1, true, true];
+
+# --cat shows the normalized form
+; $run("$bin -C --cat " . escapeshellarg($ro), $catOut);
+$catOut[0] === "$mark 1+1;";
+    true;

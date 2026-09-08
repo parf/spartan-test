@@ -5,9 +5,9 @@
 # ; STest::domain("http://127.0.0.2:8080"); # default behaviour - fail if no service on port
 ; STest::domain("http://127.0.0.2:8080", "stop"); # "stop" makes it silently fail w/o error;
 
-# "!" Critical Test
+# "‼️" Critical Test (type "!!/", stest rewrites it to ‼️)
 # TEST will instantly fail if critical test failed
-!/;
+‼️/;
     'Welcome to test server';
 
 # Substring content test
