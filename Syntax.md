@@ -176,9 +176,9 @@ Instead of an exact result you can use one or more matchers
 
 `~ [key => val]`    - result array contains KEY => VALUE
 
-`~ [key => true]`    - result array has KEY
+`~ [key => true]`    - result array has KEY (`array_key_exists`; the value may be `0`, `''`, `null`, `false`)
 
-`~ [key => false]`    - result array does NOT have KEY
+`~ [key => false]`    - result array does NOT have KEY (a present key holding `false` or `null` still fails)
 
 `~ /regexp/x`     - result matches the regular expression
 

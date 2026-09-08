@@ -206,8 +206,8 @@ Advanced comparison operators (lines starting with `~ `):
 - `~ []` - Is array
 - `~ [$a, $b]` - Array contains values
 - `~ [key => val]` - Array contains key-value pair
-- `~ [key => true]` - Array has key
-- `~ [key => false]` - Array doesn't have key
+- `~ [key => true]` - Array has key (`array_key_exists`, value ignored)
+- `~ [key => false]` - Array doesn't have key (a present key holding `false`/`null` fails)
 - `~ /regexp/` - Matches regex
 
 ## Development Workflow
