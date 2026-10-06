@@ -446,6 +446,57 @@ $run("bash -c " . escapeshellarg("ulimit -n 1024; $parallelPath $all -q " . esca
 array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 3);
     ['-j', '100', '--tag'];
 
+# -j / --jobs / STEST_JOBS replace the 100 ceiling; the file-descriptor limit still bounds them.
+$run("bash -c " . escapeshellarg("ulimit -n 1024; $parallelPath $all -q -j 40 " . escapeshellarg($passDir)));
+    0;
+
+array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 3);
+    ['-j', '40', '--tag'];
+
+$run("bash -c " . escapeshellarg("ulimit -n 1024; $parallelPath $all -q --jobs=200 " . escapeshellarg($passDir)));
+    0;
+
+array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 3);
+    ['-j', '200', '--tag'];
+
+$run("bash -c " . escapeshellarg("ulimit -n 64; $parallelPath $all -q -j 40 " . escapeshellarg($passDir)));
+    0;
+
+array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 3);
+    ['-j', '8', '--tag'];
+
+$run("bash -c " . escapeshellarg("ulimit -n 1024; STEST_JOBS=32 $parallelPath $all -q " . escapeshellarg($passDir)));
+    0;
+
+array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 3);
+    ['-j', '32', '--tag'];
+
+$run("bash -c " . escapeshellarg("ulimit -n 1024; STEST_JOBS=32 $parallelPath $all -q -j 40 " . escapeshellarg($passDir)));
+    0;
+
+array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 3);
+    ['-j', '40', '--tag'];
+
+$run("bash -c " . escapeshellarg("ulimit -n 1024; STEST_JOBS= $parallelPath $all -q " . escapeshellarg($passDir)));
+    0;
+
+array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 3);
+    ['-j', '100', '--tag'];
+
+; foreach (['-j', '-j 0', '-j -1', '--jobs', '--jobs=', '--jobs=0', '--jobs=1.5', '--jobs=nope'] as $invalidJobs) {
+    if ($run("$parallelPath $all -q $invalidJobs " . escapeshellarg($passDir)) !== 1) {
+      throw new RuntimeException("stest-all accepted invalid jobs: $invalidJobs");
+    }
+  }
+; foreach (['0', '-1', '1.5', 'nope'] as $invalidJobs) {
+    if ($run("STEST_JOBS=" . escapeshellarg($invalidJobs) . " $parallelPath $all -q " . escapeshellarg($passDir)) !== 1) {
+      throw new RuntimeException("stest-all accepted invalid STEST_JOBS: $invalidJobs");
+    }
+  }
+
+$run("$all --help 2>&1 | grep -q -- '--jobs=40'");
+    0;
+
 ; $hardExitDir = "$tmp/hard-exit-dir";
 ; $hardExitLog = "$tmp/hard-exit.stderr";
 ; mkdir($hardExitDir);
