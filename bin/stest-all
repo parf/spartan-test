@@ -22,10 +22,13 @@ usage() {
   echo "  --new           : select the newest test after other filters"
   echo "  --new=4         : select the 4 newest tests after other filters"
   echo "  --timeout=15    : curl connect/transfer timeout for each web request, in seconds"
+  echo "  -j 40, --jobs=40: run at most 40 files at once; STEST_JOBS=40 sets the same default"
+  echo "                     for web suites, keep it near the target's PHP-FPM worker count"
   echo "  -r, --read-only : never rewrite a .stest file; a missing result fails"
 #  echo " -v  : verbose - show test names"   << DEFAULT
   echo "  -q              : quiet - show errors only; test selection is unchanged"
-  echo "  Concurrency follows the file-descriptor limit and is capped at 100 GNU Parallel jobs"
+  echo "  Without -j, concurrency follows the file-descriptor limit and is capped at 100 GNU Parallel jobs"
+  echo "  -j may go above 100, never above the file-descriptor limit"
   echo "  Every output line is prefixed with the .stest path that produced it"
 }
 
@@ -47,11 +50,16 @@ recent_duration() {
 }
 
 parallel_jobs() {
+  local requested=$1
   local fd_limit jobs
   # stest is IO-bound, not CPU-bound: cap concurrency at a fixed ceiling rather
   # than scaling with the fd limit. A large ulimit -Sn (e.g. 524288) would
   # otherwise launch every test at once and thrash the machine.
   local max=100
+  # -j / STEST_JOBS replaces the ceiling: a web suite is bounded by the target's
+  # PHP-FPM workers, which only the caller knows. More concurrent requests than
+  # workers queue up, and a heavy page then misses the curl timeout (code 999).
+  [[ -n $requested ]] && max=$requested
 
   fd_limit=$(ulimit -Sn) || return 1
   if [[ $fd_limit == unlimited ]]; then
@@ -285,6 +293,9 @@ recent=
 new=
 timeout=
 timeout_set=0
+jobs_opt=
+jobs_set=0
+jobs_source="-j/--jobs"
 read_only=0
 dir=
 tag_filters=()
@@ -340,6 +351,23 @@ while [[ $# -gt 0 ]]; do
       echo "--timeout requires a value, e.g. --timeout=5" >&2
       exit 1
       ;;
+    -j)
+      if [[ $# -lt 2 ]]; then
+        echo "-j requires a value, e.g. -j 40" >&2
+        exit 1
+      fi
+      jobs_opt="$2"
+      jobs_set=1
+      shift
+      ;;
+    --jobs=*)
+      jobs_opt="${1#--jobs=}"
+      jobs_set=1
+      ;;
+    --jobs)
+      echo "--jobs requires a value, e.g. --jobs=40" >&2
+      exit 1
+      ;;
     -r|--read-only)
       read_only=1
       ;;
@@ -377,6 +405,17 @@ if [[ $timeout_set == 1 && ! "$timeout" =~ ^[1-9][0-9]*$ ]]; then
   exit 1
 fi
 
+if [[ $jobs_set == 0 && -n ${STEST_JOBS:-} ]]; then
+  jobs_opt=$STEST_JOBS
+  jobs_set=1
+  jobs_source=STEST_JOBS
+fi
+
+if [[ $jobs_set == 1 && ! "$jobs_opt" =~ ^[1-9][0-9]*$ ]]; then
+  echo "$jobs_source expects a positive integer number of parallel jobs, e.g. -j 40" >&2
+  exit 1
+fi
+
 if [[ -n "$dir" ]]; then
   cd "$dir" || exit 1
 fi
@@ -401,7 +440,7 @@ fi
 
 # check for GNU parallel
 [[ $(type -P parallel) ]] || { echo "GNU parallel required"; exit 1; }
-jobs=$(parallel_jobs) || { echo "Unable to determine parallel job limit" >&2; exit 1; }
+jobs=$(parallel_jobs "$jobs_opt") || { echo "Unable to determine parallel job limit" >&2; exit 1; }
 
 # show errors only (in STDERR)
 printf -v stest_command '%q {}' "$stest_bin"
