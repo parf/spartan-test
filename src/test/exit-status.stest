@@ -33,7 +33,7 @@
 ; exec("$bin --version 2>&1", $versionOutput, $versionCode);
 
 [$versionCode, $versionOutput];
-    [0, ['4.0.9 (build 2026-09-08)']];
+    [0, ['4.0.10 (build 2026-10-06)']];
 
 ; $timeoutDir = "$tmp/timeout-dir";
 ; $timeoutFile = "$timeoutDir/timeout.stest";
@@ -465,6 +465,19 @@ $run("bash -c " . escapeshellarg("ulimit -n 64; $parallelPath $all -q -j 40 " . 
 array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 3);
     ['-j', '8', '--tag'];
 
+$run("bash -c " . escapeshellarg("ulimit -n 1024; $parallelPath $all -q -j40 " . escapeshellarg($passDir)));
+    0;
+
+array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 3);
+    ['-j', '40', '--tag'];
+
+# The largest accepted value is still bounded by the file-descriptor limit.
+$run("bash -c " . escapeshellarg("ulimit -n 1024; $parallelPath $all -q -j 999999 " . escapeshellarg($passDir)));
+    0;
+
+array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 3);
+    ['-j', '248', '--tag'];
+
 $run("bash -c " . escapeshellarg("ulimit -n 1024; STEST_JOBS=32 $parallelPath $all -q " . escapeshellarg($passDir)));
     0;
 
@@ -483,16 +496,27 @@ $run("bash -c " . escapeshellarg("ulimit -n 1024; STEST_JOBS= $parallelPath $all
 array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 3);
     ['-j', '100', '--tag'];
 
-; foreach (['-j', '-j 0', '-j -1', '--jobs', '--jobs=', '--jobs=0', '--jobs=1.5', '--jobs=nope'] as $invalidJobs) {
+; foreach (['-j 0', '-j -1', '-j0', '-jnope', '-j 1000000', '-j 9223372036854775808', '--jobs', '--jobs=', '--jobs=0', '--jobs=1.5', '--jobs=nope', '--jobs=18446744073709551616'] as $invalidJobs) {
     if ($run("$parallelPath $all -q $invalidJobs " . escapeshellarg($passDir)) !== 1) {
       throw new RuntimeException("stest-all accepted invalid jobs: $invalidJobs");
     }
   }
-; foreach (['0', '-1', '1.5', 'nope'] as $invalidJobs) {
+; foreach (['0', '-1', '1.5', 'nope', '9223372036854775808'] as $invalidJobs) {
     if ($run("STEST_JOBS=" . escapeshellarg($invalidJobs) . " $parallelPath $all -q " . escapeshellarg($passDir)) !== 1) {
       throw new RuntimeException("stest-all accepted invalid STEST_JOBS: $invalidJobs");
     }
   }
+
+# -j as the last argument has no value.
+$run("$parallelPath $all -q -j");
+    1;
+
+# A valid option wins over an invalid STEST_JOBS.
+$run("bash -c " . escapeshellarg("ulimit -n 1024; STEST_JOBS=nope $parallelPath $all -q -j 40 " . escapeshellarg($passDir)));
+    0;
+
+array_slice(file($parallelArgs, FILE_IGNORE_NEW_LINES), 0, 3);
+    ['-j', '40', '--tag'];
 
 $run("$all --help 2>&1 | grep -q -- '--jobs=40'");
     0;

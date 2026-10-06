@@ -22,7 +22,7 @@ usage() {
   echo "  --new           : select the newest test after other filters"
   echo "  --new=4         : select the 4 newest tests after other filters"
   echo "  --timeout=15    : curl connect/transfer timeout for each web request, in seconds"
-  echo "  -j 40, --jobs=40: run at most 40 files at once; STEST_JOBS=40 sets the same default"
+  echo "  -j 40, --jobs=40: run at most 40 files at once (also -j40); STEST_JOBS=40 sets the default"
   echo "                     for web suites, keep it near the target's PHP-FPM worker count"
   echo "  -r, --read-only : never rewrite a .stest file; a missing result fails"
 #  echo " -v  : verbose - show test names"   << DEFAULT
@@ -360,6 +360,10 @@ while [[ $# -gt 0 ]]; do
       jobs_set=1
       shift
       ;;
+    -j?*)
+      jobs_opt="${1#-j}"
+      jobs_set=1
+      ;;
     --jobs=*)
       jobs_opt="${1#--jobs=}"
       jobs_set=1
@@ -411,7 +415,9 @@ if [[ $jobs_set == 0 && -n ${STEST_JOBS:-} ]]; then
   jobs_source=STEST_JOBS
 fi
 
-if [[ $jobs_set == 1 && ! "$jobs_opt" =~ ^[1-9][0-9]*$ ]]; then
+# At most 6 digits: longer values overflow bash arithmetic in parallel_jobs and
+# would slip past the file-descriptor bound.
+if [[ $jobs_set == 1 && ! "$jobs_opt" =~ ^[1-9][0-9]{0,5}$ ]]; then
   echo "$jobs_source expects a positive integer number of parallel jobs, e.g. -j 40" >&2
   exit 1
 fi
