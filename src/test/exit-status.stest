@@ -34,7 +34,7 @@
 ; exec("$bin --version 2>&1", $versionOutput, $versionCode);
 
 [$versionCode, $versionOutput];
-    [0, ['4.1.0 (build 2026-10-10)']];
+    [0, ['4.1.1 (build 2026-10-10)']];
 
 ; $timeoutDir = "$tmp/timeout-dir";
 ; $timeoutFile = "$timeoutDir/timeout.stest";

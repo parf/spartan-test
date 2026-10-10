@@ -10,6 +10,7 @@
  *   --wall=SECONDS   stest-all elapsed time
  *   --jobs=N         parallel job limit used
  *   --quiet          print the summary only when something failed, on STDERR
+ *   --summary        print the summary on STDOUT every time (stest-all --summary = -q + summary)
  *   --color          colorize the text summary
  *   --json=FILE|-    write the JSON report ("-" = STDOUT, replaces the text summary)
  *   --slowest=N      list the N slowest files (stest process time, not time since suite start)
@@ -203,7 +204,7 @@ $color = isset($opt['color']);
 $c = function (string $code, string $s) use ($color) {
     return $color ? "\033[{$code}m$s\033[0m" : $s;
 };
-$quiet = isset($opt['quiet']);
+$quiet = isset($opt['quiet']) && !isset($opt['summary']);
 if (!$quiet || $bad) {
     $t = "--- stest-all: {$sum['files']} files, {$sum['tests']} tests, " . sprintf("%.2fs", (float) ($opt['wall'] ?? 0));
     if (!empty($opt['jobs'])) {

@@ -117,6 +117,7 @@ stest-all --all                   # also run opt-in @require-tag files
 stest-all --list-tags             # every tag with its file count
 stest-all --list-required         # @require-tag tags with their file count
 stest-all -q --retry=2            # cron: re-run failures after the suite (warm caches)
+stest-all --summary               # errors only, then always the summary
 stest-all --slowest               # 10 slowest files by their own run time
 stest-all --json=report.json      # machine-readable report for CI
 stest-all --rerun-failed          # only what failed last time

@@ -28,6 +28,9 @@ bin/stest-all
 # Run all tests quietly (errors only)
 bin/stest-all -q
 
+# Errors only, then always the end-of-run summary
+bin/stest-all --summary
+
 # Limit parallelism (default: fd-bound, capped at 100); also STEST_JOBS=40
 bin/stest-all -j 40
 

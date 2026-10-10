@@ -258,6 +258,7 @@ Every run ends with a summary: files, tests, wall time, and each failed, crashed
 ```
 
 - `-q` stays quiet: a passing run prints nothing; a failing run prints the summary on STDERR.
+- `--summary` is `-q` that always ends with the summary, on STDOUT, also when everything passed.
 - `--retry=N` re-runs the failed files after the whole run, up to N more rounds, so caches the
   suite warmed up are in place. A file that passes on a retry counts as passed (flaky). With
   `-q`, job output is held back and only each file's last attempt is printed, so a recovered

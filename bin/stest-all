@@ -39,10 +39,12 @@ usage() {
   echo "  --json=FILE     : also write the JSON report to FILE"
 #  echo " -v  : verbose - show test names"   << DEFAULT
   echo "  -q              : quiet - show errors only; test selection is unchanged"
+  echo "  --summary       : like -q, but always end with the summary (on STDOUT), also when all passed"
   echo "  Without -j, concurrency follows the file-descriptor limit and is capped at 100 GNU Parallel jobs"
   echo "  -j may go above 100, never above the file-descriptor limit"
   echo "  Every output line is prefixed with the .stest path that produced it"
   echo "  A summary follows the run; with -q it is printed only when something failed, on STDERR"
+  echo "  (--summary prints it on STDOUT every time)"
   echo "  State (failed files, once) is kept in \${XDG_CONFIG_HOME:-~/.config}/stest/"
 }
 
@@ -372,6 +374,7 @@ list_tests() {
 }
 
 quiet=0
+summary=0
 list=0
 list_tags=
 run_all=0
@@ -389,8 +392,9 @@ dir=
 tag_filters=()
 declare -A requested_tags=()
 declare -A excluded_tags=()
-stest_bin="$(cd "$(dirname "$0")" && pwd)/stest"
-report_php="$(cd "$(dirname "$0")/../src" && pwd)/stest-all-report.php"
+bin_dir="$(dirname "$(readlink -f "$0")")"   # the real bin/, also when run through a symlink
+stest_bin="$bin_dir/stest"
+report_php="$(cd "$bin_dir/../src" && pwd)/stest-all-report.php"
 rerun_failed=0
 retry=
 retry_set=0
@@ -432,6 +436,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -q)
       quiet=1
+      ;;
+    --summary)
+      quiet=1
+      summary=1
       ;;
     --recent)
       recent=1day
@@ -694,8 +702,12 @@ print_held() {
 }
 
 report_args=(--rounds="$work" --top="$PWD" --jobs="$jobs" --update-failed)
-[[ $quiet == 1 ]] && report_args+=(--quiet)
-[[ $quiet != 1 && -t 1 ]] && report_args+=(--color)
+if [[ $summary == 1 ]]; then
+  report_args+=(--summary)
+elif [[ $quiet == 1 ]]; then
+  report_args+=(--quiet)
+fi
+[[ ($quiet != 1 || $summary == 1) && -t 1 ]] && report_args+=(--color)
 [[ -n "$slowest" ]] && report_args+=(--slowest="$slowest")
 [[ -n "$json" ]] && report_args+=(--json="$json")
 

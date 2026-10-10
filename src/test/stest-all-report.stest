@@ -68,6 +68,17 @@ str_contains($err, "--- stest-all");
 $sh("$all -q " . escapeshellarg($green));
     [0, '', ''];
 
+// --summary: -q output plus the summary on STDOUT, also when everything passed
+; [$code, $out, $err] = $sh("$all --summary " . escapeshellarg($green));
+
+[$code, str_starts_with($out, "--- stest-all: 1 files, 1 tests"), substr_count($out, "\n"), $err];
+    [0, true, 2, ''];
+
+; [$code, $out, $err] = $sh("$all --summary " . escapeshellarg($mixed));
+
+[$code, str_contains($out, "FAIL  ./fail.stest"), str_contains($out, "*** "), str_contains($err, "./fail.stest\t"), str_contains($err, "--- stest-all")];
+    [2, true, false, true, false];
+
 // ---------- --json
 ; [$code, $sum, $files] = $json("", $mixed);
 
@@ -390,3 +401,11 @@ file_get_contents("$watchDir/new.stest");
     2+2;
         4;
     ';
+
+// ---------- run through a symlink (as /usr/local/bin/stest-all): the report script is found
+; mkdir("$tmp/linkbin");
+; symlink("$root/bin/stest-all", "$tmp/linkbin/stest-all");
+; [$code, $out, $err] = $sh(escapeshellarg("$tmp/linkbin/stest-all") . " " . escapeshellarg($mixed));
+
+[$code, str_contains($out, "--- stest-all: 4 files, 2 tests"), str_contains($out . $err, "Could not open input file")];
+    [2, true, false];
