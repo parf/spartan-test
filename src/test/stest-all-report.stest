@@ -208,12 +208,19 @@ $sh("$all -q --retry=1 " . escapeshellarg($flaky));
 // ---------- unknown tag hint
 ; $tagged = "$tmp/tagged";
 ; $write($tagged, "a", "# @tag smoke long\n1;\n    1;\n");
-; [$code, $out, $err] = $sh("$all --list --tag=-lnog " . escapeshellarg($tagged));
+; [$code, $out, $err] = $sh("$all --list --tag=smoek " . escapeshellarg($tagged));
 
-[$code, $out, $err];
-    [0, './a.stest
-    ', 'stest-all: unknown tag \'lnog\'; known tags: long smoke
-    '];
+[$code, $out === '', $err === "stest-all: unknown tag 'smoek'; known tags: long smoke\nNo tests matched the requested tags\n"];
+    [1, true, true];
+
+// an exclusion nobody declares is not a problem: nothing to exclude, no warning
+$sh("$all --list --tag=-centerex " . escapeshellarg($tagged)) === [0, "./a.stest\n", ''];
+    true;
+
+; [$code, $out, $err] = $sh("$all --list --tag=" . escapeshellarg("smoke smoek -centerex") . " " . escapeshellarg($tagged));
+
+[$code, $out === "./a.stest\n", $err === "stest-all: unknown tag 'smoek'; known tags: long smoke\n"];
+    [0, true, true];
 
 $sh("$all --list --tag=smoke " . escapeshellarg($tagged));
     [0, './a.stest

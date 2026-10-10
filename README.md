@@ -55,7 +55,8 @@ Spartan Test captures:
 - return values;
 - thrown exceptions and errors;
 - stdout from `echo` and `print`;
-- PHP notices and warnings;
+- PHP notices, warnings, and deprecations raised by the test code (reported on the test line,
+  not passed to a project error handler);
 - web responses and request state.
 
 When an expected result is absent, the first run adds its canonical PHP representation

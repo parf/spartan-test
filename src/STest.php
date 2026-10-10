@@ -60,7 +60,7 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "4.1.1";
+const VERSION = "4.1.2";
 const DATE_BUILD = "2026-10-10";
 
 //
@@ -1475,6 +1475,14 @@ class STest_File_Commands {
             ) {
                 return true;
             }
+            // Raised by the test file's own code (eval'd here): the test's result, reported by stest
+            // on its .stest line. A project handler would show stest internals ("STest.php(N) :
+            // eval()'d code", stest frames) instead of the real issue. Errors from project code
+            // still go to the project's handler.
+            if (str_starts_with($file, __FILE__ . "(") && str_ends_with($file, " : eval()'d code")) {
+                Error::handler($level, $message, $file, $line);
+                return true;
+            }
             if ($previous) {
                 return $previous($level, $message, $file, $line);
             }
@@ -1809,6 +1817,7 @@ class Error {  // error handler
             E_USER_NOTICE => 'USER NOTICE',
             #E_STRICT => 'E_STRICT',
             E_DEPRECATED => 'E_DEPRECATED',
+            E_USER_DEPRECATED => 'E_USER_DEPRECATED',
         );
 
         $type = $map[$level] ?? "ERROR#$level";

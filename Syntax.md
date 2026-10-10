@@ -29,7 +29,10 @@ Each line is one of:
     - return values
     - exceptions (any Throwable)
     - STDOUT output (echo, print)
-    - PHP notices, warnings, and errors
+    - PHP notices, warnings, deprecations, and errors
+      raised by the test's own code are the test's result (`['error' => 'E_DEPRECATED: ...']`) even
+      when the project installs its own error handler; errors raised inside project code still go
+      to the project's handler
 
 
 BASIC SYNTAX
@@ -276,8 +279,9 @@ Every run ends with a summary: files, tests, wall time, and each failed, crashed
 - `--shard=K/N` runs every N-th file of the final selection, starting with the K-th, to split
   a suite across N CI machines.
 - `--once[=PERIOD]`, `--once=reset`, `--once=ignore` are passed to every `stest`.
-- A selector tag that no discovered file declares prints
-  `stest-all: unknown tag 'lnog'; known tags: ...` on STDERR.
+- A requested tag that no discovered file declares prints
+  `stest-all: unknown tag 'smoek'; known tags: ...` on STDERR. An excluded tag nobody declares
+  (`--tag=-centerex` in a product without it) is silent: there is nothing to exclude.
 - Exit status is the number of files still failing (101 = more than 100), as GNU Parallel reports it.
 
 State lives in `${XDG_CONFIG_HOME:-~/.config}/stest/`: `failed.json` (for `--rerun-failed`),

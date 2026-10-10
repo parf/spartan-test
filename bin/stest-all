@@ -344,16 +344,18 @@ discover_selected() {
   fi
 }
 
-# warn about selector tags no discovered file declares (typos such as --tag=-lnog)
+# warn about requested tags no discovered file declares (typos such as --tag=smoek).
+# An excluded tag nobody declares is fine: there is simply nothing to exclude, which is
+# normal for a shared command line like --tag=-centerex in a product without that tag.
 warn_unknown_tags() {
   local token known
   local -A known_tags=()
-  (( ${#requested_tags[@]} + ${#excluded_tags[@]} > 0 )) || return 0
+  (( ${#requested_tags[@]} > 0 )) || return 0
   while read -r token _; do
     [[ -n $token ]] && known_tags["$token"]=1
   done < <(discover_tests 2>/dev/null | count_tags all 2>/dev/null)
   known=$(printf '%s\n' "${!known_tags[@]}" | sort | head -20 | paste -sd ' ')
-  for token in "${!requested_tags[@]}" "${!excluded_tags[@]}"; do
+  for token in "${!requested_tags[@]}"; do
     if [[ ! ${known_tags[$token]+yes} ]]; then
       echo "stest-all: unknown tag '$token'; known tags: ${known:-none}" >&2
     fi

@@ -34,7 +34,7 @@
 ; exec("$bin --version 2>&1", $versionOutput, $versionCode);
 
 [$versionCode, $versionOutput];
-    [0, ['4.1.1 (build 2026-10-10)']];
+    [0, ['4.1.2 (build 2026-10-10)']];
 
 ; $timeoutDir = "$tmp/timeout-dir";
 ; $timeoutFile = "$timeoutDir/timeout.stest";
@@ -617,6 +617,40 @@ $findList('--unrestricted --executable');
 
 $run("$bin " . escapeshellarg($reflectionDeprecated));
     0;
+
+// errors raised by the test's own code are reported by stest on the test line, never handed
+// to the project's error handler (whose trace would show stest's eval()'d code and frames);
+// errors raised in project code still reach the project's handler
+; $handlerDir = "$tmp/project-handler";
+; mkdir($handlerDir);
+; file_put_contents("$handlerDir/init.php", '<?php
+function project_warn() { trigger_error("project warning", E_USER_WARNING); return "lib"; }
+set_error_handler(function ($level, $message, $file, $line) {
+    echo "PROJECT-HANDLER: $message at $file\n";
+    return true;
+});
+');
+; file_put_contents("$handlerDir/stest-config.json", '{"init": ["init.php"]}');
+; file_put_contents("$handlerDir/own.stest", "#!/usr/bin/env stest\n"
+    . "; \$old = function () { trigger_error('old api', E_USER_DEPRECATED); return 1; };\n"
+    . "\$old();\n    1;\n");
+; file_put_contents("$handlerDir/project.stest", "#!/usr/bin/env stest\nproject_warn();\n    'lib';\n");
+; $handlerRun = function (string $name) use ($bin, $handlerDir): array {
+    exec("cd " . escapeshellarg($handlerDir) . " && $bin -C $name.stest 2>&1", $out, $code);
+    return [$code, implode("\n", $out)];
+  };
+; [$ownCode, $ownOut] = $handlerRun("own");
+
+[$ownCode, str_contains($ownOut, "L3: \$old();"), str_contains($ownOut, "'E_USER_DEPRECATED: old api'")];
+    [1, true, true];
+
+[str_contains($ownOut, "PROJECT-HANDLER"), str_contains($ownOut, "eval()"), str_contains($ownOut, "STest.php")];
+    [false, false, false];
+
+; [$projectCode, $projectOut] = $handlerRun("project");
+
+[$projectCode, str_contains($projectOut, "PROJECT-HANDLER: project warning at $handlerDir/init.php")];
+    [1, true];
 
 ; $roDir = "$tmp/read-only-dir";
 ; mkdir($roDir);
