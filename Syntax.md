@@ -209,6 +209,13 @@ line one. Declarations after line four are ordinary comments and are ignored by
   `prod` files except those also tagged `long`.
 - Negative selectors never satisfy `@require-tag`. With `--tag=-long`, required-tag
   files remain skipped because no required tag was positively requested.
+- `--all` ignores the opt-in rule: files with `@require-tag` run as if one of their tags
+  had been requested. It composes with the other filters, e.g. `--all --tag=-long` runs
+  every file except those tagged `long`.
+- `--list-tags` prints `tag count` for every tag (`@tag` and `@require-tag`) in the selected
+  files, most used first; `--list-required` reports only `@require-tag` tags. Both include
+  opt-in files and honor `-x`, `-u`, `--recent`, `--new`, and `--tag`. A file counts once
+  per tag.
 - Repeated `--tag` options and comma-separated values are merged using the same rules.
 - Executable and non-executable `.stest` files are included by default. Use
   `-x` or `--executable` to select only files with the executable bit set.
@@ -227,6 +234,8 @@ stest-all --tag=smoke
 stest-all --tag="prod -long" --recent=2day
 stest-all --list --tag=staging --new=4
 stest-all --list --executable --unrestricted
+stest-all --all --tag=-long
+stest-all --list-required
 ```
 
 See [tagged-test.stest](examples/1-basics/tagged-test.stest) for file metadata syntax.

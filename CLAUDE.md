@@ -33,6 +33,13 @@ bin/stest-all -j 40
 
 # List all test files
 bin/stest-all --list
+
+# Run everything, including opt-in @require-tag files
+bin/stest-all --all
+
+# Tag => file count (all tags / only @require-tag tags)
+bin/stest-all --list-tags
+bin/stest-all --list-required
 ```
 
 ### Common Test Options

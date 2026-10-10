@@ -13,6 +13,10 @@ usage() {
   echo "  --list          : list the selected tests instead of running them"
   echo "  -x, --executable: select only executable .stest files"
   echo "  -u, --unrestricted: include hidden/ignored (fd), vendor, and node_modules files"
+  echo "  --list-tags     : list every tag of the selected files with its file count"
+  echo "  --list-required : list every @require-tag tag of the selected files with its file count"
+  echo "                     both include opt-in files and accept the other selection options"
+  echo "  --all           : also run files with @require-tag, as if their tags were requested"
   echo "  --tag=prod      : select files tagged prod; repeat, or separate tags with comma/space"
   echo "  --tag='prod -long': select prod files, excluding those also tagged long"
   echo "                     files with @require-tag run only when one of their tags is requested"
@@ -186,15 +190,12 @@ parse_tag_selectors() {
   done
 }
 
-file_matches_tags() {
+# Read @tag / @require-tag declarations from the first four lines of a file
+# into the normal and required associative arrays named by $2 and $3.
+read_file_tags() {
   local file=$1
-  local line directive definition token read_status
+  local line directive definition read_status
   local line_number=0
-  local required_match=0
-  local positive_match=0
-  local -A normal_tags=()
-  local -A required_tags=()
-  local -A file_tags=()
 
   if ! exec 3< "$file"; then
     echo "Unable to read test file: $file" >&2
@@ -213,12 +214,12 @@ file_matches_tags() {
       directive=${BASH_REMATCH[1]}
       definition=${BASH_REMATCH[3]}
       if [[ $directive == tag ]]; then
-        add_tag_tokens "$definition" normal_tags "$file:$line_number" || {
+        add_tag_tokens "$definition" "$2" "$file:$line_number" || {
           exec 3<&-
           return 2
         }
       else
-        add_tag_tokens "$definition" required_tags "$file:$line_number" || {
+        add_tag_tokens "$definition" "$3" "$file:$line_number" || {
           exec 3<&-
           return 2
         }
@@ -226,6 +227,18 @@ file_matches_tags() {
     fi
   done
   exec 3<&-
+}
+
+file_matches_tags() {
+  local file=$1
+  local token
+  local required_match=0
+  local positive_match=0
+  local -A normal_tags=()
+  local -A required_tags=()
+  local -A file_tags=()
+
+  read_file_tags "$file" normal_tags required_tags || return
 
   for token in "${!normal_tags[@]}" "${!required_tags[@]}"; do
     [[ -n $token ]] && file_tags["$token"]=1
@@ -235,7 +248,8 @@ file_matches_tags() {
     [[ ${file_tags[$token]+yes} ]] && return 1
   done
 
-  if (( ${#required_tags[@]} > 0 )); then
+  # --all runs opt-in files as if their required tags were ordinary tags.
+  if (( ${#required_tags[@]} > 0 && run_all == 0 )); then
     for token in "${!required_tags[@]}"; do
       if [[ ${requested_tags[$token]+yes} ]]; then
         required_match=1
@@ -256,6 +270,32 @@ file_matches_tags() {
   fi
 
   return 0
+}
+
+# Print "tag count" for every tag in the selected files, most used first.
+# $1=required limits the report to @require-tag declarations.
+count_tags() {
+  local mode=$1
+  local file token
+  local -A normal_tags required_tags file_tags
+
+  while IFS= read -r file; do
+    normal_tags=()
+    required_tags=()
+    file_tags=()
+    read_file_tags "$file" normal_tags required_tags || return
+    if [[ $mode != required ]]; then
+      for token in "${!normal_tags[@]}"; do
+        file_tags["$token"]=1
+      done
+    fi
+    for token in "${!required_tags[@]}"; do
+      file_tags["$token"]=1
+    done
+    for token in "${!file_tags[@]}"; do
+      printf '%s\n' "$token"
+    done
+  done | sort | uniq -c | sort -k1,1nr -k2,2 | awk '{ print $2, $1 }'
 }
 
 filter_tagged_tests() {
@@ -287,6 +327,8 @@ list_tests() {
 
 quiet=0
 list=0
+list_tags=
+run_all=0
 executable_only=0
 unrestricted=0
 recent=
@@ -316,7 +358,13 @@ while [[ $# -gt 0 ]]; do
       executable_only=1
       ;;
     --all)
-      # Compatibility no-op: all .stest files are selected by default.
+      run_all=1
+      ;;
+    --list-tags)
+      list_tags=all
+      ;;
+    --list-required)
+      list_tags=required
       ;;
     -u|--unrestricted)
       unrestricted=1
@@ -394,6 +442,9 @@ done
 
 parse_tag_selectors || exit $?
 
+# Tag reports cover opt-in files too; otherwise --list-required would be empty.
+[[ -n $list_tags ]] && run_all=1
+
 if [[ -n "$new" && ! "$new" =~ ^[1-9][0-9]*$ ]]; then
   echo "--new expects a positive integer" >&2
   exit 1
@@ -437,6 +488,11 @@ fi
 if (( ${#requested_tags[@]} > 0 && ${#excluded_tags[@]} == 0 )) && [[ ! -s $test_list ]]; then
   echo "No tests matched the requested tags" >&2
   exit 1
+fi
+
+if [[ -n $list_tags ]]; then
+  count_tags "$list_tags" < "$test_list"
+  exit $?
 fi
 
 if [[ $list == 1 ]]; then

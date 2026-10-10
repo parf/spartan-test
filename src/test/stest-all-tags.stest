@@ -150,6 +150,40 @@ $list("--tag=" . escapeshellarg("prod smoke"));
 $list("--all --tag=prod") === $list("--tag=prod");
     true;
 
+$list("--all");
+    [0, ['./late-required.stest', './nonexec-prod.stest', './prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest', './smoke.stest', './untagged.stest']];
+
+$list("--all --tag=-long");
+    [0, ['./late-required.stest', './nonexec-prod.stest', './prod.stest', './required-prod.stest', './smoke.stest', './untagged.stest']];
+
+$list("--all --executable");
+    [0, ['./late-required.stest', './prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest', './smoke.stest', './untagged.stest']];
+
+; $tags = function (string $args = "", ?string $dir = null) use ($all, $tagDir): array {
+    $dir ??= $tagDir;
+    $out = [];
+    exec("$all $args " . escapeshellarg($dir) . " 2>/dev/null", $out, $code);
+    return [$code, $out];
+  };
+
+$tags("--list-tags");
+    [0, ['prod 5', 'long 2', 'smoke 1', 'stage 1']];
+
+$tags("--list-required");
+    [0, ['prod 2', 'stage 1']];
+
+$tags("--list-tags --tag=-long");
+    [0, ['prod 3', 'smoke 1', 'stage 1']];
+
+$tags("--list-required --executable --tag=long");
+    [0, ['prod 1']];
+
+$tags("--list-tags", $formsDir);
+    [0, ['api.v2 1', 'blocked 1', 'blue 1', 'db:read 1', 'green 1', 'release-long 1', 'smoke_test 1', 'spaced 1']];
+
+$tags("--list-required", $formsDir);
+    [0, ['blue 1', 'green 1']];
+
 ; $unrestrictedExpected = ['./node_modules/node-prod.stest', './nonexec-prod.stest', './prod-long.stest', './prod.stest', './required-prod-long.stest', './required-prod.stest', './vendor/vendor-prod.stest'];
 ; if ($hasFd) {
     $unrestrictedExpected[] = './.hidden-prod.stest';
@@ -203,6 +237,15 @@ $run("--executable --tag=" . escapeshellarg("dangerous -blocked"), $runDir);
 $run("--all --tag=dangerous", $runDir);
     2;
 
+$run("--all", $runDir);
+    2;
+
+$run("--all --tag=-blocked", $runDir);
+    1;
+
+$run("--all --executable --tag=-blocked", $runDir);
+    0;
+
 ; $directOutput = [];
 ; exec("$stest --tag=dangerous " . escapeshellarg("$runDir/required-fail.stest") . " 2>&1", $directOutput, $directCode);
 ; $directText = implode("\n", $directOutput);
@@ -220,6 +263,9 @@ $list("", $invalidDir)[0];
     2;
 
 $list("", $emptyTagDir)[0];
+    2;
+
+$tags("--list-tags", $invalidDir)[0];
     2;
 
 $list("--tag")[0];
@@ -251,4 +297,7 @@ str_contains($help, "-x, --executable");
     true;
 
 str_contains($help, "--all");
-    false;
+    true;
+
+str_contains($help, "--list-tags") && str_contains($help, "--list-required");
+    true;

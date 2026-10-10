@@ -113,6 +113,9 @@ stest-all -q                      # quiet suite run
 stest-all --executable            # only executable .stest files
 stest-all --list                  # inspect the selected files
 stest-all --tag="smoke -long"     # include and exclude file tags
+stest-all --all                   # also run opt-in @require-tag files
+stest-all --list-tags             # every tag with its file count
+stest-all --list-required         # @require-tag tags with their file count
 stest-all --timeout=10            # timeout for every web request in the suite
 stest-all -j 40                   # at most 40 files at once (web suites: ~PHP-FPM workers)
 stest-all --read-only             # never rewrite any .stest file
