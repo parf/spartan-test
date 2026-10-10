@@ -25,6 +25,8 @@ use function stest\helper\cut;
  */
 
 include __DIR__ . "/Helpers.inc.php";
+include __DIR__ . "/Watch.inc.php";
+include __DIR__ . "/State.inc.php";
 
 // poor-man DI - Dependency Injection Container
 //
@@ -58,8 +60,8 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "4.0.11";
-const DATE_BUILD = "2026-10-09";
+const VERSION = "4.1.0";
+const DATE_BUILD = "2026-10-10";
 
 //
 // INTERNAL
@@ -82,6 +84,7 @@ class STest {
     static $URL = "";     // last URL used, if set used as REFERRER
     static $PATH = "";    // last PATH used
     static $COOKIE = [];  // array cookie => value
+    static $RESOLVE = []; // CURLOPT_RESOLVE entries ("host:port:ip") set by STest::domain(..., ip:)
     static $WebTest_TIMEOUT = 15;  // curl connect/transfer timeout (sec) for web tests; tests may override
 
     static function webTestTimeout(): int {
@@ -113,6 +116,147 @@ class STest {
     //
     // Static Methods
     //
+
+    /**
+     * run an *unmodified* test file at most once per period: skip it (like STest::stop)
+     * when its content is unchanged since its last fully passing run less than $period ago
+     * a pass records the file's sha1 in ~/.config/stest/once.json; any edit makes it run again
+     * overridden by "-f", "--force", "--once=ignore"; "--once=reset" forgets the recorded pass
+     * periods: "1day", "12h", "30min", "2weeks", "daily", "weekly", "hourly", seconds
+     *
+     * Usage:
+     *   ; STest::runOnce("1day");
+     * same as the tag "# @tag run-once(1day)", which skips the file before it executes
+     */
+    static function runOnce(string $period = "1day"): void {
+        $seconds = helper\State::seconds($period);
+        if ($seconds === null) {
+            self::error("STest::runOnce: invalid period '$period'; expected e.g. 1day, 12h, 30min, weekly");
+        }
+        $file = realpath(i('stest')->file);
+        self::$ONCE = $file;  // record the pass when this file finishes successfully
+        if ($why = self::_onceSkip($file, $seconds)) {
+            self::stop("runOnce($period): $why");
+        }
+    }
+
+    static $ONCE = null;  // realpath of the running file when runOnce() let it run
+
+    /**
+     * report an unchanged failure only once per period (for cron alerting)
+     * the file still runs; when it fails exactly as last time, its file is unchanged and that
+     * failure was reported less than $period ago, the error output is dropped and the file
+     * counts as stopped (exit 0); a new or different failure is reported, a pass clears the record
+     * call it before any test line, or use the tag "# @tag fail-once(1day)". state: ~/.config/stest/fail-once.json
+     *
+     * Usage:
+     *   ; STest::failOnce("1day");
+     */
+    static function failOnce(string $period = "1day"): void {
+        $seconds = helper\State::seconds($period);
+        if ($seconds === null) {
+            self::error("STest::failOnce: invalid period '$period'; expected e.g. 1day, 12h, 30min, weekly");
+        }
+        self::_failOnceStart(realpath(i('stest')->file), $period);
+    }
+
+    static function _failOnceStart(string $file, string $period): void {
+        $seconds = helper\State::seconds($period);
+        if ((self::$FAIL_ONCE['file'] ?? null) !== $file) { // soft-regen re-runs setup lines: keep the buffer
+            self::$FAIL_ONCE = ['file' => $file, 'period' => $period, 'seconds' => $seconds, 'hash' => sha1_file($file), 'settled' => false];
+            static $guard = false;
+            if (!$guard) {
+                $guard = true;
+                // a fatal error or exit() must not swallow the held-back error output
+                register_shutdown_function(function () {
+                    if (self::$FAIL_ONCE && !self::$FAIL_ONCE['settled']) {
+                        self::$FAIL_ONCE['settled'] = true;
+                        foreach (self::$FAIL_ONCE_BUF as [$s, $args]) {
+                            i('out')->err($s, ...$args);
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    static $FAIL_ONCE = null;     // failOnce() settings for the running file
+    static $FAIL_ONCE_BUF = [];   // error output held back until the outcome is known
+
+    // error output of a test file; held back while failOnce() is undecided
+    static function _err(string $s, ...$args): void {
+        if (self::$FAIL_ONCE && !self::$FAIL_ONCE['settled']) {
+            self::$FAIL_ONCE_BUF[] = [$s, $args];
+            return;
+        }
+        i('out')->err($s, ...$args);
+    }
+
+    /**
+     * decide a failOnce() file: $passed true = pass, false = failure, null = neither (stopped)
+     * returns a message when the failure is a repeat to keep quiet; otherwise flushes the held output
+     */
+    static function _failOnceSettle(string $file, array $details, string $message, ?bool $passed): ?string {
+        $f = self::$FAIL_ONCE;
+        if (!$f || $f['settled']) {
+            return null;
+        }
+        self::$FAIL_ONCE['settled'] = true;
+        $quiet = null;
+        if ($passed === false) {
+            $signature = sha1(json_encode([$details, $message], JSON_PARTIAL_OUTPUT_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE));
+            $last = helper\State::read('fail-once')[$f['file']] ?? null;
+            $age = time() - (int) ($last['reported'] ?? 0);
+            if ($last && ($last['signature'] ?? '') === $signature && ($last['hash'] ?? '') === $f['hash'] && $age >= 0 && $age < $f['seconds']) {
+                $quiet = "failOnce({$f['period']}): same failure as reported " . helper\State::ago($age) . " ago";
+            } else {
+                helper\State::update('fail-once', function (array $data) use ($f, $signature) {
+                    $data[$f['file']] = ['signature' => $signature, 'hash' => $f['hash'], 'reported' => time()];
+                    return $data;
+                });
+            }
+        } elseif ($passed === true) {
+            if (isset(helper\State::read('fail-once')[$f['file']])) {
+                helper\State::update('fail-once', function (array $data) use ($f) {
+                    unset($data[$f['file']]);
+                    return $data;
+                });
+            }
+        }
+        $buffer = self::$FAIL_ONCE_BUF;
+        self::$FAIL_ONCE_BUF = [];
+        if ($quiet === null) {
+            foreach ($buffer as [$s, $args]) {
+                i('out')->err($s, ...$args);
+            }
+        }
+        return $quiet;
+    }
+
+    // reason to skip $file (unchanged and passed within $seconds) | null
+    static function _onceSkip(string $file, int $seconds): ?string {
+        $mode = self::$ARG['once'] ?? null;
+        if ($mode === 'ignore' || $mode === 'reset' || (self::$ARG['force'] ?? 0)) {
+            return null;
+        }
+        $last = helper\State::read('once')[$file] ?? null;
+        if (!$last || ($last['hash'] ?? '') !== sha1_file($file)) {
+            return null;
+        }
+        $age = time() - (int) ($last['passed'] ?? 0);
+        return $age >= 0 && $age < $seconds ? "unchanged, passed " . helper\State::ago($age) . " ago" : null;
+    }
+
+    static function _onceRecord(string $file, bool $passed): void {
+        helper\State::update('once', function (array $data) use ($file, $passed) {
+            if ($passed) {
+                $data[$file] = ['hash' => sha1_file($file), 'passed' => time()];
+            } else {
+                unset($data[$file]);
+            }
+            return $data;
+        });
+    }
 
     /**
      * intentionally skip the rest of this test file successfully
@@ -366,11 +510,21 @@ class STest {
      *
      * test domain for availability:
      *     fail_action =  "stop" | "error" | "alert"
+     *
+     * ip: send every request for this domain to that IP address (curl --resolve);
+     *     Host header, cookies and TLS SNI keep the domain name. --ip="..." overrides it
+     *     \STest::domain("www.example.com", ip: "172.16.1.1");
      */
-    static function domain(string $domain, string $fail_action = "error") {
+    static function domain(string $domain, string $fail_action = "error", string $ip = "") {
         self::debug(" - domain-in: $domain", 4);
         if ($t = STest::$ARG['domain'] ?? 0) { # --domain="..." - overrides all
             $domain = $t;
+        }
+        if (($t = STest::$ARG['ip'] ?? 0) && $t !== true) { # --ip="..." - overrides the ip: argument
+            $ip = $t;
+        }
+        if ($ip !== "" && filter_var(trim($ip, "[]"), FILTER_VALIDATE_IP) === false) {
+            self::error("STest::domain: invalid ip '$ip'");
         }
         if (strpos($domain, "//") === false) {    # //domain | scheme://domain
             $domain = "https://" . $domain;
@@ -379,7 +533,8 @@ class STest {
         if ($realm && ! (STest::$ARG['domain'] ?? 0)) {
             $domain = static::_realmUrl($domain, $realm);
         }
-        \hb\Curl::test($domain, $fail_action); // check if web-server is up
+        STest::$RESOLVE = $ip === "" ? [] : [\hb\Curl::resolveEntry($domain, $ip)];
+        \hb\Curl::test($domain, $fail_action, $ip); // check if web-server is up
         STest::$DOMAIN = $domain;
         self::debug(" - domain: $domain", 2);
     }
@@ -518,6 +673,9 @@ class STest {
     public function run(array $argv) {
         $this->init($argv);
         self::$FAILED = 0;
+        if (self::$ARG['watch'] ?? 0) {
+            exit(helper\Watcher::run($argv, self::$TESTS));
+        }
         foreach (self::$ARG as $a => $v) {
             $a = str_replace("-", "_", $a); // "-" to "_"
             if (is_callable(["stest\\STest_Global_Commands", $a])) {
@@ -532,6 +690,128 @@ class STest {
     }
 
     function runTest($file) {
+        static $first = true;
+        // the first file of a process is charged the PHP start-up and init time too
+        $start = $first ? ($_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true)) : microtime(true);
+        $first = false;
+        STest_File_Commands::_resetStats();
+        self::$ONCE = null;
+        self::$FAIL_ONCE = null;
+        self::$FAIL_ONCE_BUF = [];
+        $real = realpath($file) ?: $file;
+        $once = self::$ARG['once'] ?? null;
+        if ($once === 'reset' && is_file($real)) {
+            self::_onceRecord($real, false);
+        }
+        // "# @tag run-once(1day)" / "# @tag fail-once(1day)" special-use tags, else --once=PERIOD
+        $header = is_file($real) ? self::_headerDirectives($real) : [];
+        $runOnce = $header['run-once'] ?? ($once === true ? '1day' : ($once === 'reset' || $once === 'ignore' ? null : $once));
+        if (isset($header['invalid'])) {
+            $message = "invalid tag '{$header['invalid']}'; expected e.g. run-once(1day), fail-once(12h), periods: 30min, weekly, 2days";
+            i('out')->err("*** {alert}$real{/}. Error: $message\n");
+            STest_File_Commands::_setStats(['status' => 'error', 'message' => $message]);
+            self::$FAIL_ONCE = null;
+            $failed = 1;
+            self::$FAILED += 1;
+        } elseif (($skip = $this->_onceAuto($file, $real, $runOnce)) !== null) {
+            $failed = 0;
+        } else {
+            if (isset($header['fail-once'])) {
+                self::_failOnceStart($real, $header['fail-once']);
+            }
+            $failed = $this->runTestFile($file);
+            if ($runOnce !== null) {
+                self::$ONCE = $real;  // every passing file is recorded
+            }
+            if (self::$ONCE !== null && !$failed && (STest_File_Commands::_stats()['status'] ?? '') === 'pass') {
+                self::_onceRecord(self::$ONCE, true);
+            }
+        }
+        if ($resultFile = self::$ARG['result-file'] ?? null) {
+            self::_writeResult($resultFile, $file, (int) $failed, microtime(true) - $start);
+        }
+        return $failed;
+    }
+
+    /**
+     * special-use tags in the "# @tag" / "# @require-tag" lines of the first four lines:
+     *   # @tag web run-once(PERIOD)   - as STest::runOnce(PERIOD)
+     *   # @tag fail-once(PERIOD)      - as STest::failOnce(PERIOD)
+     * a bare "run-once" / "fail-once" means 1day; returns [name => period, 'invalid' => token]
+     */
+    static function _headerDirectives(string $file): array {
+        $found = [];
+        $fh = @fopen($file, 'r');
+        for ($n = 0; $fh && $n < 4 && ($line = fgets($fh)) !== false; $n++) {
+            if (!preg_match('/^\s*#\s*@(?:tag|require-tag)\s+(.*)$/', rtrim($line, "\r\n"), $m)) {
+                continue;
+            }
+            foreach (preg_split('/[\s,]+/', trim($m[1]), -1, PREG_SPLIT_NO_EMPTY) as $token) {
+                if (!preg_match('/^(run-once|fail-once)(?:\((.*)\))?$/', $token, $t)) {
+                    continue;
+                }
+                $period = ($t[2] ?? '') === '' ? '1day' : $t[2];
+                if (helper\State::seconds($period) === null) {
+                    $found['invalid'] = $token;
+                } else {
+                    $found[$t[1]] = $period;
+                }
+            }
+        }
+        $fh && fclose($fh);
+        return $found;
+    }
+
+    // runOnce period (--once=PERIOD or tag run-once): skip an unchanged, recently passed file without executing it; null = run it
+    function _onceAuto(string $file, string $real, ?string $period): ?string {
+        if ($period === null || !is_file($real)) {
+            return null;
+        }
+        $why = self::_onceSkip($real, helper\State::seconds($period));
+        if ($why === null) {
+            return null;
+        }
+        $this->file = $file;
+        $message = "runOnce($period): $why";
+        i('out')->e("*** {bg_blue}{white}{bold}%s{/}\n {warn}Test stopped{/}: $message\n", $real);
+        STest_File_Commands::_setStats(['status' => 'stop', 'message' => $message]);
+        i('reporter')->stop($real, ['message' => $message, 'tests' => 0]);
+        return $message;
+    }
+
+    // append one JSON line describing the finished file (used by stest-all and --watch)
+    static function _writeResult(string $resultFile, string $file, int $failed, float $duration): void {
+        $stats = STest_File_Commands::_stats();
+        $status = $stats['status'] ?? ($failed ? 'fail' : 'pass');
+        if ($failed && $status === 'pass') {
+            $status = 'fail';
+        }
+        $record = [
+            'file' => $file,
+            'status' => $status,
+            'tests' => $stats['tests'] ?? 0,
+            'failed' => $failed,
+            'new' => $stats['new'] ?? 0,
+            'reformat' => $stats['reformat'] ?? 0,
+            'saved' => STest_File_Commands::$saved,
+            'duration' => round($duration, 3),
+        ] + array_filter([
+            'message' => $stats['message'] ?? null,
+            'details' => $stats['details'] ?? null,
+        ]);
+        $json = json_encode($record, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_PARTIAL_OUTPUT_ON_ERROR);
+        $fh = @fopen($resultFile, 'a');
+        if ($fh === false) {
+            fwrite(STDERR, "unable to write --result-file=$resultFile\n");
+            return;
+        }
+        flock($fh, LOCK_EX);
+        fwrite($fh, $json . "\n");
+        flock($fh, LOCK_UN);
+        fclose($fh);
+    }
+
+    function runTestFile($file) {
         $this->file = $file;
         self::$DIR = \realpath(dirname($file));
         try {
@@ -539,6 +819,7 @@ class STest {
             $T = helper\Parser::Reader($file);
         } catch (\Exception $ex) {
             i('out')->err("*** {alert}$file{/}. Error: " . $ex->getMessage() . "\n");
+            STest_File_Commands::_setStats(['status' => 'error', 'message' => $ex->getMessage()]);
             self::$FAILED += 1;
             return 1;
         }
@@ -606,6 +887,13 @@ class STest {
             }
             self::$ARG['timeout'] = $timeout;
         }
+        if (array_key_exists('once', self::$ARG)) {
+            $once = self::$ARG['once'];
+            if ($once !== true && $once !== 'reset' && $once !== 'ignore' && helper\State::seconds((string) $once) === null) {
+                fwrite(STDERR, "--once expects a period (1day, 12h, 30min, weekly, ...), reset, or ignore\n");
+                exit(1);
+            }
+        }
         if (self::$ARG['read_only'] ?? 0) {
             foreach (['generate', 'save', 'clean'] as $writer) {
                 if (self::$ARG[$writer] ?? 0) {
@@ -661,6 +949,36 @@ class STest_Global_Commands {
      * example: --timeout=5
      */
     static function timeout($v) {
+    }
+
+    /**
+     * web-test: send every request to this IP, overriding STest::domain(..., ip:)
+     * Host header, cookies and TLS SNI keep the domain name. example: --ip=172.16.1.1
+     */
+    static function ip($v) {
+    }
+
+    /**
+     * --once[=1day]   skip files that are unchanged and passed within the period, as if each called STest::runOnce()
+     * --once=reset    forget the recorded passes of the given files, then run them
+     * --once=ignore   run files even when runOnce would skip them (passes are still recorded)
+     */
+    static function once($v) {
+    }
+
+    /**
+     * re-run a test file each time it is saved (requires inotifywait from inotify-tools)
+     * paths may be files or directories (recursive); results stest writes itself never trigger a re-run
+     * example: stest --watch tests/ api.stest
+     */
+    static function watch() {
+    }
+
+    /**
+     * append one JSON line per finished test file to PATH (used by stest-all and --watch)
+     * fields: file, status, tests, failed, new, reformat, saved, duration, message, details
+     */
+    static function result_file($v) {
     }
 
     /**
@@ -804,9 +1122,32 @@ class STest_File_Commands {
 
     // static function $Option(ParsedTest $T, $option_value)
     private static $softNeeded = false;
+    private static $stats = [];   // last test() outcome, @see STest::_writeResult
+    static $saved = false;        // the current file was rewritten by save()
 
     static function _softNeeded(): bool {
         return self::$softNeeded;
+    }
+
+    // failOnce(): the same failure was already reported - report the file as stopped instead
+    static function _failOnceQuiet(object $__t, string $message): int {
+        i('out')->e("*** {bg_blue}{white}{bold}%s{/}\n {warn}Test stopped{/}: $message\n", $__t->filename);
+        self::$stats = ['status' => 'stop', 'message' => $message, 'tests' => $__t->tests, 'new' => $__t->new, 'reformat' => $__t->reformat];
+        i('reporter')->stop($__t->filename, ['message' => $message, 'tests' => $__t->tests]);
+        return 0;
+    }
+
+    static function _resetStats(): void {
+        self::$stats = [];
+        self::$saved = false;
+    }
+
+    static function _setStats(array $stats): void {
+        self::$stats = $stats;
+    }
+
+    static function _stats(): array {
+        return self::$stats;
     }
 
 
@@ -831,10 +1172,10 @@ class STest_File_Commands {
         // show filename above first error
         $__err = function ($s, $reason = "failed") use ($__t) {
             if (!$__t->filename_shown) {
-                i('out')->err("*** {alert}%s %s{/}\n", $__t->filename, $reason);
+                STest::_err("*** {alert}%s %s{/}\n", $__t->filename, $reason);
                 $__t->filename_shown = 1;
             }
-            i('out')->err($s . "\n");
+            STest::_err($s . "\n");
         };
 
         $__tester = function (string &$expected, $got, $line, $code) use ($__err, &$ARG, $__t) {
@@ -1037,6 +1378,10 @@ class STest_File_Commands {
                 $__err("{alert}$reason{/} at line $__line: $m\n    {cyan}$__code{/}");
             }
             $reportReason = $reason === "Stop" && $__t->fail ? "fail" : $reason;
+            if ($quiet = STest::_failOnceSettle($__t->filename, $__t->details, $m, $reportReason === "Stop" ? null : false)) {
+                return STest_File_Commands::_failOnceQuiet($__t, $quiet);
+            }
+            self::$stats = ['status' => strtolower($reportReason), 'message' => $m, 'tests' => $__t->tests, 'new' => $__t->new, 'reformat' => $__t->reformat, 'details' => $__t->details];
             i('reporter')->$reportReason($__t->filename, ['message' => $m, 'tests' => $__t->tests, 'new' => $__t->new, 'fail' => $__t->fail, 'details' => $__t->details]);
             // a stopped file still gets its typed "!!" markers rewritten to ‼️ (results are left as they are)
             if (helper\Parser::$criticalRewritten && !($ARG['read_only'] ?? 0) && !self::save($__t->T)) {
@@ -1081,12 +1426,16 @@ class STest_File_Commands {
         if ($reformat = $__t->reformat) {
             $stat .= ", {blue}reformat: $reformat{/}";
         }
+        if ($quiet = STest::_failOnceSettle($__t->filename, $__t->details, "", !$__t->fail)) {
+            return self::_failOnceQuiet($__t, $quiet);
+        }
         if ($fail = $__t->fail) {
             $__err("{alert}>{/} $stat, {warn}failed: $fail{/}");
         } else {
             i('out')->e("*** {head}%s{/} $stat\n", $__t->filename);
         }
 
+        self::$stats = ['status' => $fail ? 'fail' : 'pass', 'tests' => $__t->tests, 'new' => $__t->new, 'reformat' => $__t->reformat, 'details' => $__t->details];
         $how = $fail ? "fail" : "success";
         if ($ARG['alert']??0)
             $how = "alert";
@@ -1369,6 +1718,7 @@ class STest_File_Commands {
             return false;
         }
 
+        self::$saved = true;
         i('out')->e("*** {head}%s{/} saved\n", $filename);
         return true;
     }

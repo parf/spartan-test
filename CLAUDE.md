@@ -40,6 +40,15 @@ bin/stest-all --all
 # Tag => file count (all tags / only @require-tag tags)
 bin/stest-all --list-tags
 bin/stest-all --list-required
+
+# Re-run failed files after the whole run (warm caches); summary/JSON/slowest
+bin/stest-all -q --retry=2
+bin/stest-all --json=report.json --slowest
+bin/stest-all --rerun-failed
+bin/stest-all --shard=1/4
+
+# Re-run test files on save (inotifywait)
+bin/stest --watch tests/
 ```
 
 ### Common Test Options
@@ -112,6 +121,15 @@ composer test-list     # List all tests
 - Supports GET, POST, JSONPOST operations
 - Cookie/session preservation across requests
 - Automatic PHP error detection on pages
+
+**`src/State.inc.php`** - `stest\helper\State`: per-user JSON state in `${XDG_CONFIG_HOME:-~/.config}/stest/`
+(`failed.json`, `once.json`, `fail-once.json`), locked read-modify-write; period parsing (`1day`, `12h`)
+
+**`src/Watch.inc.php`** - `stest\helper\Watcher`: `stest --watch` loop over `inotifywait`; skips
+events whose content hash matches what stest itself saved (via `--result-file` `saved`)
+
+**`src/stest-all-report.php`** - stest-all post-run report: merges per-round `--result-file`
+JSON lines and GNU Parallel joblogs into the summary, `--json`, `--slowest`, and `failed.json`
 
 **`src/Curl.inc.php`** - HTTP client wrapper
 - `Curl` class: Low-level HTTP operations

@@ -28,7 +28,7 @@ class WebTest {
     function __construct() {
         if (! STest::$DOMAIN)
             STest::error("no DOMAIN configured, set STest::\$DOMAIN first");
-        Curl::test(STest::$DOMAIN); // fast check if service online
+        Curl::test(STest::$DOMAIN, "error", explode(":", STest::$RESOLVE[0] ?? "", 3)[2] ?? ""); // fast check if service online
     }
 
     // report discovered error on code=200 page
@@ -61,7 +61,7 @@ class WebTest {
             throw new \stest\ErrorException("Set STest::\$DOMAIN first");
         if (substr(strtolower($d), 0, 4) != 'http')
             $d = "http://".$d;        
-        $opts = [
+        $opts = (STest::$RESOLVE ? [CURLOPT_RESOLVE => STest::$RESOLVE] : []) + [
             CURLOPT_HTTPHEADER => ["Content-type: application/json"],
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => json_encode($kv)
@@ -92,6 +92,8 @@ class WebTest {
         if (substr(strtolower($d), 0, 4) != 'http')
             $d = "http://".$d;
         $curl_opts = [];
+        if (STest::$RESOLVE)
+            $curl_opts += [CURLOPT_RESOLVE => STest::$RESOLVE];  // STest::domain(..., ip:)
         if (STest::$URL)
             $curl_opts += [CURLOPT_REFERER => STest::$URL];
         if (STest::$COOKIE) {

@@ -36,6 +36,19 @@ requests:
 ```
 
 
+## Pinning A Domain To An IP
+
+Send every request for the domain to one server, e.g. a single node behind a load balancer
+or a host that is not in DNS yet. The Host header, cookies, and TLS SNI keep the domain name
+(curl `--resolve`):
+
+```
+; \STest::domain("www.example.com", ip: "172.16.1.1");
+```
+
+`--ip=ADDRESS` overrides the `ip:` argument from the command line. IPv6 addresses work too.
+
+
 ## Running The Web Test Examples
 
 The examples in `examples/3-web-tests/` expect a local test server to be

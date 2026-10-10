@@ -13,23 +13,38 @@ class Curl {
      * test is service's port is active
      * @throws \stest\StopException
      */
-    static function test(string $url, $level = "error")  {
+    static function test(string $url, $level = "error", string $ip = "")  {
         static $test_done = [];
-        if ($test_done[$url]??0)
+        if ($test_done["$url $ip"]??0)
             return; // avoid extra tests
         $d = \parse_url($url);
         $host = $d['host'] ?? "";
         if (! $host)
             throw new \Error("can't parse hostname from url=$url");
         $port = $d['port'] ?? ( (\strtolower($d['scheme'] ?? "") === 'https') ? 443 : 80);
-        \STest::debug(" - Curl::test($host:$port)", 2);
-        $fp = @fsockopen($host, $port, $errno, $errstr, 5);
+        $connect = $ip !== "" ? (str_contains($ip, ":") && $ip[0] !== "[" ? "[$ip]" : $ip) : $host;
+        \STest::debug(" - Curl::test($connect:$port)", 2);
+        $fp = @fsockopen($connect, $port, $errno, $errstr, 5);
         if (! $fp) {
             \STest::$level("no service on `$url` port:$port : err#$errno '$errstr'");
             return;
         }
-        $test_done[$url] = 1;
+        $test_done["$url $ip"] = 1;
         fclose($fp);
+    }
+
+    /**
+     * CURLOPT_RESOLVE entry pinning $url's host and port to $ip: "host:port:ip"
+     */
+    static function resolveEntry(string $url, string $ip): string {
+        $d = \parse_url($url);
+        $host = $d['host'] ?? "";
+        if (! $host)
+            throw new \Error("can't parse hostname from url=$url");
+        $port = $d['port'] ?? ( (\strtolower($d['scheme'] ?? "") === 'https') ? 443 : 80);
+        if (str_contains($ip, ":") && $ip[0] !== "[")
+            $ip = "[$ip]"; // IPv6
+        return "$host:$port:$ip";
     }
 
     static function get($url, array $params = [], array $curl_opts = [], array $opts = []) {

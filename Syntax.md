@@ -216,6 +216,11 @@ line one. Declarations after line four are ordinary comments and are ignored by
   files, most used first; `--list-required` reports only `@require-tag` tags. Both include
   opt-in files and honor `-x`, `-u`, `--recent`, `--new`, and `--tag`. A file counts once
   per tag.
+- Special-use tags `run-once(PERIOD)` and `fail-once(PERIOD)` (bare = `1day`) are written in
+  `@tag` / `@require-tag` lines like any tag: `# @tag web run-once(1day)`. `stest` and
+  `stest-all` apply them as `STest::runOnce(PERIOD)` / `STest::failOnce(PERIOD)` (see
+  Built-in STest Methods); `stest-all` lists and selects them by name: `--tag=run-once`,
+  `--tag=-fail-once`, and `--list-tags` shows `run-once 3`. An invalid period fails the file.
 - Repeated `--tag` options and comma-separated values are merged using the same rules.
 - Executable and non-executable `.stest` files are included by default. Use
   `-x` or `--executable` to select only files with the executable bit set.
@@ -240,6 +245,66 @@ stest-all --list-required
 
 See [tagged-test.stest](examples/1-basics/tagged-test.stest) for file metadata syntax.
 
+## stest-all runs: summary, retry, JSON, state
+
+Every run ends with a summary: files, tests, wall time, and each failed, crashed, or flaky file.
+
+```text
+--- stest-all: 120 files, 3400 tests, 41.20s (-j 40)
+    passed 115, failed 2, crashed 1, stopped 2 | failed tests 5, retried 3 files, 1 passed on retry
+    FAIL  ./api/orders.stest  2 of 30 tests
+    CRASH ./api/import.stest  exit 255 without a result (PHP fatal error or exit())
+    FLAKY ./web/search.stest  passed on attempt 2
+```
+
+- `-q` stays quiet: a passing run prints nothing; a failing run prints the summary on STDERR.
+- `--retry=N` re-runs the failed files after the whole run, up to N more rounds, so caches the
+  suite warmed up are in place. A file that passes on a retry counts as passed (flaky). With
+  `-q`, job output is held back and only each file's last attempt is printed, so a recovered
+  failure never reaches cron. Without `-q` every round is shown live.
+- `--slowest[=10]` lists the slowest files by their own `stest` process time (PHP start-up,
+  init, and tests), measured inside each process, never time since the suite started.
+- `--json` prints a JSON report on STDOUT and sends test output to STDERR; `--json=FILE` writes
+  it to FILE and keeps the normal output. The report holds the summary and every file's
+  `status` (`pass`, `fail`, `stop`, `error`, `alert`, `crash`), `exit`, `tests`, `failed`,
+  `new`, `reformat`, `duration`, `attempts`/`flaky` after retries, `message`, and failure `details`.
+- `--rerun-failed` runs only the files that failed in earlier runs of the same top directory.
+  Each run updates that list: files it ran are replaced by their new outcome, others are kept.
+  Opt-in `@require-tag` files on the list run without their tag; `--tag`, `--new`, and
+  `--shard` still filter.
+- `--shard=K/N` runs every N-th file of the final selection, starting with the K-th, to split
+  a suite across N CI machines.
+- `--once[=PERIOD]`, `--once=reset`, `--once=ignore` are passed to every `stest`.
+- A selector tag that no discovered file declares prints
+  `stest-all: unknown tag 'lnog'; known tags: ...` on STDERR.
+- Exit status is the number of files still failing (101 = more than 100), as GNU Parallel reports it.
+
+State lives in `${XDG_CONFIG_HOME:-~/.config}/stest/`: `failed.json` (for `--rerun-failed`),
+`once.json` (`runOnce`), `fail-once.json` (`failOnce`).
+
+```bash
+stest-all -q --retry=2                 # cron: warm-cache retries, silent unless something still fails
+stest-all --json=report.json --slowest
+stest-all --rerun-failed
+stest-all --shard=2/4 --json > shard-2.json
+```
+
+## Watch mode
+
+`stest --watch PATH...` re-runs a test file each time it is saved. PATH may be files or
+directories (recursive; hidden files, `vendor`, `node_modules`, `.git` are skipped); listed files
+run once at start. Requires `inotifywait` (inotify-tools). Other options, e.g. `-v`, are passed
+to every run.
+
+stest rewrites test files itself (new results, reformatting, `‼️`); those writes never trigger
+another run. After each run the watcher remembers the content hash the file should have: the
+hash stest saved, or the one the run started with. An event whose content still matches is
+ignored, while an edit made by hand, even during a run, triggers a new run.
+
+```bash
+stest --watch tests/ api.stest
+```
+
 ### Several matchers may follow one expression
 
 ```
@@ -261,6 +326,18 @@ See [tagged-test.stest](examples/1-basics/tagged-test.stest) for file metadata s
   process exits nonzero. The `--force` option ignores all `::stop` calls.\
    example: `if (date("l") != "Monday") \STest::stop("Monday-only test");`
 - `STest::stop($message, int $until_yyyymmdd)` - successfully disable the test until the date; execution resumes on that date
+- `STest::runOnce($period = "1day")` - run an *unmodified* file at most once per period: when the
+  file's sha1 equals the one recorded after its last fully passing run, less than `$period` ago,
+  the file stops like `STest::stop()` (exit 0). Any edit makes it run again; a failure is never
+  recorded. Same as the special-use tag `# @tag run-once(1day)`, which skips the file before
+  anything executes. `--force` / `--once=ignore` run it anyway; `--once=reset` forgets the pass;
+  `--once[=PERIOD]` treats every file as if it called `runOnce(PERIOD)`.
+  Periods: `1day`, `2days`, `12h`, `30min`, `1week`, `daily`, `weekly`, `hourly`, or seconds.
+- `STest::failOnce($period = "1day")` - for cron alerting: report an unchanged failure once per
+  period. The file always runs; when it fails exactly as last time (same failures, unchanged file)
+  less than `$period` after that failure was reported, its error output is dropped and the file
+  counts as stopped (exit 0). A new or different failure is reported; a pass clears the record.
+  Call it before any test line, or use the tag `# @tag fail-once(1day)`.
 - `STest::error($message)` - terminate the current test file as a failure, call `Reporter::error()`, and contribute nonzero status
 - `STest::alert($message)` - terminate the current test file as a failure, call `Reporter::alert()`, and contribute nonzero status
 - `STest::latestVersion()` - query Packagist and return the newest stable published
@@ -277,6 +354,8 @@ See [tagged-test.stest](examples/1-basics/tagged-test.stest) for file metadata s
 - `STest::runTest($file)`  -  run another .stest file in the current context
 
 ```php
+; \STest::runOnce('1day');
+; \STest::failOnce('12h');
 ; \STest::requireVersion('4.0.0');
 ; \STest::requireVersion('4.1.0', on_fail: 'error');
 ; $latest = \STest::checkLatestVersion();

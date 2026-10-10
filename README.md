@@ -116,6 +116,12 @@ stest-all --tag="smoke -long"     # include and exclude file tags
 stest-all --all                   # also run opt-in @require-tag files
 stest-all --list-tags             # every tag with its file count
 stest-all --list-required         # @require-tag tags with their file count
+stest-all -q --retry=2            # cron: re-run failures after the suite (warm caches)
+stest-all --slowest               # 10 slowest files by their own run time
+stest-all --json=report.json      # machine-readable report for CI
+stest-all --rerun-failed          # only what failed last time
+stest-all --shard=1/4             # split a suite across CI machines
+stest --watch tests/              # re-run test files as you save them
 stest-all --timeout=10            # timeout for every web request in the suite
 stest-all -j 40                   # at most 40 files at once (web suites: ~PHP-FPM workers)
 stest-all --read-only             # never rewrite any .stest file

@@ -1,0 +1,392 @@
+#!/usr/bin/env stest
+# stest-all summary, --json, --slowest, --rerun-failed, --shard, --retry, tag hints; stest --once, failOnce, --watch, domain ip
+
+; $self = realpath(\stest\i('stest')->file);
+; $root = realpath(dirname($self, 3));
+; $tmp = sys_get_temp_dir() . "/stest-all-report-" . getmypid();
+; exec("rm -rf " . escapeshellarg($tmp));
+; mkdir($tmp, 0777, true);
+; putenv("XDG_CONFIG_HOME=$tmp/config");
+; register_shutdown_function(function () use ($tmp) {
+    exec("rm -rf " . escapeshellarg($tmp));
+  });
+; $all = escapeshellarg("$root/bin/stest-all");
+; $stest = escapeshellarg("$root/bin/stest");
+; $write = function (string $dir, string $name, string $body): string {
+    is_dir($dir) || mkdir($dir, 0777, true);
+    file_put_contents("$dir/$name.stest", "#!/usr/bin/env stest\n$body");
+    chmod("$dir/$name.stest", 0755);
+    return "$dir/$name.stest";
+  };
+// [exit code, stdout, stderr]
+; $sh = function (string $cmd): array {
+    $p = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+    $out = stream_get_contents($pipes[1]);
+    $err = stream_get_contents($pipes[2]);
+    return [proc_close($p), $out, $err];
+  };
+; $json = function (string $args, string $dir) use ($sh, $all): array {
+    [$code, $out] = $sh("$all --json $args " . escapeshellarg($dir));
+    $j = json_decode($out, true) ?: [];
+    $files = [];
+    foreach ($j['files'] ?? [] as $f) {
+        $files[$f['file']] = $f;
+    }
+    return [$code, $j['summary'] ?? [], $files];
+  };
+
+// ---------- summary
+; $mixed = "$tmp/mixed";
+; $write($mixed, "pass", "1+1;\n    2;\n");
+; $write($mixed, "fail", "1+1;\n    3;\n");
+; $write($mixed, "stop", "; STest::stop('off');\n1;\n    1;\n");
+; $write($mixed, "crash", "; exit(7);\n");
+; [$code, $out, $err] = $sh("$all " . escapeshellarg($mixed));
+
+$code;
+    2;
+
+str_contains($out, "--- stest-all: 4 files, 2 tests") && str_contains($out, "passed 1, failed 1, crashed 1, stopped 1");
+    true;
+
+str_contains($out, "FAIL  ./fail.stest  1 of 1 tests") && str_contains($out, "CRASH ./crash.stest  exit 7 without a result");
+    true;
+
+str_contains($err, "--- stest-all");
+    false;
+
+// -q: a failing run prints its summary on STDERR only
+; [$code, $out, $err] = $sh("$all -q " . escapeshellarg($mixed));
+
+[$code, $out, str_contains($err, "--- stest-all: 4 files") && str_contains($err, "FAIL  ./fail.stest")];
+    [2, '', true];
+
+// -q: a passing run prints nothing at all
+; $green = "$tmp/green";
+; $write($green, "a", "1+1;\n    2;\n");
+
+$sh("$all -q " . escapeshellarg($green));
+    [0, '', ''];
+
+// ---------- --json
+; [$code, $sum, $files] = $json("", $mixed);
+
+[$code, $sum['files'], $sum['passed'], $sum['failed'], $sum['stopped'], $sum['crashed'], $sum['tests'], $sum['failed_tests']];
+    [2, 4, 1, 1, 1, 1, 2, 1];
+
+array_map(fn($f) => [$f['status'], $f['exit']], $files);
+    ["./crash.stest"=>['crash', 7], "./fail.stest"=>['fail', 1], "./pass.stest"=>['pass', 0], "./stop.stest"=>['stop', 0]];
+
+[$files['fail.stest'] ?? null, $files['./fail.stest']['details'][0]['line'], $files['./fail.stest']['details'][0]['expect'], $files['./stop.stest']['message']];
+    [NULL, 2, '3', 'off'];
+
+// --json=FILE keeps the text summary on STDOUT
+; [$code, $out] = $sh("$all --json=" . escapeshellarg("$tmp/report.json") . " " . escapeshellarg($mixed));
+
+[$code, str_contains($out, "--- stest-all"), json_decode(file_get_contents("$tmp/report.json"), true)['summary']['files']];
+    [2, true, 4];
+
+// ---------- per-file time is the file's own stest process time, not time since the suite started
+; $timing = "$tmp/timing";
+; $write($timing, "a-slow", "usleep(1200000);\n    NULL;\n");
+; $write($timing, "b-quick", "1;\n    1;\n");
+; [$code, $sum, $files] = $json("-j 1", $timing);
+
+[$code, $files['./a-slow.stest']['duration'] >= 1.2, $files['./a-slow.stest']['duration'] < 3];
+    [0, true, true];
+
+// with -j 1 b-quick starts after a-slow; its time must not include a-slow's 1.2s
+$files['./b-quick.stest']['duration'] < 0.6;
+    true;
+
+; [$code, $out] = $sh("$all -j 1 --slowest=1 " . escapeshellarg($timing));
+; preg_match('/--- slowest 1 \(stest process time per file\)\n\s+([0-9.]+)s  (\S+)/', $out, $m);
+
+[$code, $m[2] ?? null, (float) ($m[1] ?? 0) >= 1.2, substr_count($out, "s  ./")];
+    [0, './a-slow.stest', true, 1];
+
+// -q still prints an explicitly requested --slowest report
+str_contains($sh("$all -q --slowest " . escapeshellarg($timing))[1], "--- slowest 2");
+    true;
+
+$sh("$all --slowest=0 " . escapeshellarg($timing))[0];
+    1;
+
+// ---------- --rerun-failed
+; $rerun = "$tmp/rerun";
+; $write($rerun, "ok", "1+1;\n    2;\n");
+; $write($rerun, "bad", "1+1;\n    3;\n");
+; $write($rerun, "opt-in", "# @require-tag deep\n1+1;\n    3;\n");
+; $sh("$all --tag=deep " . escapeshellarg($rerun));
+; $sh("$all " . escapeshellarg($rerun));
+; $list = fn($args) => $sh("$all --list $args " . escapeshellarg($rerun));
+
+// an opt-in file remembered from a --tag run is re-run without the tag
+$list("--rerun-failed");
+    [0, './bad.stest
+    ./opt-in.stest
+    ', ''];
+
+; $write($rerun, "bad", "1+1;\n    2;\n");
+; [$code, $sum] = $json("--rerun-failed", $rerun);
+
+[$code, $sum['files'], $sum['failed']];
+    [1, 2, 1];
+
+$list("--rerun-failed");
+    [0, './opt-in.stest
+    ', ''];
+
+; $write($rerun, "opt-in", "# @require-tag deep\n1+1;\n    2;\n");
+; $sh("$all --rerun-failed " . escapeshellarg($rerun));
+
+$sh("$all --rerun-failed " . escapeshellarg($rerun)) === [0, "stest-all: no failed tests recorded for $rerun\n", ''];
+    true;
+
+$sh("$all -q --rerun-failed " . escapeshellarg($rerun));
+    [0, '', ''];
+
+// ---------- --shard=K/N
+; $shards = "$tmp/shards";
+; foreach (range(1, 7) as $i) { $write($shards, "t$i", "1;\n    1;\n"); }
+; $shard = fn($s) => array_filter(explode("\n", $sh("$all --list --shard=$s " . escapeshellarg($shards))[1]));
+; [$s1, $s2, $s3] = [$shard("1/3"), $shard("2/3"), $shard("3/3")];
+
+[count($s1), count($s2), count($s3), count(array_unique(array_merge($s1, $s2, $s3)))];
+    [3, 2, 2, 7];
+
+$s1;
+    ['./t1.stest', './t4.stest', './t7.stest'];
+
+[$sh("$all --list --shard=4/3 " . escapeshellarg($shards))[0], $sh("$all --list --shard=0/3 " . escapeshellarg($shards))[0], $sh("$all --list --shard=x " . escapeshellarg($shards))[0]];
+    [1, 1, 1];
+
+// ---------- --retry=N re-runs failed files after the whole run
+; $flaky = "$tmp/flaky";
+; $marker = "$tmp/flaky-marker";
+; $write($flaky, "cold-cache", "file_exists('$marker') ? 'warm' : (touch('$marker') ? 'cold' : '?');\n    'warm';\n");
+; $write($flaky, "steady", "1+1;\n    2;\n");
+; [$code, $out, $err] = $sh("$all --retry=2 " . escapeshellarg($flaky));
+
+[$code, str_contains($out, "--- stest-all: retry 1/2, 1 failed files"), str_contains($out, "retry 2/2"), str_contains($out, "FLAKY ./cold-cache.stest  passed on attempt 2")];
+    [0, true, false, true];
+
+// -q: a file that passes on retry leaves no output for cron
+; is_file($marker) && unlink($marker);
+
+$sh("$all -q --retry=1 " . escapeshellarg($flaky));
+    [0, '', ''];
+
+; is_file($marker) && unlink($marker);
+; [$code, $sum, $files] = $json("--retry=1", $flaky);
+
+[$code, $sum['retried'], $sum['flaky'], $files['./cold-cache.stest']['attempts'], $files['./cold-cache.stest']['flaky'], isset($files['./steady.stest']['attempts'])];
+    [0, 1, 1, 2, true, false];
+
+// a file that keeps failing is shown once, from its last attempt, with -q
+; $write($flaky, "broken", "1+1;\n    3;\n");
+; is_file($marker) && unlink($marker);
+; [$code, $out, $err] = $sh("$all -q --retry=2 " . escapeshellarg($flaky));
+
+[$code, $out, substr_count($err, "./broken.stest\t*** "), str_contains($err, "./cold-cache.stest\t"), str_contains($err, "FAIL  ./broken.stest"), str_contains($err, "FLAKY ./cold-cache.stest")];
+    [1, '', 1, false, true, true];
+
+[$sh("$all --retry=x " . escapeshellarg($flaky))[0], $sh("$all --retry=11 " . escapeshellarg($flaky))[0]];
+    [1, 1];
+
+// ---------- unknown tag hint
+; $tagged = "$tmp/tagged";
+; $write($tagged, "a", "# @tag smoke long\n1;\n    1;\n");
+; [$code, $out, $err] = $sh("$all --list --tag=-lnog " . escapeshellarg($tagged));
+
+[$code, $out, $err];
+    [0, './a.stest
+    ', 'stest-all: unknown tag \'lnog\'; known tags: long smoke
+    '];
+
+$sh("$all --list --tag=smoke " . escapeshellarg($tagged));
+    [0, './a.stest
+    ', ''];
+
+// ---------- STest::runOnce() / --once
+; $once = "$tmp/once";
+; $f = $write($once, "daily", "; STest::runOnce('1day');\n1+1;\n    2;\n");
+; $run = fn($args) => $sh("$stest -C $args " . escapeshellarg($f));
+
+str_contains($run("")[1], "tests: 1");
+    true;
+
+str_contains($run("")[1], "runOnce(1day): unchanged, passed");
+    true;
+
+str_contains($run("--once=ignore")[1], "tests: 1");
+    true;
+
+str_contains($run("--force")[1], "tests: 1");
+    true;
+
+; $run("--once=reset");
+
+str_contains($run("")[1], "runOnce(1day): unchanged");
+    true;
+
+// any edit makes it run again
+; file_put_contents($f, "2+2;\n    4;\n", FILE_APPEND);
+
+str_contains($run("")[1], "tests: 2");
+    true;
+
+; $plain = $write($once, "plain", "1+1;\n    2;\n");
+
+[str_contains($sh("$stest -C --once " . escapeshellarg($plain))[1], "tests: 1"), str_contains($sh("$stest -C --once " . escapeshellarg($plain))[1], "runOnce(1day): unchanged")];
+    [true, true];
+
+// a failing file is not recorded
+; $failing = $write($once, "failing", "1+1;\n    3;\n");
+
+[$sh("$stest -q --once " . escapeshellarg($failing))[0], $sh("$stest -q --once " . escapeshellarg($failing))[0]];
+    [1, 1];
+
+$sh("$stest --once=sometimes " . escapeshellarg($plain))[0];
+    1;
+
+\stest\helper\State::seconds("1day") . " " . \stest\helper\State::seconds("12h") . " " . \stest\helper\State::seconds("30min") . " " . \stest\helper\State::seconds("weekly") . " " . \stest\helper\State::seconds("2weeks") . " " . \stest\helper\State::seconds("90");
+    '86400 43200 1800 604800 1209600 90';
+
+[\stest\helper\State::seconds("day"), \stest\helper\State::seconds("1 fortnight"), \stest\helper\State::seconds("0h")];
+    [NULL, NULL, NULL];
+
+// stest-all passes --once through: the second suite run skips the unchanged files
+; $suite = "$tmp/once-suite";
+; $write($suite, "a", "1+1;\n    2;\n");
+; $sh("$all --once " . escapeshellarg($suite));
+
+array_column($json("--once", $suite)[2], 'status');
+    ['stop'];
+
+// special-use tag "run-once(PERIOD)": skipped before anything executes
+; $hdr = $write("$tmp/header", "run-once", "# @tag smoke run-once(12h)\n; file_put_contents('$tmp/header-ran', 'x', FILE_APPEND);\n1+1;\n    2;\n");
+; $sh("$stest -q " . escapeshellarg($hdr));
+; [$code, $out] = $sh("$stest -C " . escapeshellarg($hdr));
+
+[$code, str_contains($out, "runOnce(12h): unchanged"), file_get_contents("$tmp/header-ran")];
+    [0, true, 'x'];
+
+// bare "run-once" = 1day, also from a @require-tag line
+; $hdrDefault = $write("$tmp/header", "default", "# @require-tag deep,run-once\n1+1;\n    2;\n");
+; $sh("$stest -q " . escapeshellarg($hdrDefault));
+
+str_contains($sh("$stest -C " . escapeshellarg($hdrDefault))[1], "runOnce(1day): unchanged");
+    true;
+
+; $hdrBad = $write("$tmp/header", "bad", "# @tag run-once(sometimes)\n1;\n    1;\n");
+; [$code, , $err] = $sh("$stest -C " . escapeshellarg($hdrBad));
+
+[$code, str_contains($err, "invalid tag 'run-once(sometimes)'")];
+    [1, true];
+
+// a tag line after line four is an ordinary comment
+; $hdrLate = $write("$tmp/header", "late", "# 2\n# 3\n# 4\n# @tag run-once\n1;\n    1;\n");
+; $sh("$stest -q " . escapeshellarg($hdrLate));
+
+str_contains($sh("$stest -C " . escapeshellarg($hdrLate))[1], "tests: 1");
+    true;
+
+; $hdrFo = $write("$tmp/header", "fail-once", "# @tag fail-once(1day)\n1+1;\n    3;\n");
+
+[$sh("$stest -q " . escapeshellarg($hdrFo))[0], $sh("$stest -q " . escapeshellarg($hdrFo))];
+    [1, [0, '', '']];
+
+// stest-all lists and selects them by name
+$sh("$all --list-tags " . escapeshellarg("$tmp/header"));
+    [0, 'run-once 3
+    deep 1
+    fail-once 1
+    smoke 1
+    ', ''];
+
+$sh("$all --list --tag=fail-once " . escapeshellarg("$tmp/header"));
+    [0, './fail-once.stest
+    ', ''];
+
+// late.stest declares its tag after line four, so it has none
+$sh("$all --list --tag=-run-once " . escapeshellarg("$tmp/header"));
+    [0, './fail-once.stest
+    ./late.stest
+    ', ''];
+
+// ---------- STest::failOnce(): the same failure is reported once per period
+; $fo = $write("$tmp/fail-once", "alert", "; STest::failOnce('1day');\n1+1;\n    3;\n");
+; $foRun = fn() => $sh("$stest -q -C " . escapeshellarg($fo));
+; [$code1, , $err1] = $foRun();
+; [$code2, , $err2] = $foRun();
+
+[$code1, str_contains($err1, "expect: 3"), $code2, $err2];
+    [1, true, 0, ''];
+
+str_contains($sh("$stest -C " . escapeshellarg($fo))[1], "failOnce(1day): same failure as reported");
+    true;
+
+// a different failure is reported again
+; file_put_contents($fo, str_replace("    3;", "    4;", file_get_contents($fo)));
+
+[$foRun()[0], $foRun()[0]];
+    [1, 0];
+
+// a pass clears the record: the next failure is reported
+; file_put_contents($fo, str_replace("    4;", "    2;", file_get_contents($fo)));
+; $foRun();
+; file_put_contents($fo, str_replace("    2;", "    4;", file_get_contents($fo)));
+
+$foRun()[0];
+    1;
+
+// ---------- STest::domain(..., ip:)
+\hb\Curl::resolveEntry("https://www.example.com", "172.16.1.1");
+    'www.example.com:443:172.16.1.1';
+
+\hb\Curl::resolveEntry("http://example.com:8080/x", "::1");
+    'example.com:8080:[::1]';
+
+; $ipTest = $write("$tmp/ip", "pinned", "; STest::domain('http://pinned.invalid:1', 'stop', ip: '127.0.0.1');\n1;\n    1;\n");
+
+str_contains($sh("$stest -C " . escapeshellarg($ipTest))[1], "no service on `http://pinned.invalid:1` port:1");
+    true;
+
+; $badIp = $write("$tmp/ip", "bad", "; STest::domain('http://example.com', ip: 'not-an-ip');\n");
+
+str_contains($sh("$stest -C " . escapeshellarg($badIp))[2], "invalid ip 'not-an-ip'");
+    true;
+
+// ---------- stest --watch: re-runs on edits, never on its own saves
+; exec("command -v inotifywait", $_o, $noInotify);
+
+; if ($noInotify) {
+    STest::stop("inotifywait not installed");
+  }
+; $watchDir = "$tmp/watch";
+; mkdir("$watchDir/vendor", 0777, true);
+; $watchLog = "$tmp/watch.log";
+; $p = proc_open("exec $stest --watch -C " . escapeshellarg($watchDir), [1 => ['file', $watchLog, 'a'], 2 => ['file', $watchLog, 'a']], $pipes);
+; usleep(800000);
+; $write($watchDir, "new", "1+1;\n");   // no stored result: stest saves one, which must not re-trigger
+; usleep(1500000);
+; $write("$watchDir/vendor", "skipped", "1;\n");
+; file_put_contents("$watchDir/notes.txt", "x");
+; usleep(800000);
+; file_put_contents("$watchDir/new.stest", "2+2;\n", FILE_APPEND);
+; usleep(1500000);
+; proc_terminate($p);
+; proc_close($p);
+; $log = file_get_contents($watchLog);
+
+[substr_count($log, "\n--- "), substr_count($log, "new.stest saved"), str_contains($log, "skipped")];
+    [2, 2, false];
+
+file_get_contents("$watchDir/new.stest");
+    '#!/usr/bin/env stest
+    1+1;
+        2;
+    2+2;
+        4;
+    ';

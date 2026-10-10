@@ -29,11 +29,21 @@ usage() {
   echo "  -j 40, --jobs=40: run at most 40 files at once (also -j40); STEST_JOBS=40 sets the default"
   echo "                     for web suites, keep it near the target's PHP-FPM worker count"
   echo "  -r, --read-only : never rewrite a .stest file; a missing result fails"
+  echo "  --retry=2       : after the whole run, re-run the failed files, up to 2 more rounds"
+  echo "                     (warm caches); with -q only the last attempt's output is shown"
+  echo "  --once[=1day]   : skip files unchanged since they passed within the period; --once=reset|ignore"
+  echo "  --rerun-failed  : run only the files that failed in earlier runs of this directory"
+  echo "  --shard=2/4     : run the 2nd of 4 equal slices of the selected files (CI split)"
+  echo "  --slowest[=10]  : after the run, list the 10 slowest files by their own stest process time"
+  echo "  --json          : print a JSON report on STDOUT (test output goes to STDERR)"
+  echo "  --json=FILE     : also write the JSON report to FILE"
 #  echo " -v  : verbose - show test names"   << DEFAULT
   echo "  -q              : quiet - show errors only; test selection is unchanged"
   echo "  Without -j, concurrency follows the file-descriptor limit and is capped at 100 GNU Parallel jobs"
   echo "  -j may go above 100, never above the file-descriptor limit"
   echo "  Every output line is prefixed with the .stest path that produced it"
+  echo "  A summary follows the run; with -q it is printed only when something failed, on STDERR"
+  echo "  State (failed files, once) is kept in \${XDG_CONFIG_HOME:-~/.config}/stest/"
 }
 
 recent_minutes() {
@@ -151,6 +161,8 @@ add_tag_tokens() {
     return 2
   fi
   for token in "${tokens[@]}"; do
+    # special-use tags run-once(PERIOD) / fail-once(PERIOD): selected by name; stest checks the period
+    [[ $token =~ ^(run-once|fail-once)(\(.*\))?$ ]] && token=${BASH_REMATCH[1]}
     if ! valid_tag "$token"; then
       echo "$source: invalid tag '$token'" >&2
       return 2
@@ -312,16 +324,50 @@ filter_tagged_tests() {
   done
 }
 
+# --rerun-failed: the remembered failed files that still exist, in place of discovery
+discover_failed() {
+  local file
+  php "$report_php" --print-failed --top="$PWD" | while IFS= read -r file; do
+    [[ -f $file ]] || continue
+    [[ $executable_only == 1 && ! -x $file ]] && continue
+    printf '%s\n' "$file"
+  done
+}
+
+discover_selected() {
+  if [[ $rerun_failed == 1 ]]; then
+    discover_failed
+  else
+    discover_tests
+  fi
+}
+
+# warn about selector tags no discovered file declares (typos such as --tag=-lnog)
+warn_unknown_tags() {
+  local token known
+  local -A known_tags=()
+  (( ${#requested_tags[@]} + ${#excluded_tags[@]} > 0 )) || return 0
+  while read -r token _; do
+    [[ -n $token ]] && known_tags["$token"]=1
+  done < <(discover_tests 2>/dev/null | count_tags all 2>/dev/null)
+  known=$(printf '%s\n' "${!known_tags[@]}" | sort | head -20 | paste -sd ' ')
+  for token in "${!requested_tags[@]}" "${!excluded_tags[@]}"; do
+    if [[ ! ${known_tags[$token]+yes} ]]; then
+      echo "stest-all: unknown tag '$token'; known tags: ${known:-none}" >&2
+    fi
+  done
+}
+
 list_tests() {
   local file mtime
 
   if [[ -n "$new" ]]; then
-    discover_tests | filter_tagged_tests | while IFS= read -r file; do
+    discover_selected | filter_tagged_tests | while IFS= read -r file; do
       mtime=$(stat -c '%Y' "$file") || return
       printf '%s %s\n' "$mtime" "$file"
     done | sort -k1,1nr -k2,2 | sed -n "1,${new}p" | cut -d " " -f 2-
   else
-    discover_tests | filter_tagged_tests
+    discover_selected | filter_tagged_tests
   fi
 }
 
@@ -344,6 +390,14 @@ tag_filters=()
 declare -A requested_tags=()
 declare -A excluded_tags=()
 stest_bin="$(cd "$(dirname "$0")" && pwd)/stest"
+report_php="$(cd "$(dirname "$0")/../src" && pwd)/stest-all-report.php"
+rerun_failed=0
+retry=
+retry_set=0
+once=
+shard=
+slowest=
+json=
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -423,6 +477,43 @@ while [[ $# -gt 0 ]]; do
     -r|--read-only)
       read_only=1
       ;;
+    --retry=*)
+      retry="${1#--retry=}"
+      retry_set=1
+      ;;
+    --retry)
+      echo "--retry requires a value, e.g. --retry=2" >&2
+      exit 1
+      ;;
+    --once)
+      once=--once
+      ;;
+    --once=*)
+      once="$1"
+      ;;
+    --rerun-failed)
+      rerun_failed=1
+      ;;
+    --shard=*)
+      shard="${1#--shard=}"
+      ;;
+    --shard)
+      echo "--shard requires a value, e.g. --shard=1/4" >&2
+      exit 1
+      ;;
+    --slowest)
+      slowest=10
+      ;;
+    --slowest=*)
+      slowest="${1#--slowest=}"
+      ;;
+    --json)
+      json=-
+      ;;
+    --json=*)
+      json="${1#--json=}"
+      [[ -n $json ]] || { echo "--json= requires a file name" >&2; exit 1; }
+      ;;
     -*)
       echo "Unknown option: $1" >&2
       usage >&2
@@ -444,6 +535,34 @@ parse_tag_selectors || exit $?
 
 # Tag reports cover opt-in files too; otherwise --list-required would be empty.
 [[ -n $list_tags ]] && run_all=1
+# Remembered failures are an explicit list: an opt-in file that failed must run again.
+[[ $rerun_failed == 1 ]] && run_all=1
+
+if [[ $retry_set == 1 && ! "$retry" =~ ^([0-9]|10)$ ]]; then
+  echo "--retry expects a number of extra attempts from 0 to 10, e.g. --retry=2" >&2
+  exit 1
+fi
+
+shard_k=
+shard_n=
+if [[ -n "$shard" ]]; then
+  if [[ ! "$shard" =~ ^([1-9][0-9]{0,5})/([1-9][0-9]{0,5})$ ]] || (( BASH_REMATCH[1] > BASH_REMATCH[2] )); then
+    echo "--shard expects K/N with 1 <= K <= N, e.g. --shard=1/4" >&2
+    exit 1
+  fi
+  shard_k=${BASH_REMATCH[1]}
+  shard_n=${BASH_REMATCH[2]}
+fi
+
+if [[ -n "$slowest" && ! "$slowest" =~ ^[1-9][0-9]{0,5}$ ]]; then
+  echo "--slowest expects a positive integer, e.g. --slowest=10" >&2
+  exit 1
+fi
+
+if [[ -n "$once" && "$once" != --once ]] && ! [[ "${once#--once=}" =~ ^(reset|ignore|hourly|daily|weekly|[1-9][0-9]{0,6}[[:space:]]*(s|sec|m|min|h|hour|d|day|w|week|)s?)$ ]]; then
+  echo "--once expects a period (1day, 12h, 30min, weekly, ...), reset, or ignore" >&2
+  exit 1
+fi
 
 if [[ -n "$new" && ! "$new" =~ ^[1-9][0-9]*$ ]]; then
   echo "--new expects a positive integer" >&2
@@ -478,7 +597,16 @@ if [[ -n "$dir" ]]; then
 fi
 
 test_list=$(mktemp "${TMPDIR:-/tmp}/stest-all.XXXXXX") || exit 1
-trap 'rm -f "$test_list"' EXIT
+work=$(mktemp -d "${TMPDIR:-/tmp}/stest-all-run.XXXXXX") || exit 1
+trap 'rm -f "$test_list" "$test_list.shard"; rm -rf "$work"' EXIT
+
+if [[ $rerun_failed == 1 && -z $(discover_failed) ]]; then
+  [[ $quiet == 1 || $json == - ]] || echo "stest-all: no failed tests recorded for $PWD"
+  [[ $json == - ]] && echo '{"ok": true, "summary": {"files": 0}, "files": []}'
+  exit 0
+fi
+
+warn_unknown_tags
 list_tests > "$test_list"
 status=$?
 if (( status != 0 )); then
@@ -488,6 +616,12 @@ fi
 if (( ${#requested_tags[@]} > 0 && ${#excluded_tags[@]} == 0 )) && [[ ! -s $test_list ]]; then
   echo "No tests matched the requested tags" >&2
   exit 1
+fi
+
+# --shard=K/N: every N-th file of the final selection, starting with the K-th
+if [[ -n $shard_n ]]; then
+  awk -v k="$shard_k" -v n="$shard_n" '(NR - 1) % n == k - 1' "$test_list" > "$test_list.shard" &&
+    mv "$test_list.shard" "$test_list" || exit 1
 fi
 
 if [[ -n $list_tags ]]; then
@@ -508,10 +642,86 @@ jobs=$(parallel_jobs "$jobs_opt") || { echo "Unable to determine parallel job li
 printf -v stest_command '%q {}' "$stest_bin"
 [[ -n "$timeout" ]] && stest_command+=" --timeout=$timeout"
 [[ $read_only == 1 ]] && stest_command+=" --read-only"
+[[ -n "$once" ]] && stest_command+=" $(printf '%q' "$once")"
 if [[ $quiet == 1 ]]; then
-  parallel -j "$jobs" --tag "$stest_command -q" :::: "$test_list"
-  exit $?
+  stest_command+=" -q"
+else
+  stest_command+=" --color"
 fi
 
-parallel -j "$jobs" --tag "$stest_command --color" :::: "$test_list"
-exit $?
+# With -q and --retry, job output is held back so that a failure that passes on
+# a later round never reaches cron; only each file's last attempt is printed.
+hold=0
+[[ $quiet == 1 && ${retry:-0} -gt 0 ]] && hold=1
+
+# run_round N: run $work/N/list; N=0 is the main run
+run_round() {
+  local dir="$work/$1" command
+  mkdir -p "$dir/out"
+  printf -v command '%s --result-file=%q' "$stest_command" "$dir/results"
+  if [[ $hold == 1 ]]; then
+    printf -v command '%s >%q/{#}.1 2>%q/{#}.2' "$command" "$dir/out" "$dir/out"
+    parallel -j "$jobs" --joblog "$dir/joblog" "$command" :::: "$dir/list"
+  elif [[ $json == - ]]; then
+    # STDOUT carries only the JSON document
+    parallel -j "$jobs" --tag --joblog "$dir/joblog" "$command" :::: "$dir/list" >&2
+  else
+    parallel -j "$jobs" --tag --joblog "$dir/joblog" "$command" :::: "$dir/list"
+  fi
+}
+
+# files of round N that failed (non-zero exit or signal), in list order
+failed_of_round() {
+  awk -F '\t' 'NR == FNR { file[FNR] = $0; next } FNR > 1 && ($7 != 0 || $8 != 0) { print file[$1] }' \
+    "$work/$1/list" "$work/$1/joblog" | sort -u
+}
+
+# print held output: each file's last attempt, every line prefixed with its path
+print_held() {
+  local n file seq
+  local -A last=()
+  for (( n = 0; n <= rounds; n++ )); do
+    seq=0
+    while IFS= read -r file; do
+      seq=$((seq + 1))
+      last["$file"]="$n/out/$seq"
+    done < "$work/$n/list"
+  done
+  while IFS= read -r file; do
+    FILE=$file awk '{ print ENVIRON["FILE"] "\t" $0 }' "$work/${last[$file]}.1"
+    FILE=$file awk '{ print ENVIRON["FILE"] "\t" $0 }' "$work/${last[$file]}.2" >&2
+  done < "$work/0/list"
+}
+
+report_args=(--rounds="$work" --top="$PWD" --jobs="$jobs" --update-failed)
+[[ $quiet == 1 ]] && report_args+=(--quiet)
+[[ $quiet != 1 && -t 1 ]] && report_args+=(--color)
+[[ -n "$slowest" ]] && report_args+=(--slowest="$slowest")
+[[ -n "$json" ]] && report_args+=(--json="$json")
+
+started=$EPOCHREALTIME
+mkdir -p "$work/0" && cp "$test_list" "$work/0/list" || exit 1
+run_round 0
+status=$?
+rounds=0
+for (( n = 1; n <= ${retry:-0}; n++ )); do
+  failed_of_round $((n - 1)) > "$work/retry.list"
+  [[ -s $work/retry.list ]] || break
+  if [[ $hold != 1 ]]; then
+    if [[ $json == - ]]; then
+      echo "--- stest-all: retry $n/$retry, $(wc -l < "$work/retry.list") failed files" >&2
+    else
+      echo "--- stest-all: retry $n/$retry, $(wc -l < "$work/retry.list") failed files"
+    fi
+  fi
+  mkdir -p "$work/$n" && mv "$work/retry.list" "$work/$n/list" || exit 1
+  run_round "$n"
+  rounds=$n
+done
+[[ $hold == 1 ]] && print_held
+
+php "$report_php" "${report_args[@]}" --started="$started"
+report_status=$?
+# GNU Parallel errors (exit > 101) win; otherwise the number of files still failing
+(( status > 101 )) && exit "$status"
+exit "$report_status"

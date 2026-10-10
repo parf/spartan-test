@@ -6,6 +6,7 @@
 ; $tmp = sys_get_temp_dir() . "/stest-all-tags-" . getmypid();
 ; exec("rm -rf " . escapeshellarg($tmp));
 ; mkdir($tmp, 0777, true);
+; putenv("XDG_CONFIG_HOME=$tmp/config"); // stest-all state (failed files, once) stays inside the fixture
 ; register_shutdown_function(function () use ($tmp) {
     exec("rm -rf " . escapeshellarg($tmp));
   });

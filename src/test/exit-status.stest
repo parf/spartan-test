@@ -6,6 +6,7 @@
 ; $tmp = sys_get_temp_dir() . "/stest-exit-status-" . getmypid();
 ; exec("rm -rf " . escapeshellarg($tmp));
 ; mkdir($tmp, 0777, true);
+; putenv("XDG_CONFIG_HOME=$tmp/config"); // stest-all state (failed files, once) stays inside the fixture
 ; register_shutdown_function(function () use ($tmp) {
     exec("rm -rf " . escapeshellarg($tmp));
   });
@@ -33,7 +34,7 @@
 ; exec("$bin --version 2>&1", $versionOutput, $versionCode);
 
 [$versionCode, $versionOutput];
-    [0, ['4.0.11 (build 2026-10-09)']];
+    [0, ['4.1.0 (build 2026-10-10)']];
 
 ; $timeoutDir = "$tmp/timeout-dir";
 ; $timeoutFile = "$timeoutDir/timeout.stest";
@@ -540,9 +541,12 @@ $run("$all --help 2>&1 | grep -q -- '--jobs=40'");
 $hardExitCode !== 0;
     true;
 
-file_get_contents($hardExitLog);
-    './hard-exit.stest	fatal-marker
-    ';
+explode("\n", file_get_contents($hardExitLog))[0];
+    './hard-exit.stest	fatal-marker';
+
+// -q prints the failure summary on STDERR after the job output
+str_contains(file_get_contents($hardExitLog), "CRASH ./hard-exit.stest  exit 7 without a result");
+    true;
 
 ; exec(
     "$all " . escapeshellarg($hardExitDir)
