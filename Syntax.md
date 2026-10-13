@@ -294,6 +294,21 @@ stest-all --rerun-failed
 stest-all --shard=2/4 --json > shard-2.json
 ```
 
+### Environment defaults
+
+Three environment variables provide defaults without changing a shared command line:
+
+```bash
+STEST_TIMEOUT=10 stest-all    # curl connect/transfer timeout in seconds
+STEST_JOBS=40 stest-all       # maximum parallel files (still fd-bound)
+STEST_RETRY=2 stest-all -q    # extra rounds for files that fail
+```
+
+`STEST_TIMEOUT` works with both `stest` and `stest-all`; `STEST_JOBS` and `STEST_RETRY`
+belong to `stest-all`. The matching CLI option has priority over its environment variable,
+including when the environment value is invalid. Empty values are ignored. Accepted ranges
+are the same as the CLI: timeout is a positive integer, jobs is 1–999999, and retry is 0–10.
+
 ## Watch mode
 
 `stest --watch PATH...` re-runs a test file each time it is saved. PATH may be files or

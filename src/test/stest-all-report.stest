@@ -194,6 +194,31 @@ $sh("$all -q --retry=1 " . escapeshellarg($flaky));
 [$code, $sum['retried'], $sum['flaky'], $files['./cold-cache.stest']['attempts'], $files['./cold-cache.stest']['flaky'], isset($files['./steady.stest']['attempts'])];
     [0, 1, 1, 2, true, false];
 
+// STEST_RETRY supplies the default; CLI wins, and an empty value is ignored.
+; is_file($marker) && unlink($marker);
+
+$sh("STEST_RETRY=1 $all -q " . escapeshellarg($flaky));
+    [0, '', ''];
+
+; is_file($marker) && unlink($marker);
+
+$sh("STEST_RETRY= $all -q " . escapeshellarg($flaky))[0];
+    1;
+
+; is_file($marker) && unlink($marker);
+
+$sh("STEST_RETRY=nope $all -q --retry=1 " . escapeshellarg($flaky));
+    [0, '', ''];
+
+; foreach (['-1', '11', '1.5', 'nope'] as $invalidRetry) {
+    if ($sh("STEST_RETRY=" . escapeshellarg($invalidRetry) . " $all -q " . escapeshellarg($green))[0] !== 1) {
+      throw new RuntimeException("stest-all accepted invalid STEST_RETRY: $invalidRetry");
+    }
+  }
+
+true;
+    true;
+
 // a file that keeps failing is shown once, from its last attempt, with -q
 ; $write($flaky, "broken", "1+1;\n    3;\n");
 ; is_file($marker) && unlink($marker);
@@ -204,6 +229,9 @@ $sh("$all -q --retry=1 " . escapeshellarg($flaky));
 
 [$sh("$all --retry=x " . escapeshellarg($flaky))[0], $sh("$all --retry=11 " . escapeshellarg($flaky))[0]];
     [1, 1];
+
+str_contains($sh("$all --help")[1], 'STEST_RETRY=2');
+    true;
 
 // ---------- unknown tag hint
 ; $tagged = "$tmp/tagged";

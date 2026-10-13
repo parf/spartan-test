@@ -34,7 +34,7 @@
 ; exec("$bin --version 2>&1", $versionOutput, $versionCode);
 
 [$versionCode, $versionOutput];
-    [0, ['4.1.2 (build 2026-10-10)']];
+    [0, ['4.1.3 (build 2026-10-13)']];
 
 ; $timeoutDir = "$tmp/timeout-dir";
 ; $timeoutFile = "$timeoutDir/timeout.stest";
@@ -51,13 +51,33 @@
 $run("$bin " . escapeshellarg($timeoutFile) . " --timeout=3");
     0;
 
+$run("STEST_TIMEOUT=3 $bin " . escapeshellarg($timeoutFile));
+    0;
+
 $run("$bin " . escapeshellarg($timeoutFile));
     1;
 
 $run("$all " . escapeshellarg($timeoutDir) . " --timeout=3 -q");
     0;
 
+$run("STEST_TIMEOUT=3 $all " . escapeshellarg($timeoutDir) . " -q");
+    0;
+
 $run("$all " . escapeshellarg($timeoutDir) . " --timeout=9 -q");
+    1;
+
+# CLI options win even when the environment value is invalid.
+$run("STEST_TIMEOUT=nope $bin " . escapeshellarg($timeoutFile) . " --timeout=3");
+    0;
+
+$run("STEST_TIMEOUT=nope $all " . escapeshellarg($timeoutDir) . " --timeout=3 -q");
+    0;
+
+# An empty environment value is ignored, leaving the per-test property in effect.
+$run("STEST_TIMEOUT= $bin " . escapeshellarg($timeoutFile));
+    1;
+
+$run("STEST_TIMEOUT= $all " . escapeshellarg($timeoutDir) . " -q");
     1;
 
 $run("$bin --help 2>&1 | grep -q -- '--timeout'");
@@ -66,12 +86,27 @@ $run("$bin --help 2>&1 | grep -q -- '--timeout'");
 $run("$all --help 2>&1 | grep -q -- '--timeout=15'");
     0;
 
+$run("$bin --help 2>&1 | grep -q -- 'STEST_TIMEOUT'");
+    0;
+
+$run("$all --help 2>&1 | grep -q -- 'STEST_TIMEOUT'");
+    0;
+
 ; foreach (['--timeout', '--timeout=', '--timeout=0', '--timeout=-1', '--timeout=1.5', '--timeout=nope'] as $invalidTimeout) {
     if ($run("$bin " . escapeshellarg($timeoutFile) . " $invalidTimeout") !== 1) {
       throw new RuntimeException("stest accepted invalid timeout: $invalidTimeout");
     }
     if ($run("$all " . escapeshellarg($timeoutDir) . " $invalidTimeout") !== 1) {
       throw new RuntimeException("stest-all accepted invalid timeout: $invalidTimeout");
+    }
+  }
+
+; foreach (['0', '-1', '1.5', 'nope'] as $invalidTimeout) {
+    if ($run("STEST_TIMEOUT=" . escapeshellarg($invalidTimeout) . " $bin " . escapeshellarg($timeoutFile)) !== 1) {
+      throw new RuntimeException("stest accepted invalid STEST_TIMEOUT: $invalidTimeout");
+    }
+    if ($run("STEST_TIMEOUT=" . escapeshellarg($invalidTimeout) . " $all " . escapeshellarg($timeoutDir)) !== 1) {
+      throw new RuntimeException("stest-all accepted invalid STEST_TIMEOUT: $invalidTimeout");
     }
   }
 

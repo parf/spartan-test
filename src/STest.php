@@ -60,8 +60,8 @@ function I(/*string | array */ $name, array $args = []) { # Instance
 // PUBLIC
 //
 
-const VERSION = "4.1.2";
-const DATE_BUILD = "2026-10-10";
+const VERSION = "4.1.3";
+const DATE_BUILD = "2026-10-13";
 
 //
 // INTERNAL
@@ -877,12 +877,20 @@ class STest {
                 self::$ARG[$nk] = $v;
             }
         }
+        $timeoutSource = '--timeout';
+        if (!array_key_exists('timeout', self::$ARG)) {
+            $envTimeout = getenv('STEST_TIMEOUT');
+            if ($envTimeout !== false && $envTimeout !== '') {
+                self::$ARG['timeout'] = $envTimeout;
+                $timeoutSource = 'STEST_TIMEOUT';
+            }
+        }
         if (array_key_exists('timeout', self::$ARG)) {
             $timeout = self::$ARG['timeout'] === true
                 ? false
                 : filter_var(self::$ARG['timeout'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
             if ($timeout === false) {
-                fwrite(STDERR, "--timeout expects a positive integer number of seconds, e.g. --timeout=5\n");
+                fwrite(STDERR, "$timeoutSource expects a positive integer number of seconds, e.g. --timeout=5\n");
                 exit(1);
             }
             self::$ARG['timeout'] = $timeout;
@@ -946,7 +954,7 @@ class STest_Global_Commands {
 
     /**
      * curl connect/transfer timeout for web requests, in seconds (default 15)
-     * example: --timeout=5
+     * example: --timeout=5; STEST_TIMEOUT=5 sets the default
      */
     static function timeout($v) {
     }

@@ -25,11 +25,13 @@ Override it from the command line for one file or a complete suite:
 ```bash
 stest api.stest --timeout=5
 stest-all --timeout=10
+STEST_TIMEOUT=10 stest-all
 ```
 
-The CLI option must be a positive integer number of seconds and takes precedence over
-the per-test property. Without the CLI option, set `STest::$WebTest_TIMEOUT` before the
-requests:
+`STEST_TIMEOUT` supplies the default for direct `stest` and `stest-all` runs. An empty value
+is ignored. The CLI option must be a positive integer number of seconds and takes precedence
+over the environment variable and the per-test property. Without either external setting,
+set `STest::$WebTest_TIMEOUT` before the requests:
 
 ```
 ; STest::$WebTest_TIMEOUT = 5;   # seconds; applies to all following GET / POST / JSONPOST

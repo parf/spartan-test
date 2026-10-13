@@ -34,6 +34,9 @@ bin/stest-all --summary
 # Limit parallelism (default: fd-bound, capped at 100); also STEST_JOBS=40
 bin/stest-all -j 40
 
+# Environment defaults; matching CLI options take precedence
+STEST_TIMEOUT=10 STEST_JOBS=40 STEST_RETRY=2 bin/stest-all -q
+
 # List all test files
 bin/stest-all --list
 
@@ -220,7 +223,7 @@ Web tests maintain state across requests:
 - `STest::$HEADERS` - Response headers
 - `STest::$INFO` - Full curl response info
 
-Configurable input: `--timeout=SECONDS` (positive integer) overrides `STest::$WebTest_TIMEOUT` (default `15`) for curl connect/transfer timeouts in `stest` and `stest-all`. Without the CLI option, a test may set the property before issuing requests (`; STest::$WebTest_TIMEOUT = 5;`). `STest::webTestTimeout()` resolves CLI precedence and is passed through `WebTest::rq()`/`jsonPost()` into `Curl::rq()`'s `timeout` opt.
+Configurable input precedence is `--timeout=SECONDS`, then non-empty `STEST_TIMEOUT`, then `STest::$WebTest_TIMEOUT` (default `15`) for curl connect/transfer timeouts in `stest` and `stest-all`. Values are positive integer seconds. A test may set the property before issuing requests (`; STest::$WebTest_TIMEOUT = 5;`). `STest::webTestTimeout()` resolves CLI/environment precedence and is passed through `WebTest::rq()`/`jsonPost()` into `Curl::rq()`'s `timeout` opt. For `stest-all`, non-empty `STEST_JOBS` and `STEST_RETRY` provide defaults for `-j`/`--jobs` and `--retry`; CLI wins and empty values are ignored.
 
 Realms allow testing against different environments (dev/staging/prod) by modifying domain dynamically via `--realm` option or environment variables.
 

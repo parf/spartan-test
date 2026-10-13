@@ -129,10 +129,26 @@ stest-all -j 40                   # at most 40 files at once (web suites: ~PHP-F
 stest-all --read-only             # never rewrite any .stest file
 ```
 
+Environment variables can provide shared defaults for local shells and CI:
+
+```bash
+STEST_TIMEOUT=10 stest-all        # default web-request timeout (seconds)
+STEST_JOBS=40 stest-all           # default parallel file limit
+STEST_RETRY=2 stest-all -q        # default number of retry rounds
+```
+
+The corresponding CLI option (`--timeout`, `-j`/`--jobs`, or `--retry`) takes precedence.
+An empty environment value is ignored. `STEST_TIMEOUT` also applies to direct `stest` runs;
+`STEST_JOBS` and `STEST_RETRY` are `stest-all` settings.
+
 By default, suite discovery includes executable and non-executable `.stest` files, while
 skipping hidden paths, `vendor`, and `node_modules`. Install
 [`fd`](https://github.com/sharkdp/fd) for faster discovery in large repositories;
 systems without it automatically use `find`. GNU Parallel powers suite execution.
+
+Suite summaries, retries, JSON reports, slow-test reporting, sharding, and remembered failed
+files are built in. `--read-only` makes CI runs non-mutating; `stest --watch` provides a local
+save-and-rerun loop. See [Complete syntax](Syntax.md) for exact behavior and state locations.
 
 Run `stest --help` or `stest-all --help` for all CLI options.
 
