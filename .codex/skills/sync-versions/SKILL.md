@@ -1,6 +1,6 @@
 ---
 name: sync-versions
-description: Update localhost and the standard Spartan Test server fleet to the latest published release, then compare active stest versions. Use when asked to "update all to latest", synchronize versions, check version drift, or show versions across localhost, active realmo-* developer hosts, p5, t5cre-stage, t5cre-rc, t5cre-prod, and t4test.
+description: Update localhost and the standard Spartan Test server fleet to the latest published release, then compare active stest versions. Use when asked to "update all to latest", synchronize versions, check version drift, or show versions across localhost, active realmo-* developer hosts, p5, t5cre-stage, t5cre-rc, t5cre-prod, and t5cre-test.
 ---
 
 # Sync Spartan Test Versions
@@ -10,7 +10,7 @@ Run from the Spartan Test repository root.
 ## Standard Fleet
 
 `localhost`, `p5`, every active `realmo-*` developer host from the colo inventory,
-`t5cre-stage`, `t5cre-rc`, `t5cre-prod`, and `t4test`.
+`t5cre-stage`, `t5cre-rc`, `t5cre-prod`, and `t5cre-test`.
 
 The script reads `/hbfr/boston-colo/ve.list` (override with `STEST_VE_LIST`) and excludes
 the service VEs `realmo-parse-raw` and `realmo-parse-reso`. The current deployment inventory
@@ -35,7 +35,7 @@ is `realmo-amironov`, `realmo-anar`, `realmo-dstep`,
 6. Hosts supplied after options replace the standard remote host list:
 
    ```bash
-   .codex/skills/sync-versions/scripts/sync_versions.sh p5 t4test
+   .codex/skills/sync-versions/scripts/sync_versions.sh p5 t5cre-test
    ```
 
 7. Report a compact version table. Call out unreachable hosts and any version mismatch.

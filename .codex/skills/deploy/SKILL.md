@@ -66,7 +66,7 @@ Never bump, commit, tag, push, or publish unless the user requested that operati
 ## Deploy The Published Release
 
 The standard fleet is `localhost`, `p5`, every active `realmo-*` developer host listed by
-the sync-versions skill, `t5cre-stage`, `t5cre-rc`, `t5cre-prod`, and `t4test`.
+the sync-versions skill, `t5cre-stage`, `t5cre-rc`, `t5cre-prod`, and `t5cre-test`.
 
 1. After Packagist verification, update localhost and every standard remote host, then
    verify their active versions:

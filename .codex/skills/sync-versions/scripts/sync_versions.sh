@@ -41,7 +41,7 @@ standard_hosts=(
   t5cre-stage
   t5cre-rc
   t5cre-prod
-  t4test
+  t5cre-test
 )
 expected=
 
