@@ -40,6 +40,9 @@ STEST_TIMEOUT=10 STEST_JOBS=40 STEST_RETRY=2 bin/stest-all -q
 # List all test files
 bin/stest-all --list
 
+# Exclude one or more directories (relative to the top directory, or absolute)
+bin/stest-all --skip-dir=tests/slow --skip-dir=/srv/project/legacy-tests
+
 # Run everything, including opt-in @require-tag files
 bin/stest-all --all
 

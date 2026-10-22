@@ -13,6 +13,8 @@ usage() {
   echo "  --list          : list the selected tests instead of running them"
   echo "  -x, --executable: select only executable .stest files"
   echo "  -u, --unrestricted: include hidden/ignored (fd), vendor, and node_modules files"
+  echo "  --skip-dir=PATH : skip a directory; repeat as needed"
+  echo "                     relative paths use TOP-DIRECTORY; absolute paths are accepted"
   echo "  --list-tags     : list every tag of the selected files with its file count"
   echo "  --list-required : list every @require-tag tag of the selected files with its file count"
   echo "                     both include opt-in files and accept the other selection options"
@@ -93,6 +95,8 @@ parallel_jobs() {
 
 discover_with_find() {
   local find_args=(\( -type f -o -type l \) -name "*.stest")
+  local skip
+  local -a prune_args=()
   if [[ $executable_only == 1 ]]; then
     find_args+=(-executable)
   fi
@@ -100,16 +104,27 @@ discover_with_find() {
     find_args+=(-mmin "-$(recent_minutes "$recent")")
   fi
 
-  if [[ $unrestricted == 1 ]]; then
+  if [[ $unrestricted != 1 ]]; then
+    prune_args=(-name vendor -o -name node_modules -o \( -name '.*' ! -path . \))
+  fi
+  for skip in "${skip_dirs[@]}"; do
+    [[ ${#prune_args[@]} -gt 0 ]] && prune_args+=(-o)
+    prune_args+=(-samefile "$skip")
+  done
+
+  if [[ ${#prune_args[@]} == 0 ]]; then
     find . "${find_args[@]}"
+  elif [[ $unrestricted == 1 ]]; then
+    find . \( -type d \( "${prune_args[@]}" \) -prune \) \
+      -o \( "${find_args[@]}" -print \)
   else
-    find . \( -type d \( -name vendor -o -name node_modules -o \( -name '.*' ! -path . \) \) -prune \) \
+    find . \( -type d \( "${prune_args[@]}" \) -prune \) \
       -o \( "${find_args[@]}" ! -name '.*' -print \)
   fi
 }
 
 discover_with_fd() {
-  local error_file status file
+  local error_file status file skip relative pattern
   local fd_args=(--show-errors --strip-cwd-prefix=never -t f -t l -e stest)
 
   if [[ $unrestricted == 1 ]]; then
@@ -120,6 +135,19 @@ discover_with_fd() {
   if [[ -n "$recent" ]]; then
     fd_args+=(--changed-within "$(recent_duration "$recent")")
   fi
+  for skip in "${skip_dirs[@]}"; do
+    case "$skip" in
+      "$top_dir") continue ;;
+      "$top_dir"/*) relative=${skip#"$top_dir"/} ;;
+      *) continue ;;
+    esac
+    # fd exclusions are globs. The final path filter still handles names that
+    # cannot safely be represented as a literal glob.
+    [[ $relative == *'*'* || $relative == *'?'* || $relative == *'['* ]] && continue
+    pattern=$relative
+    [[ $pattern != */* ]] && pattern="/$pattern"
+    fd_args+=(--exclude "$pattern")
+  done
 
   error_file=$(mktemp "${TMPDIR:-/tmp}/stest-all-fd.XXXXXX") || return 1
   fd "${fd_args[@]}" . 2> "$error_file" | while IFS= read -r file; do
@@ -344,6 +372,26 @@ discover_selected() {
   fi
 }
 
+file_is_skipped() {
+  local file=$1 candidate skip
+  if [[ $file == /* ]]; then
+    candidate=$file
+  else
+    candidate="$top_dir/${file#./}"
+  fi
+  for skip in "${skip_dirs[@]}"; do
+    [[ "$candidate/" == "$skip/"* ]] && return 0
+  done
+  return 1
+}
+
+filter_skipped_tests() {
+  local file
+  while IFS= read -r file; do
+    file_is_skipped "$file" || printf '%s\n' "$file"
+  done
+}
+
 # warn about requested tags no discovered file declares (typos such as --tag=smoek).
 # An excluded tag nobody declares is fine: there is simply nothing to exclude, which is
 # normal for a shared command line like --tag=-centerex in a product without that tag.
@@ -353,7 +401,7 @@ warn_unknown_tags() {
   (( ${#requested_tags[@]} > 0 )) || return 0
   while read -r token _; do
     [[ -n $token ]] && known_tags["$token"]=1
-  done < <(discover_tests 2>/dev/null | count_tags all 2>/dev/null)
+  done < <(discover_tests 2>/dev/null | filter_skipped_tests | count_tags all 2>/dev/null)
   known=$(printf '%s\n' "${!known_tags[@]}" | sort | head -20 | paste -sd ' ')
   for token in "${!requested_tags[@]}"; do
     if [[ ! ${known_tags[$token]+yes} ]]; then
@@ -366,12 +414,12 @@ list_tests() {
   local file mtime
 
   if [[ -n "$new" ]]; then
-    discover_selected | filter_tagged_tests | while IFS= read -r file; do
+    discover_selected | filter_skipped_tests | filter_tagged_tests | while IFS= read -r file; do
       mtime=$(stat -c '%Y' "$file") || return
       printf '%s %s\n' "$mtime" "$file"
     done | sort -k1,1nr -k2,2 | sed -n "1,${new}p" | cut -d " " -f 2-
   else
-    discover_selected | filter_tagged_tests
+    discover_selected | filter_skipped_tests | filter_tagged_tests
   fi
 }
 
@@ -392,6 +440,8 @@ jobs_set=0
 jobs_source="-j/--jobs"
 read_only=0
 dir=
+skip_dir_args=()
+skip_dirs=()
 tag_filters=()
 declare -A requested_tags=()
 declare -A excluded_tags=()
@@ -430,6 +480,17 @@ while [[ $# -gt 0 ]]; do
       ;;
     -u|--unrestricted)
       unrestricted=1
+      ;;
+    --skip-dir=*)
+      skip_dir_args+=("${1#--skip-dir=}")
+      ;;
+    --skip-dir)
+      if [[ $# -lt 2 || -z $2 ]]; then
+        echo "--skip-dir requires a directory, e.g. --skip-dir=tests/slow" >&2
+        exit 1
+      fi
+      skip_dir_args+=("$2")
+      shift
       ;;
     --tag=*)
       tag_filters+=("${1#--tag=}")
@@ -619,6 +680,23 @@ fi
 if [[ -n "$dir" ]]; then
   cd "$dir" || exit 1
 fi
+
+top_dir=$(pwd -P) || exit 1
+for skip in "${skip_dir_args[@]}"; do
+  if [[ -z $skip ]]; then
+    echo "--skip-dir requires a non-empty directory path" >&2
+    exit 1
+  fi
+  if [[ $skip != /* ]]; then
+    skip="$top_dir/$skip"
+  fi
+  skip=$(realpath -m -- "$skip") || exit 1
+  if [[ ! -d $skip ]]; then
+    echo "--skip-dir is not a directory: $skip" >&2
+    exit 1
+  fi
+  skip_dirs+=("$skip")
+done
 
 test_list=$(mktemp "${TMPDIR:-/tmp}/stest-all.XXXXXX") || exit 1
 work=$(mktemp -d "${TMPDIR:-/tmp}/stest-all-run.XXXXXX") || exit 1

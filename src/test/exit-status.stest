@@ -34,7 +34,7 @@
 ; exec("$bin --version 2>&1", $versionOutput, $versionCode);
 
 [$versionCode, $versionOutput];
-    [0, ['4.1.3 (build 2026-10-13)']];
+    [0, ['4.1.4 (build 2026-10-22)']];
 
 ; $timeoutDir = "$tmp/timeout-dir";
 ; $timeoutFile = "$timeoutDir/timeout.stest";
@@ -460,6 +460,48 @@ $run("$path $all --list --new " . escapeshellarg($allDir) . " | grep -q './nonex
 $run("$path $all --list --executable --new " . escapeshellarg($allDir) . " | grep -q './exec-pass.stest'");
     0;
 
+; $skipDir = "$tmp/skip-dir";
+; mkdir($skipDir);
+; mkdir("$skipDir/relative skip");
+; mkdir("$skipDir/absolute-skip");
+; copy($pass, "$skipDir/keep.stest");
+; copy($fail, "$skipDir/relative skip/fail.stest");
+; copy($fail, "$skipDir/absolute-skip/fail.stest");
+; chmod("$skipDir/keep.stest", 0755);
+; chmod("$skipDir/relative skip/fail.stest", 0755);
+; chmod("$skipDir/absolute-skip/fail.stest", 0755);
+; $skipList = function (string $args) use ($all, $skipDir, $path): array {
+    exec("$path $all --list $args " . escapeshellarg($skipDir) . " 2>/dev/null", $out, $code);
+    sort($out);
+    return [$code, $out];
+  };
+
+; $skipResult = $skipList(
+    "--skip-dir=" . escapeshellarg('relative skip')
+      . " --skip-dir " . escapeshellarg("$skipDir/absolute-skip")
+  );
+
+$skipResult;
+    [0, ['./keep.stest']];
+
+; $skipRun = $run(
+    "$path $all --skip-dir=" . escapeshellarg('relative skip')
+      . " --skip-dir " . escapeshellarg("$skipDir/absolute-skip")
+      . " " . escapeshellarg($skipDir)
+  );
+
+$skipRun;
+    0;
+
+$run("$path $all --list --skip-dir=missing " . escapeshellarg($skipDir));
+    1;
+
+$run("$path $all --list --skip-dir= " . escapeshellarg($skipDir));
+    1;
+
+$run("$all --help 2>&1 | grep -q -- '--skip-dir=PATH'");
+    0;
+
 ; $parallelBin = "$tmp/parallel-bin";
 ; $parallelArgs = "$tmp/parallel-args";
 ; mkdir($parallelBin);
@@ -601,7 +643,7 @@ file_get_contents($hardExitLog);
 ; $findDir = "$tmp/find-dir";
 ; mkdir($findBin);
 ; mkdir($findDir);
-; foreach (['cat', 'cut', 'dirname', 'find', 'mktemp', 'rm', 'sed', 'sort', 'stat'] as $command) {
+; foreach (['cat', 'cut', 'dirname', 'find', 'mktemp', 'realpath', 'rm', 'sed', 'sort', 'stat'] as $command) {
     symlink(trim(shell_exec("command -v $command")), "$findBin/$command");
   }
 ; copy($pass, "$findDir/normal.stest");
@@ -613,6 +655,9 @@ file_get_contents($hardExitLog);
 ; mkdir("$findDir/vendor");
 ; copy($pass, "$findDir/vendor/vendor.stest");
 ; chmod("$findDir/vendor/vendor.stest", 0755);
+; mkdir("$findDir/skip-dir");
+; copy($pass, "$findDir/skip-dir/skipped.stest");
+; chmod("$findDir/skip-dir/skipped.stest", 0755);
 ; mkdir("$findDir/not-a-file.stest");
 ; file_put_contents("$findDir/target", $passText);
 ; chmod("$findDir/target", 0755);
@@ -626,16 +671,22 @@ file_get_contents($hardExitLog);
   };
 
 $findList();
+    [0, ['./link.stest', './nonexec.stest', './normal.stest', './skip-dir/skipped.stest']];
+
+$findList('--skip-dir=skip-dir');
+    [0, ['./link.stest', './nonexec.stest', './normal.stest']];
+
+$findList('--skip-dir ' . escapeshellarg("$findDir/skip-dir"));
     [0, ['./link.stest', './nonexec.stest', './normal.stest']];
 
 $findList('--executable');
-    [0, ['./link.stest', './normal.stest']];
+    [0, ['./link.stest', './normal.stest', './skip-dir/skipped.stest']];
 
 $findList('--unrestricted');
-    [0, ['./.hidden.stest', './link.stest', './nonexec.stest', './normal.stest', './vendor/vendor.stest']];
+    [0, ['./.hidden.stest', './link.stest', './nonexec.stest', './normal.stest', './skip-dir/skipped.stest', './vendor/vendor.stest']];
 
 $findList('--unrestricted --executable');
-    [0, ['./.hidden.stest', './link.stest', './normal.stest', './vendor/vendor.stest']];
+    [0, ['./.hidden.stest', './link.stest', './normal.stest', './skip-dir/skipped.stest', './vendor/vendor.stest']];
 
 ; $reflectionDeprecated = "$tmp/reflection-deprecated.stest";
 ; $reflectionDeprecatedText = "#!/usr/bin/env stest\n"

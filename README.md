@@ -113,6 +113,7 @@ stest-all                         # all .stest files
 stest-all -q                      # quiet suite run
 stest-all --executable            # only executable .stest files
 stest-all --list                  # inspect the selected files
+stest-all --skip-dir=tests/slow   # omit a directory (repeatable; absolute paths also work)
 stest-all --tag="smoke -long"     # include and exclude file tags
 stest-all --all                   # also run opt-in @require-tag files
 stest-all --list-tags             # every tag with its file count
@@ -145,6 +146,8 @@ By default, suite discovery includes executable and non-executable `.stest` file
 skipping hidden paths, `vendor`, and `node_modules`. Install
 [`fd`](https://github.com/sharkdp/fd) for faster discovery in large repositories;
 systems without it automatically use `find`. GNU Parallel powers suite execution.
+Use repeatable `--skip-dir=PATH` options to omit additional directories. Relative paths are
+resolved from the repository directory passed to `stest-all`; absolute paths are also accepted.
 
 Suite summaries, retries, JSON reports, slow-test reporting, sharding, and remembered failed
 files are built in. `--read-only` makes CI runs non-mutating; `stest --watch` provides a local

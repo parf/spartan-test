@@ -217,8 +217,8 @@ line one. Declarations after line four are ordinary comments and are ignored by
   every file except those tagged `long`.
 - `--list-tags` prints `tag count` for every tag (`@tag` and `@require-tag`) in the selected
   files, most used first; `--list-required` reports only `@require-tag` tags. Both include
-  opt-in files and honor `-x`, `-u`, `--recent`, `--new`, and `--tag`. A file counts once
-  per tag.
+  opt-in files and honor `-x`, `-u`, `--skip-dir`, `--recent`, `--new`, and `--tag`.
+  A file counts once per tag.
 - Special-use tags `run-once(PERIOD)` and `fail-once(PERIOD)` (bare = `1day`) are written in
   `@tag` / `@require-tag` lines like any tag: `# @tag web run-once(1day)`. `stest` and
   `stest-all` apply them as `STest::runOnce(PERIOD)` / `STest::failOnce(PERIOD)` (see
@@ -227,6 +227,9 @@ line one. Declarations after line four are ordinary comments and are ignored by
 - Repeated `--tag` options and comma-separated values are merged using the same rules.
 - Executable and non-executable `.stest` files are included by default. Use
   `-x` or `--executable` to select only files with the executable bit set.
+- `--skip-dir=PATH` excludes a directory from discovery and may be repeated. `PATH` may be
+  relative to the top directory passed to `stest-all` or absolute. The exclusion also applies
+  to `--list`, tag reports, and `--rerun-failed`.
 - A positive-only tag query with no matches exits nonzero. If negative tags intentionally
   exclude every positive match, the empty result remains successful.
 - Both discovery backends skip hidden files, `vendor`, and `node_modules` by default.
@@ -234,14 +237,15 @@ line one. Declarations after line four are ordinary comments and are ignored by
   Use `-u` or `--unrestricted` to include these paths. Systems without `fd` use the
   `find` fallback.
 
-Selection order is optional `--executable` filtering, then `--recent`, tags, `--new`,
-and finally execution or `--list`. Examples:
+Selection order is directory discovery and `--skip-dir`, optional `--executable` filtering,
+then `--recent`, tags, `--new`, and finally execution or `--list`. Examples:
 
 ```bash
 stest-all --tag=smoke
 stest-all --tag="prod -long" --recent=2day
 stest-all --list --tag=staging --new=4
 stest-all --list --executable --unrestricted
+stest-all --list --skip-dir=tests/slow --skip-dir=/srv/project/legacy-tests
 stest-all --all --tag=-long
 stest-all --list-required
 ```
