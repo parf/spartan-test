@@ -1,6 +1,6 @@
 ---
 name: deploy
-description: "Prepare, publish, and deploy a Spartan Test release: update docs and CHANGELOG, bump version/build date, run tests, review changes, commit/tag/push, verify Packagist, roll published releases out to the standard server fleet, and verify active versions. Use for requests such as bump/test/publish, deploy to p4, update stest on stage, or ship Spartan Test."
+description: "Prepare, publish, and deploy a Spartan Test release: update docs and CHANGELOG, bump version/build date, run tests, review changes, commit/tag/push, verify Packagist, roll published releases out to the standard server fleet, and verify active versions. Use for requests such as bump/test/publish, deploy to p5, update stest on stage, or ship Spartan Test."
 ---
 
 # Release And Deploy Spartan Test
@@ -65,8 +65,8 @@ Never bump, commit, tag, push, or publish unless the user requested that operati
 
 ## Deploy The Published Release
 
-The standard fleet is `localhost`, `p4`, `rdvp`, `t4cre-stage`, `t4cre-rc`,
-`t4cre-prod`, and `t4test`.
+The standard fleet is `localhost`, `p5`, every active `realmo-*` developer host listed by
+the sync-versions skill, `t5cre-stage`, `t5cre-rc`, `t5cre-prod`, and `t4test`.
 
 1. After Packagist verification, update localhost and every standard remote host, then
    verify their active versions:
@@ -103,7 +103,7 @@ Use this path for a deploy request that does not also publish a release.
    non-production validation host:
 
    ```bash
-   .codex/skills/deploy/scripts/deploy.sh --test p4
+   .codex/skills/deploy/scripts/deploy.sh --test p5
    ```
 
 5. Report each host, resolved `stest` path, version, update result, and suite result.

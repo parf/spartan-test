@@ -12,7 +12,37 @@ deploy="$repo/.codex/skills/deploy/scripts/deploy.sh"
 check_only=0
 run_tests=0
 hosts=()
-standard_hosts=(p4 rdvp t4cre-stage t4cre-rc t4cre-prod t4test)
+ve_list=${STEST_VE_LIST:-/hbfr/boston-colo/ve.list}
+fallback_realmo_hosts=(
+  realmo-amironov
+  realmo-anar
+  realmo-dstep
+  realmo-etruhanov
+  realmo-iaroslav
+  realmo-kkriazhev
+  realmo-nkamensky
+  realmo-parf
+  realmo-sryzhkov
+  realmo-vbatrak
+  realmo-ykononov
+)
+realmo_hosts=()
+if [[ -r $ve_list ]]; then
+  mapfile -t realmo_hosts < <(
+    awk '$1 ~ /^realmo-/ && $1 != "realmo-parse-raw" && $1 != "realmo-parse-reso" { print $1 }' "$ve_list" |
+      sort -u
+  )
+else
+  realmo_hosts=("${fallback_realmo_hosts[@]}")
+fi
+standard_hosts=(
+  p5
+  "${realmo_hosts[@]}"
+  t5cre-stage
+  t5cre-rc
+  t5cre-prod
+  t4test
+)
 expected=
 
 while (($#)); do
